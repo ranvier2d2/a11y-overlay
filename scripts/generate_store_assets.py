@@ -46,10 +46,16 @@ def cover(im: Image.Image, width: int, height: int) -> Image.Image:
     return resized.crop((left, top, left + width, top + height))
 
 
-def save_cover(src_name: str, dest_name: str, width: int = 1280, height: int = 800) -> None:
+def save_rgb_variants(image: Image.Image, base_path: Path) -> None:
+    rgb = image.convert("RGB")
+    rgb.save(base_path.with_suffix(".png"))
+    rgb.save(base_path.with_suffix(".jpg"), quality=95, subsampling=0)
+
+
+def save_cover(src_name: str, dest_stem: str, width: int = 1280, height: int = 800) -> None:
     im = Image.open(ROOT / src_name).convert("RGB")
     out = cover(im, width, height)
-    out.save(SCREENSHOTS / dest_name, quality=95)
+    save_rgb_variants(out, SCREENSHOTS / dest_stem)
 
 
 def draw_app_icon(size: int) -> Image.Image:
@@ -87,7 +93,7 @@ def draw_app_icon(size: int) -> Image.Image:
     return image
 
 
-def draw_tile(width: int, height: int, dest_name: str) -> None:
+def draw_tile(width: int, height: int, dest_stem: str) -> None:
     image = Image.new("RGB", (width, height), BG)
     draw = ImageDraw.Draw(image)
 
@@ -114,21 +120,21 @@ def draw_tile(width: int, height: int, dest_name: str) -> None:
     draw.text((text_x, margin + int(height * 0.30)), "Visualize page structure", fill=TEXT, font=title_font)
     draw.text((text_x, margin + int(height * 0.50)), "Landmarks, headings, focus order, depth, and layout layers.", fill=MUTED, font=body_font)
 
-    image.save(EDGE / dest_name, quality=95)
+    save_rgb_variants(image, EDGE / dest_stem)
 
 
 def main() -> None:
     SCREENSHOTS.mkdir(parents=True, exist_ok=True)
     EDGE.mkdir(parents=True, exist_ok=True)
 
-    save_cover("landing-hero.png", "chrome-01-landing-hero.png")
-    save_cover("github-overlay-default.png", "chrome-02-overlay-default.png")
-    save_cover("github-overlay-focus.png", "chrome-03-overlay-focus.png")
-    save_cover("landing-full.png", "chrome-04-landing-full.png")
+    save_cover("landing-hero.png", "chrome-01-landing-hero")
+    save_cover("github-overlay-default.png", "chrome-02-overlay-default")
+    save_cover("github-overlay-focus.png", "chrome-03-overlay-focus")
+    save_cover("landing-full.png", "chrome-04-landing-full")
 
-    draw_app_icon(300).convert("RGB").save(EDGE / "edge-logo-300.png", quality=95)
-    draw_tile(440, 280, "edge-small-promotional-tile-440x280.png")
-    draw_tile(1400, 560, "edge-large-promotional-tile-1400x560.png")
+    save_rgb_variants(draw_app_icon(300), EDGE / "edge-logo-300")
+    draw_tile(440, 280, "edge-small-promotional-tile-440x280")
+    draw_tile(1400, 560, "edge-large-promotional-tile-1400x560")
 
     print(f"generated screenshots in {SCREENSHOTS}")
     print(f"generated edge assets in {EDGE}")

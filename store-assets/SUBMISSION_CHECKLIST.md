@@ -48,10 +48,10 @@ Upload:
 
 Recommended Chrome screenshots:
 
-- `store-assets/screenshots/chrome-01-landing-hero.png`
-- `store-assets/screenshots/chrome-02-overlay-default.png`
-- `store-assets/screenshots/chrome-03-overlay-focus.png`
-- `store-assets/screenshots/chrome-04-landing-full.png`
+- `store-assets/screenshots/chrome-01-landing-hero.jpg`
+- `store-assets/screenshots/chrome-02-overlay-default.jpg`
+- `store-assets/screenshots/chrome-03-overlay-focus.jpg`
+- `store-assets/screenshots/chrome-04-landing-full.jpg`
 
 ## Microsoft Edge Add-ons
 
@@ -64,10 +64,10 @@ https://developer.microsoft.com/en-us/microsoft-edge/extensions
 Upload:
 
 - Package: `dist/a11y-overlay-chrome-v0.1.0.zip`
-- Logo: `store-assets/edge/edge-logo-300.png`
-- Small promotional tile: `store-assets/edge/edge-small-promotional-tile-440x280.png`
-- Large promotional tile: `store-assets/edge/edge-large-promotional-tile-1400x560.png`
-- Screenshots: files in `store-assets/screenshots/`
+- Logo: `store-assets/edge/edge-logo-300.jpg` or `.png`
+- Small promotional tile: `store-assets/edge/edge-small-promotional-tile-440x280.jpg`
+- Large promotional tile: `store-assets/edge/edge-large-promotional-tile-1400x560.jpg`
+- Screenshots: prefer the `.jpg` files in `store-assets/screenshots/`
 - Privacy policy URL: `https://ranvier2d2.github.io/a11y-overlay/privacy.html`
 
 ## Manual answers you may still need in store UI
