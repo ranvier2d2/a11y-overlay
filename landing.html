@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>a11y-overlay · live page structure for humans and agents</title>
+<meta name="description" content="Drop-in JavaScript that paints landmarks, headings, tab order, and repeating components over any page. Humans toggle with one key. Agents drive it with one line.">
+<meta property="og:title" content="a11y-overlay — live page structure for humans and agents">
+<meta property="og:description" content="Paint semantic structure on any page. A visual audit for humans, a controllable layer for browser-driving agents.">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --bg: #0c0a09;
+    --bg-soft: #151210;
+    --bg-raised: #1c1917;
+    --border: #292524;
+    --border-bright: #44403c;
+    --text: #e7e5e4;
+    --text-dim: #a8a29e;
+    --text-faint: #57534e;
+    --amber: #f59e0b;
+    --lime:  #a3e635;
+    --cyan:  #22d3ee;
+    --rose:  #fb7185;
+    --violet:#a78bfa;
+    --blue:  #60a5fa;
+    --slate: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--lime); color: var(--bg); }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  .serif { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+
+  a { color: inherit; }
+
+  /* ---------- reusable ---------- */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-bright);
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .eyebrow.lime { border-color: var(--lime); color: var(--lime); }
+  .eyebrow.cyan { border-color: var(--cyan); color: var(--cyan); }
+  .eyebrow .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; opacity: 0.8;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1px solid;
+    cursor: pointer;
+    background: transparent;
+    transition: transform 0.08s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--lime); color: var(--bg); border-color: var(--lime); }
+  .btn.ghost   { color: var(--text); border-color: var(--border-bright); }
+  .btn.ghost:hover { border-color: var(--text); }
+  .btn .arrow { transition: transform 0.15s; }
+  .btn:hover .arrow { transform: translateX(3px); }
+
+  /* ---------- top nav ---------- */
+  nav.top {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(12, 10, 9, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.top .wrap {
+    display: flex; align-items: center; gap: 22px;
+    padding-top: 14px; padding-bottom: 14px;
+  }
+  nav.top .logo {
+    font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; font-size: 11px; color: var(--lime);
+  }
+  nav.top .v { color: var(--text-faint); font-size: 10px; margin-left: -14px; }
+  nav.top .links {
+    display: flex; gap: 22px; font-size: 11px;
+    color: var(--text-dim); margin-left: auto;
+  }
+  nav.top .links a { text-decoration: none; }
+  nav.top .links a:hover { color: var(--text); }
+
+  /* ---------- hero ---------- */
+  section.hero { padding: 88px 0 48px; position: relative; }
+  .hero h1 {
+    font-family: Georgia, serif; font-weight: 400;
+    font-size: clamp(38px, 6vw, 68px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 22px 0 22px;
+    max-width: 940px;
+  }
+  .hero h1 em.lime  { font-style: italic; color: var(--lime); }
+  .hero h1 em.cyan  { font-style: italic; color: var(--cyan); }
+  .hero h1 em.amber { font-style: italic; color: var(--amber); }
+  .hero .lede {
+    color: var(--text-dim);
+    max-width: 640px;
+    font-size: 15px;
+    line-height: 1.55;
+    margin-bottom: 28px;
+  }
+  .hero .lede strong { color: var(--text); font-weight: 400; }
+  .hero .ctas { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 40px; }
+  .hero .meta-row {
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+    color: var(--text-faint); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .hero .meta-row .dot { color: var(--border-bright); }
+
+  /* ---------- hero: dual demo ---------- */
+  .duality {
+    margin-top: 56px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 860px) { .duality { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--bg-soft);
+    padding: 24px 26px 26px;
+    position: relative;
+    min-height: 360px;
+  }
+  .panel .tag {
+    position: absolute; top: 16px; right: 18px;
+    font-size: 9.5px; letter-spacing: 0.14em;
+    color: var(--text-faint); text-transform: uppercase;
+  }
+  .panel h3 {
+    font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; margin-bottom: 18px;
+  }
+  .panel h3.amber { color: var(--amber); }
+  .panel h3.cyan  { color: var(--cyan); }
+
+  /* mock page visualisation */
+  .mock {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    height: 272px;
+    overflow: hidden;
+    color: #1c1917;
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+  }
+  .mock .mhead, .mock .mnav, .mock .mmain, .mock .mfoot,
+  .mock .mcard, .mock .mh1, .mock .mbtn, .mock .mimg {
+    position: absolute;
+    font-family: ui-monospace, monospace;
+  }
+  .mock .mhead { top: 0; left: 0; right: 0; height: 32px; background: #f5f5f4; border-bottom: 1px solid #e7e5e4; padding: 9px 12px; font-size: 9px; color: #78716c; letter-spacing: 0.06em; }
+  .mock .mnav  { top: 32px; left: 0; right: 0; height: 22px; background: #fafaf9; border-bottom: 1px solid #e7e5e4; display: flex; align-items: center; padding: 0 12px; gap: 10px; font-size: 9px; color: #57534e; }
+  .mock .mmain { top: 54px; left: 0; right: 0; bottom: 30px; padding: 10px 12px; overflow: hidden; }
+  .mock .mfoot { bottom: 0; left: 0; right: 0; height: 30px; background: #f5f5f4; border-top: 1px solid #e7e5e4; padding: 8px 12px; font-size: 9px; color: #a8a29e; }
+  .mock .mh1 { position: static; font-family: Georgia, serif; font-style: italic; font-size: 16px; color: #0c0a09; margin-bottom: 6px; display: block; }
+  .mock .msub { color: #78716c; font-size: 9px; margin-bottom: 10px; display: block; }
+  .mock .mrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+  .mock .mcard { position: static; background: #fafaf9; border: 1px solid #e7e5e4; padding: 6px 8px; font-size: 9px; color: #44403c; height: 54px; display: flex; flex-direction: column; justify-content: space-between; }
+  .mock .mcard .mimg { position: static; height: 18px; background: #e7e5e4; }
+  .mock .mbtn { position: static; display: inline-block; background: #0c0a09; color: #fafaf9; padding: 3px 8px; font-size: 9px; align-self: flex-start; }
+
+  /* overlay outlines painted on top of the mock */
+  .mock .ovl {
+    position: absolute;
+    pointer-events: none;
+    outline: 1px solid transparent;
+    transition: outline-color 0.3s ease, background-color 0.3s ease;
+  }
+  .mock .ovl.landmark-hdr { top: 0; left: 0; right: 0; height: 32px; }
+  .mock .ovl.landmark-nav { top: 32px; left: 0; right: 0; height: 22px; }
+  .mock .ovl.landmark-main { top: 54px; left: 0; right: 0; bottom: 30px; }
+  .mock .ovl.landmark-foot { bottom: 0; left: 0; right: 0; height: 30px; }
+  .mock .ovl.heading-h1 { top: 62px; left: 12px; width: 230px; height: 22px; }
+  .mock .ovl.interact-btn { top: 228px; left: 252px; width: 30px; height: 12px; }
+  .mock .ovl.alt-img { top: 124px; left: 196px; width: 92px; height: 18px; }
+  .mock .ovl.focus-1, .mock .ovl.focus-2, .mock .ovl.focus-3 { height: 12px; }
+  .mock .ovl.focus-1 { top: 36px; left: 48px; width: 36px; }
+  .mock .ovl.focus-2 { top: 36px; left: 92px; width: 42px; }
+  .mock .ovl.focus-3 { top: 228px; left: 252px; width: 30px; }
+
+  /* layer-specific styling applied via class on .mock */
+  .mock[data-active="landmark"] .ovl.landmark-hdr,
+  .mock[data-active="landmark"] .ovl.landmark-nav,
+  .mock[data-active="landmark"] .ovl.landmark-main,
+  .mock[data-active="landmark"] .ovl.landmark-foot {
+    outline-color: var(--amber);
+    background: rgba(245,158,11,0.07);
+  }
+  .mock[data-active="heading"] .ovl.heading-h1 {
+    outline-color: var(--cyan);
+    background: rgba(34,211,238,0.10);
+  }
+  .mock[data-active="interact"] .ovl.interact-btn {
+    outline-color: var(--lime);
+    background: rgba(163,230,53,0.14);
+  }
+  .mock[data-active="alt"] .ovl.alt-img {
+    outline-color: var(--rose);
+    background: rgba(251,113,133,0.14);
+  }
+  .mock[data-active="focus"] .ovl.focus-1,
+  .mock[data-active="focus"] .ovl.focus-2,
+  .mock[data-active="focus"] .ovl.focus-3 {
+    outline-color: var(--blue);
+    background: rgba(96,165,250,0.14);
+  }
+
+  /* tiny label chip on active layer */
+  .mock .ovl::after {
+    content: attr(data-label);
+    position: absolute;
+    top: -11px;
+    left: -1px;
+    font-family: ui-monospace, monospace;
+    font-size: 7.5px;
+    letter-spacing: 0.04em;
+    padding: 1px 4px;
+    color: var(--bg);
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+  .mock[data-active="landmark"] .ovl.landmark-hdr::after,
+  .mock[data-active="landmark"] .ovl.landmark-nav::after,
+  .mock[data-active="landmark"] .ovl.landmark-main::after,
+  .mock[data-active="landmark"] .ovl.landmark-foot::after { opacity: 1; background: var(--amber); }
+  .mock[data-active="heading"]  .ovl.heading-h1::after    { opacity: 1; background: var(--cyan); }
+  .mock[data-active="interact"] .ovl.interact-btn::after  { opacity: 1; background: var(--lime); }
+  .mock[data-active="alt"]      .ovl.alt-img::after       { opacity: 1; background: var(--rose); color: white; }
+  .mock[data-active="focus"]    .ovl.focus-1::after,
+  .mock[data-active="focus"]    .ovl.focus-2::after,
+  .mock[data-active="focus"]    .ovl.focus-3::after       { opacity: 1; background: var(--blue); color: white; }
+
+  /* cycle indicator */
+  .cycle {
+    margin-top: 14px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .cycle span {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+    transition: all 0.2s;
+  }
+  .cycle span.on { border-color: currentColor; color: var(--text); }
+  .cycle span[data-k="landmark"].on { color: var(--amber); border-color: var(--amber); }
+  .cycle span[data-k="heading"].on  { color: var(--cyan); border-color: var(--cyan); }
+  .cycle span[data-k="interact"].on { color: var(--lime); border-color: var(--lime); }
+  .cycle span[data-k="alt"].on      { color: var(--rose); border-color: var(--rose); }
+  .cycle span[data-k="focus"].on    { color: var(--blue); border-color: var(--blue); }
+
+  /* JSON stream panel (right side of duality) */
+  .stream {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    font-size: 11px;
+    line-height: 1.75;
+    height: 272px;
+    overflow-y: auto;
+    color: var(--text-dim);
+    scroll-behavior: smooth;
+  }
+  .stream .ln { display: block; opacity: 0.55; transition: opacity 0.3s, color 0.3s; }
+  .stream .ln.hot { opacity: 1; color: var(--text); }
+  .stream .k { color: var(--cyan); }
+  .stream .s { color: #86efac; }
+  .stream .n { color: var(--amber); }
+  .stream .b { color: var(--violet); }
+  .stream .c { color: var(--text-faint); font-style: italic; }
+
+  /* ---------- section scaffold ---------- */
+  section.blk {
+    padding: 88px 0;
+    border-top: 1px solid var(--border);
+  }
+  .section-eyebrow {
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .section-h {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(26px, 3.2vw, 40px);
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    max-width: 780px;
+    margin-bottom: 14px;
+  }
+  .section-h em.lime { font-style: italic; color: var(--lime); }
+  .section-h em.cyan { font-style: italic; color: var(--cyan); }
+  .section-sub {
+    color: var(--text-dim);
+    max-width: 620px;
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 42px;
+  }
+
+  /* ---------- feature grid ---------- */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .feat {
+    background: var(--bg-soft);
+    padding: 22px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 230px;
+    position: relative;
+  }
+  .feat .hd {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .feat kbd {
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    border-bottom-width: 2px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 3px;
+    color: var(--text);
+    min-width: 22px;
+    text-align: center;
+  }
+  .feat .swatch {
+    width: 10px; height: 10px;
+    border: 1px solid currentColor;
+    background: currentColor;
+    opacity: 0.9;
+  }
+  .feat h4 {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .feat p {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .feat .row {
+    margin-top: auto;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding-top: 10px;
+  }
+  .feat .row .p {
+    padding: 2px 7px;
+    border: 1px solid var(--border-bright);
+    color: var(--text-faint);
+  }
+  .feat .row .p.h { color: var(--amber); border-color: rgba(245,158,11,0.5); }
+  .feat .row .p.a { color: var(--cyan);  border-color: rgba(34,211,238,0.5); }
+
+  /* ---------- how it works ---------- */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 960px) { .how-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .how-grid { grid-template-columns: 1fr; } }
+  .how-step {
+    background: var(--bg-soft);
+    padding: 24px 24px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 220px;
+  }
+  .how-step .num {
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .how-step h4 {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.15;
+    color: var(--text);
+  }
+  .how-step p {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.58;
+  }
+  .how-step code { color: var(--cyan); }
+
+  /* ---------- two-col: for humans / for agents ---------- */
+  .aud-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 860px) { .aud-split { grid-template-columns: 1fr; } }
+  .aud {
+    background: var(--bg-soft);
+    padding: 30px 28px 32px;
+  }
+  .aud h3 {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+  .aud h3.h { color: var(--amber); }
+  .aud h3.a { color: var(--cyan); }
+  .aud .subtitle { color: var(--text-dim); font-size: 12px; margin-bottom: 22px; }
+  .aud ul { list-style: none; }
+  .aud li {
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 10px;
+  }
+  .aud li:first-child { border-top: none; }
+  .aud li .sym {
+    color: var(--text-faint);
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 14px;
+  }
+  .aud.h li .sym { color: var(--amber); }
+  .aud.a li .sym { color: var(--cyan); }
+  .aud li strong { color: var(--text); font-weight: 400; }
+  .aud li code { color: var(--cyan); }
+  .aud li em { color: var(--text); font-style: normal; }
+
+  /* ---------- agent API ---------- */
+  .api-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .api-grid { grid-template-columns: 1fr; } }
+  .api-table {
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+  }
+  .api-table .row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 14px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .api-table .row:last-child { border-bottom: none; }
+  .api-table .row code {
+    color: var(--cyan);
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .api-table .row .d { color: var(--text-dim); line-height: 1.5; }
+
+  .code {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 0;
+    overflow: hidden;
+  }
+  .code .filebar {
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .code pre {
+    padding: 16px 18px;
+    font-size: 11.5px;
+    line-height: 1.75;
+    overflow-x: auto;
+    color: var(--text-dim);
+    font-family: inherit;
+    white-space: pre;
+  }
+  .code .c  { color: var(--text-faint); font-style: italic; }
+  .code .k  { color: var(--rose); }
+  .code .s  { color: #86efac; }
+  .code .fn { color: var(--cyan); }
+  .code .v  { color: var(--amber); }
+  .code .p  { color: var(--violet); }
+  .code .copy {
+    cursor: pointer;
+    color: var(--text-faint);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    background: transparent;
+    border: 1px solid var(--border-bright);
+    padding: 2px 8px;
+    font-family: inherit;
+    text-transform: uppercase;
+  }
+  .code .copy:hover { color: var(--text); border-color: var(--text); }
+
+  /* ---------- live demo ---------- */
+  .demo-shell {
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+  }
+  .demo-bar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+  }
+  .demo-bar .dots { display: flex; gap: 6px; }
+  .demo-bar .dots .d { width: 9px; height: 9px; border-radius: 50%; background: var(--border-bright); }
+  .demo-bar .keys { display: flex; gap: 4px; margin-left: auto; }
+  .demo-bar .keys kbd {
+    background: var(--bg-raised);
+    border: 1px solid var(--border-bright);
+    padding: 2px 6px;
+    font-size: 9.5px;
+    font-family: inherit;
+    color: var(--text);
+  }
+  .demo-bar .keys kbd.hot { background: var(--lime); color: var(--bg); border-color: var(--lime); }
+  .demo-bar .status {
+    padding: 2px 7px;
+    border: 1px solid var(--lime);
+    color: var(--lime);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+  .demo-iframe {
+    width: 100%;
+    height: 560px;
+    border: 0;
+    display: block;
+    background: #ffffff;
+  }
+
+  /* ---------- install ---------- */
+  .install-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 860px) { .install-grid { grid-template-columns: 1fr; } }
+  .install-card {
+    background: var(--bg-soft);
+    padding: 26px 26px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 300px;
+  }
+  .install-card h5 {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--lime);
+  }
+  .install-card .target {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .install-card .who {
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .install-card pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+    overflow-x: auto;
+    font-family: inherit;
+    line-height: 1.55;
+  }
+  .install-card pre .k { color: var(--rose); }
+  .install-card pre .s { color: #86efac; }
+  .install-card pre .a { color: var(--amber); }
+  .install-card pre .c { color: var(--text-faint); font-style: italic; }
+  .install-card pre .fn { color: var(--cyan); }
+  .install-card .bm {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 8px 14px;
+    border: 1px dashed var(--lime);
+    color: var(--lime);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: grab;
+    font-weight: 600;
+  }
+  .install-card .bm:active { cursor: grabbing; }
+  .install-card .note {
+    margin-top: auto;
+    color: var(--text-faint);
+    font-size: 10.5px;
+    line-height: 1.5;
+  }
+  .install-footnote {
+    margin-top: 18px;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.58;
+    max-width: 820px;
+  }
+  .install-footnote code { color: var(--cyan); }
+
+  /* ---------- stats ---------- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 720px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+  .stat { background: var(--bg-soft); padding: 28px 20px; text-align: center; }
+  .stat .n {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-size: 44px;
+    color: var(--lime);
+    line-height: 1;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+  .stat .l {
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ---------- under the hood ---------- */
+  .hood {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 720px) { .hood { grid-template-columns: 1fr; } }
+  .hood .item { background: var(--bg-soft); padding: 22px 24px; }
+  .hood .item h5 {
+    font-family: Georgia, serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 18px;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .hood .item p { color: var(--text-dim); font-size: 12.5px; line-height: 1.55; }
+
+  /* ---------- FAQ ---------- */
+  .faq { border-top: 1px solid var(--border); margin-top: 30px; }
+  .faq details {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 0;
+  }
+  .faq summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: '+';
+    color: var(--text-faint);
+    font-size: 20px;
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+  .faq details[open] summary::after { transform: rotate(45deg); color: var(--lime); }
+  .faq details p {
+    margin-top: 12px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+  .faq details p code { color: var(--cyan); }
+
+  /* ---------- footer ---------- */
+  footer {
+    padding: 36px 0 48px;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  footer .wrap {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  footer .links { display: flex; gap: 18px; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  /* mobile tweaks */
+  @media (max-width: 600px) {
+    .wrap { padding: 0 18px; }
+    section.hero { padding: 56px 0 32px; }
+    section.blk { padding: 64px 0; }
+    .hero .meta-row .dot { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <span class="logo">a11y-overlay</span>
+    <span class="v">v0.1</span>
+    <span class="links">
+      <a href="#humans">Humans</a>
+      <a href="#agents">Agents</a>
+      <a href="#demo">Demo</a>
+      <a href="#install">Install</a>
+    </span>
+  </div>
+</nav>
+
+<!-- =================== HERO =================== -->
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow lime"><span class="pulse"></span>v0.1 · drop-in, zero deps</span>
+    <h1>Live page structure,<br>annotated for <em class="amber">humans</em> and <em class="cyan">agents.</em></h1>
+    <p class="lede">
+      A <strong>~650-line script</strong> that paints landmarks, headings, tab order, and repeating
+      components on top of any page. Humans toggle it with a keystroke. Agents drive it with one line
+      of <code>page.evaluate</code>. Nothing on the host DOM is modified.
+    </p>
+    <div class="ctas">
+      <a href="#demo" class="btn primary">Open live demo <span class="arrow">→</span></a>
+      <a href="#install" class="btn ghost">Install bookmarklet</a>
+    </div>
+    <div class="meta-row">
+      <span>Zero deps</span>
+      <span class="dot">·</span>
+      <span>No build</span>
+      <span class="dot">·</span>
+      <span>Shadow-DOM chrome</span>
+      <span class="dot">·</span>
+      <span>MutationObserver · RAF</span>
+      <span class="dot">·</span>
+      <span>MIT</span>
+    </div>
+
+    <!-- dual visualization -->
+    <div class="duality" role="presentation">
+      <div class="panel">
+        <span class="tag">mock · auto-cycle</span>
+        <h3 class="amber">What the human sees</h3>
+        <div class="mock" id="mock" data-active="landmark">
+          <div class="mhead">HEADER · nav · cart</div>
+          <div class="mnav">home &nbsp; products &nbsp; docs &nbsp; about &nbsp; <span style="margin-left:auto">log in</span></div>
+          <div class="mmain">
+            <span class="mh1">Pricing that scales.</span>
+            <span class="msub">Plans for every team size — start free, grow as you go.</span>
+            <div class="mrow">
+              <div class="mcard"><div class="mimg"></div><span>Starter · $0/mo</span></div>
+              <div class="mcard"><div class="mimg"></div><span>Team · $29/mo</span></div>
+              <div class="mcard"><div class="mimg"></div><span>Pro · $99/mo</span></div>
+            </div>
+            <div style="margin-top:8px;">
+              <span class="mbtn">Buy now</span>
+            </div>
+          </div>
+          <div class="mfoot">© 2026 · terms · privacy</div>
+
+          <!-- overlay paint -->
+          <div class="ovl landmark-hdr"  data-label="header"></div>
+          <div class="ovl landmark-nav"  data-label="nav"></div>
+          <div class="ovl landmark-main" data-label="main"></div>
+          <div class="ovl landmark-foot" data-label="footer"></div>
+          <div class="ovl heading-h1"    data-label="H1"></div>
+          <div class="ovl interact-btn"  data-label="button"></div>
+          <div class="ovl alt-img"       data-label="img · no alt"></div>
+          <div class="ovl focus-1"       data-label="1"></div>
+          <div class="ovl focus-2"       data-label="2"></div>
+          <div class="ovl focus-3"       data-label="3"></div>
+        </div>
+
+        <div class="cycle" id="cycle">
+          <span data-k="landmark" class="on">L · landmark</span>
+          <span data-k="heading">H · heading</span>
+          <span data-k="interact">I · interact</span>
+          <span data-k="alt">A · alt</span>
+          <span data-k="focus">F · focus</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="tag">same page · live state</span>
+        <h3 class="cyan">What the agent reads</h3>
+        <div class="stream" id="stream">
+          <!-- populated by JS -->
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; font-size:10px; color:var(--text-faint); letter-spacing:0.12em; text-transform:uppercase;">
+          <span>window.__a11yOverlayInstalled</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- =================== TWO AUDIENCES =================== -->
+<section class="blk" id="audiences">
+  <div class="wrap">
+    <div class="section-eyebrow">Who uses it</div>
+    <h2 class="section-h">User stories for <em class="lime">humans</em> and <em class="cyan">agents.</em></h2>
+    <p class="section-sub">
+      The overlay is most valuable when somebody needs to answer “what is this page
+      structurally?” fast, without opening DevTools or hand-writing selectors.
+    </p>
+
+    <div class="aud-split">
+      <div class="aud h" id="humans">
+        <h3 class="h">For humans.</h3>
+        <div class="subtitle">Designers, devs, QA, content editors.</div>
+        <ul>
+          <li><span class="sym">·</span><span><strong>As a QA lead,</strong> I want to audit a production page I do not own, so I can confirm landmark, heading, and focus structure in under a minute.</span></li>
+          <li><span class="sym">·</span><span><strong>As a content editor,</strong> I want missing-alt images called out instantly, so I can fix them before the page ships.</span></li>
+          <li><span class="sym">·</span><span><strong>As a designer,</strong> I want to see the real heading hierarchy on the canvas, so I can catch structural drift without reading DOM trees.</span></li>
+          <li><span class="sym">·</span><span><strong>As a frontend engineer,</strong> I want repeating cards grouped visually, so the broken sibling in a grid is obvious on first glance.</span></li>
+          <li><span class="sym">·</span><span><strong>As an accessibility reviewer,</strong> I want tab order numbered in-place, so I can see keyboard flow without tabbing through the whole page.</span></li>
+          <li><span class="sym">·</span><span><strong>As a release owner,</strong> I want the overlay to tear down cleanly, so I can inspect live production pages without leaving residue behind.</span></li>
+        </ul>
+      </div>
+      <div class="aud a" id="agents">
+        <h3 class="a">For agents.</h3>
+        <div class="subtitle">Coding agents, QA bots, scrapers, test generators.</div>
+        <ul>
+          <li><span class="sym">·</span><span><strong>As a browser-driving agent,</strong> I want a single injected script that exposes page structure visually, so I can reason from annotated screenshots instead of raw DOM soup.</span></li>
+          <li><span class="sym">·</span><span><strong>As a Playwright worker,</strong> I want deterministic layer toggles like <code>toggle('heading')</code>, so I can capture one clean screenshot per concern.</span></li>
+          <li><span class="sym">·</span><span><strong>As a scraper agent,</strong> I want repeating-component clusters surfaced without selectors, so I can lock onto the right list or card grid automatically.</span></li>
+          <li><span class="sym">·</span><span><strong>As a CI regression agent,</strong> I want focus order and heading jumps made visible, so broken keyboard flow shows up as a screenshot diff.</span></li>
+          <li><span class="sym">·</span><span><strong>As an orchestration agent,</strong> I want to inject the overlay into a sandboxed preview and control it over <code>postMessage</code>, so parent and child frames stay decoupled.</span></li>
+          <li><span class="sym">·</span><span><strong>As a production-safe automation harness,</strong> I want overlay chrome isolated from the host DOM, so the annotations never get mistaken for app state.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== FEATURES GRID =================== -->
+<section class="blk" id="features">
+  <div class="wrap">
+    <div class="section-eyebrow">The layers</div>
+    <h2 class="section-h">Every layer, <em class="cyan">one keystroke.</em></h2>
+    <p class="section-sub">
+      Each layer has a dedicated color, a persona it serves, and a deterministic key.
+      Toggle one at a time or stack them all.
+    </p>
+
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="hd"><kbd>L</kbd><span class="swatch" style="color:var(--amber);"></span></div>
+        <h4>Landmarks</h4>
+        <p><code style="color:var(--amber);">header · nav · main · section · footer · aside · form · article</code> outlined in amber with role labels. Catch missing <code>main</code>, duplicate nav, un-landmarked regions.</p>
+        <div class="row"><span class="p h">Human · dev</span><span class="p a">Agent · layout</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>H</kbd><span class="swatch" style="color:var(--cyan);"></span></div>
+        <h4>Headings</h4>
+        <p>h1 through h6 with level + text snippet. Out-of-order jumps (h1→h3) get a warning variant. Serialized heading tree is readable at a glance.</p>
+        <div class="row"><span class="p h">Human · auditor</span><span class="p a">Agent · IA diff</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>I</kbd><span class="swatch" style="color:var(--lime);"></span></div>
+        <h4>Interactive</h4>
+        <p>Links, buttons, inputs, <code>role=button</code>, <code>tabindex</code>. Catch clickable divs, undersized targets, buttons without accessible names.</p>
+        <div class="row"><span class="p h">Human · designer</span><span class="p a">Agent · test gen</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>A</kbd><span class="swatch" style="color:var(--rose);"></span></div>
+        <h4>Alt-missing</h4>
+        <p>Every <code>&lt;img&gt;</code> without meaningful <code>alt</code> outlined rose. Decorative <code>alt=""</code> and <code>role="presentation"</code> are correctly excluded.</p>
+        <div class="row"><span class="p h">Human · editor</span><span class="p a">Agent · audit</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>R</kbd><span class="swatch" style="color:var(--violet);"></span></div>
+        <h4>Repeating</h4>
+        <p>Siblings sharing a 2-deep DOM signature get grouped and outlined. Outliers (missing a child) are dashed. Unique on the market — designers, refactorers, and scrapers all want this.</p>
+        <div class="row"><span class="p h">Human · refactor</span><span class="p a">Agent · scrape</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>F</kbd><span class="swatch" style="color:var(--blue);"></span></div>
+        <h4>Focus order</h4>
+        <p>Numbered blue badges on every focusable in tab order. Positive <code>tabindex</code> values flagged. Diffable between PRs for regression protection.</p>
+        <div class="row"><span class="p h">Human · a11y</span><span class="p a">Agent · CI diff</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>D</kbd><span class="swatch" style="color:var(--slate);"></span></div>
+        <h4>Depth</h4>
+        <p>Every visible element tinted by DOM nesting depth. Wrapper-div soup becomes visually obvious — "7 nested divs around one button" stops being abstract.</p>
+        <div class="row"><span class="p h">Human · designer</span><span class="p a">Agent · refactor</span></div>
+      </div>
+
+      <div class="feat">
+        <div class="hd"><kbd>G</kbd><span class="swatch" style="color:var(--text-faint);"></span></div>
+        <h4>Grid</h4>
+        <p>Implicit block boundaries painted around every block-level element. Makes margin-collapse and layout drift obvious without opening DevTools.</p>
+        <div class="row"><span class="p h">Human · dev</span><span class="p a">Agent · visual QA</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== HOW IT WORKS =================== -->
+<section class="blk" id="how">
+  <div class="wrap">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-h">Inject, detect, paint, <em class="cyan">toggle.</em></h2>
+    <p class="section-sub">
+      The script is intentionally small. It does four things, and each maps directly
+      to a deployment surface a human or agent can understand.
+    </p>
+
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="num">01 · Inject</div>
+        <h4>Load one file.</h4>
+        <p>Use a bookmarklet, a plain <code>&lt;script&gt;</code> tag, or <code>page.addScriptTag()</code>. Installation creates a single fixed host node at the document root.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">02 · Detect</div>
+        <h4>Scan visible structure.</h4>
+        <p>The overlay walks visible landmarks, headings, focusables, missing-alt images, repeating siblings, nesting depth, and block-level layout boxes.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">03 · Paint</div>
+        <h4>Render in a shadow root.</h4>
+        <p>Outlines, badges, toolbar, and help chrome live inside an open shadow root, so page CSS cannot leak in and teardown stays clean.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">04 · Repaint on change</div>
+        <h4>Stay in sync.</h4>
+        <p><code>scroll</code>, <code>resize</code>, and <code>MutationObserver</code> events funnel into one RAF-throttled render loop, so SPA updates and DOM churn stay aligned.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== AGENT API =================== -->
+<section class="blk" id="api">
+  <div class="wrap">
+    <div class="section-eyebrow">Agent interface</div>
+    <h2 class="section-h">One global, <em class="cyan">six controls.</em></h2>
+    <p class="section-sub">
+      After injection, the overlay exposes <code>window.__a11yOverlayInstalled</code>.
+      Five controls live on that object; the sixth is a parent-frame <code>postMessage</code>
+      bridge for iframe demos and orchestrators.
+    </p>
+
+    <div class="api-grid">
+      <div class="api-table">
+        <div class="row"><code>.toggle(key)</code><span class="d">Toggle any layer by name: <code>'landmark'</code>, <code>'heading'</code>, <code>'interact'</code>, <code>'alt'</code>, <code>'repeat'</code>, <code>'focus'</code>, <code>'depth'</code>, <code>'grid'</code>.</span></div>
+        <div class="row"><code>.state</code><span class="d">Live state object. Read which layers are active. Inspect after toggling.</span></div>
+        <div class="row"><code>.toggleHelp()</code><span class="d">Show/hide the help panel. Useful for clean screenshots.</span></div>
+        <div class="row"><code>.render()</code><span class="d">Force a repaint. Handy after <code>page.evaluate</code>-driven layout changes.</span></div>
+        <div class="row"><code>.teardown()</code><span class="d">Remove every overlay node, detach observers, restore the page to byte-exact original state.</span></div>
+        <div class="row"><code>postMessage</code><span class="d">From a parent frame: <code>iframe.contentWindow.postMessage({__a11yov:true, key:'L'})</code> — drives an overlay inside a sandboxed iframe.</span></div>
+      </div>
+
+      <div class="code">
+        <div class="filebar">
+          <span>playwright · typescript · full flow</span>
+          <button class="copy" data-copy="pw">Copy</button>
+        </div>
+<pre id="pw"><span class="c">// 1. load the page</span>
+<span class="k">await</span> page.<span class="fn">goto</span>(<span class="s">'https://example.com'</span>);
+
+<span class="c">// 2. inject the overlay</span>
+<span class="k">await</span> page.<span class="fn">addScriptTag</span>({ path: <span class="s">'a11y-overlay.js'</span> });
+
+<span class="c">// 3. drive it — one screenshot per layer</span>
+<span class="k">for</span> (<span class="k">const</span> layer <span class="k">of</span> [<span class="s">'landmark'</span>, <span class="s">'heading'</span>, <span class="s">'alt'</span>, <span class="s">'focus'</span>]) {
+  <span class="k">await</span> page.<span class="fn">evaluate</span>((k) =&gt; {
+    <span class="k">const</span> api = window.__a11yOverlayInstalled;
+    <span class="c">// turn everything off, then one on</span>
+    Object.<span class="fn">keys</span>(api.state).<span class="fn">forEach</span>(n =&gt; api.state[n] = <span class="v">false</span>);
+    api.<span class="fn">toggle</span>(k);
+  }, layer);
+  <span class="k">await</span> page.<span class="fn">screenshot</span>({ path: <span class="s">`audit-${layer}.png`</span> });
+}
+
+<span class="c">// 4. clean up — host DOM is byte-exact</span>
+<span class="k">await</span> page.<span class="fn">evaluate</span>(() =&gt; window.__a11yOverlayInstalled.<span class="fn">teardown</span>());</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== LIVE DEMO =================== -->
+<section class="blk" id="demo">
+  <div class="wrap">
+    <div class="section-eyebrow">Hands-on</div>
+    <h2 class="section-h">Try it now. <em class="lime">Click, then press a key.</em></h2>
+    <p class="section-sub">
+      The overlay is already running inside the iframe below. Click anywhere on the page,
+      then press <kbd style="border:1px solid var(--border-bright);padding:1px 6px;background:var(--bg-soft);">L</kbd>
+      <kbd style="border:1px solid var(--border-bright);padding:1px 6px;background:var(--bg-soft);">H</kbd>
+      <kbd style="border:1px solid var(--border-bright);padding:1px 6px;background:var(--bg-soft);">A</kbd>
+      <kbd style="border:1px solid var(--border-bright);padding:1px 6px;background:var(--bg-soft);">R</kbd>
+      <kbd style="border:1px solid var(--border-bright);padding:1px 6px;background:var(--bg-soft);">F</kbd>
+      — or use the floating toolbar in the top-right of the iframe.
+    </p>
+
+    <div class="demo-shell">
+      <div class="demo-bar">
+        <div class="dots"><div class="d"></div><div class="d"></div><div class="d"></div></div>
+        <span>reference.html · overlay injected</span>
+        <span class="status">● live</span>
+        <div class="keys">
+          <kbd>L</kbd><kbd>H</kbd><kbd>I</kbd><kbd>A</kbd><kbd>R</kbd><kbd>F</kbd><kbd>D</kbd><kbd>G</kbd><kbd>?</kbd><kbd>X</kbd>
+        </div>
+      </div>
+      <iframe id="demoframe" class="demo-iframe" src="reference.html" title="Live overlay demo"></iframe>
+    </div>
+  </div>
+</section>
+
+<!-- =================== INSTALL =================== -->
+<section class="blk" id="install">
+  <div class="wrap">
+    <div class="section-eyebrow">Where to use it</div>
+    <h2 class="section-h">Use it where the page <em class="lime">already lives.</em></h2>
+    <p class="section-sub">
+      The right surface depends on who owns the page. Humans usually start with the
+      extension or bookmarklet. Teams that own the app use a script tag. Agents and CI use browser automation.
+    </p>
+
+    <div class="install-grid">
+      <div class="install-card">
+        <h5>01 · Extension</h5>
+        <div class="who">For humans · lowest-friction repeated use</div>
+        <div class="target">Load unpacked. Click the toolbar icon.</div>
+<pre>chrome://extensions
+
+Developer mode → Load unpacked
+
+select this repo root</pre>
+        <p class="note">
+          Best option for GitHub, Stripe dashboards, and other CSP-heavy pages. For
+          <code style="color:var(--cyan)">file://</code> pages, also enable “Allow access to file URLs”.
+          If the browser shortcut is inactive, assign it under <code style="color:var(--cyan)">chrome://extensions/shortcuts</code>.
+        </p>
+      </div>
+
+      <div class="install-card">
+        <h5>02 · Bookmarklet</h5>
+        <div class="who">For humans · pages that allow injected scripts</div>
+        <div class="target">Drag, click, audit.</div>
+        <a class="bm" id="bm" href="#" draggable="true">⚡ a11y overlay</a>
+        <p class="note">
+          Drag the pill above to your bookmarks bar. Click once to inject, click again to
+          toggle help. Pages with strict Content Security Policy will block bookmarklet injection.
+        </p>
+      </div>
+
+      <div class="install-card">
+        <h5>03 · Script tag</h5>
+        <div class="who">For developers · your own site</div>
+        <div class="target">One line before <code style="font-family:inherit;color:var(--text);">&lt;/body&gt;</code>.</div>
+<pre><span class="c">&lt;!-- dev / staging builds only --&gt;</span>
+&lt;<span class="k">script</span> <span class="a">src</span>=<span class="s">"/a11y-overlay.js"</span>&gt;&lt;/<span class="k">script</span>&gt;</pre>
+        <p class="note">
+          No build step. No dependencies. ~650 lines. Guard behind a feature flag or an
+          env check if you don't want it on production.
+        </p>
+      </div>
+
+      <div class="install-card">
+        <h5>04 · Playwright</h5>
+        <div class="who">For agents · CI, scrapers, QA bots</div>
+        <div class="target">Inject, toggle, screenshot.</div>
+<pre><span class="k">await</span> page.<span class="fn">addScriptTag</span>({
+  path: <span class="s">'a11y-overlay.js'</span>
+});
+<span class="k">await</span> page.<span class="fn">evaluate</span>(() =&gt;
+  window.__a11yOverlayInstalled.<span class="fn">toggle</span>(<span class="s">'heading'</span>)
+);</pre>
+        <p class="note">
+          Same script, same API. An agent's inject + toggle + screenshot loop is fewer
+          than ten lines end-to-end.
+        </p>
+      </div>
+    </div>
+    <p class="install-footnote">
+      Today, use the extension for repeated human audits, the bookmarklet on friendly public
+      pages, a script tag on sites you own, and Playwright or Puppeteer anywhere an automation
+      harness controls the browser. For CSP-locked apps like GitHub, Gmail, or banking software,
+      the extension is the real human path, not a smarter bookmarklet.
+    </p>
+  </div>
+</section>
+
+<!-- =================== STATS =================== -->
+<section class="blk" id="stats">
+  <div class="wrap">
+    <div class="stats-grid">
+      <div class="stat"><div class="n">~650</div><div class="l">Lines of JS</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Dependencies</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Host DOM mutations</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">Overlay layers</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== UNDER THE HOOD =================== -->
+<section class="blk" id="hood">
+  <div class="wrap">
+    <div class="section-eyebrow">Under the hood</div>
+    <h2 class="section-h">Invisible to the page. <em class="cyan">Visible to you.</em></h2>
+    <p class="section-sub">
+      The overlay is engineered to be safe on production: nothing you see on top of your page
+      can ever be confused with your page.
+    </p>
+
+    <div class="hood">
+      <div class="item">
+        <h5>Shadow-DOM chrome.</h5>
+        <p>All UI — toolbar, help panel, outlines — lives inside an open shadow root attached to a single fixed-position host. Your stylesheets can't leak in, and your selectors can't accidentally match overlay nodes.</p>
+      </div>
+      <div class="item">
+        <h5>Byte-exact teardown.</h5>
+        <p>Press <code style="color:var(--cyan)">X</code> (or call <code style="color:var(--cyan)">teardown()</code>) and every trace is gone. No class residue, no inline styles, no leftover listeners. <code style="color:var(--cyan)">document.body.innerHTML</code> matches what it was before install.</p>
+      </div>
+      <div class="item">
+        <h5>RAF-throttled rendering.</h5>
+        <p>Scroll, resize, and DOM mutations all funnel into a single <code style="color:var(--cyan)">requestAnimationFrame</code> tick. Painting 500 outlines on a long page stays at 60fps on a mid-range laptop.</p>
+      </div>
+      <div class="item">
+        <h5>MutationObserver-aware.</h5>
+        <p>SPA route changes, React re-renders, HTMX swaps — the overlay follows. Overlay-internal mutations are filtered out, so there's no render loop with your own observers.</p>
+      </div>
+      <div class="item">
+        <h5>Cross-frame remote control.</h5>
+        <p>Inject into an iframe, drive it from the parent via <code style="color:var(--cyan)">postMessage</code>. Useful for design-review apps, component galleries, and agent orchestrators that surface a preview UI.</p>
+      </div>
+      <div class="item">
+        <h5>Keyboard-first, mouse-optional.</h5>
+        <p>Every layer has a single-letter toggle. The floating toolbar mirrors the keys for mouse users. Keyboard listeners never hijack typing inside inputs or contentEditable regions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== FAQ =================== -->
+<section class="blk" id="faq">
+  <div class="wrap">
+    <div class="section-eyebrow">Questions</div>
+    <h2 class="section-h">Edge cases, <em class="lime">honestly.</em></h2>
+
+    <div class="faq">
+      <details>
+        <summary>Is this a full WCAG scanner?</summary>
+        <p>No — and saying so is a feature. a11y-overlay visualises <strong>structure</strong>: landmarks, heading order, interactive targets, alt presence, tab order. It does not check contrast ratios, ARIA attribute validity, or <code>focus-visible</code> state. Pair it with axe-core or Lighthouse for exhaustive compliance; reach for a11y-overlay when you need to <em>see</em> the page's skeleton in under a second.</p>
+      </details>
+      <details>
+        <summary>Where can I use it today?</summary>
+        <p>Four places. On <strong>pages you own</strong>, drop in <code>&lt;script src="/a11y-overlay.js"&gt;</code>. On <strong>friendly third-party pages</strong>, use the bookmarklet. On <strong>CSP-heavy sites</strong>, use the browser extension. In <strong>automation and agents</strong>, inject it with Playwright or Puppeteer. What you cannot do with a bookmarklet is bypass a strict <code>Content-Security-Policy</code>; sites like GitHub, Gmail, Stripe, and many admin panels will block script injection by design.</p>
+      </details>
+      <details>
+        <summary>Can an agent extract structured data, not just screenshots?</summary>
+        <p>Today: yes, via <code>window.__a11yOverlayInstalled.state</code> and by querying the shadow DOM directly. A first-class <code>getReport()</code> method — returning <code>{ altMissing, headings, focusOrder, repeats }</code> as JSON — is on the short-term roadmap. File an issue if you want to shape the schema.</p>
+      </details>
+      <details>
+        <summary>Does it work on cross-origin iframes?</summary>
+        <p>No, and there's no way around this — the browser's same-origin policy prevents any script injection or DOM access across origins. Inject the overlay inside the iframe's own page (server side, a script tag, or a browser extension), then drive it from the parent via <code>postMessage</code>.</p>
+      </details>
+      <details>
+        <summary>Will it slow down a large page?</summary>
+        <p>Rendering is RAF-throttled and proportional to <em>visible</em> elements, not total DOM size. A 10,000-node page with a 200-node viewport paints in a single frame. The MutationObserver filters overlay-internal changes to avoid feedback loops.</p>
+      </details>
+      <details>
+        <summary>Is it safe to ship in production?</summary>
+        <p>The script is safe — zero host DOM mutation, byte-exact teardown. That said, we recommend gating it behind a cookie, query param, or role check. You probably don't want every visitor seeing outlines.</p>
+      </details>
+      <details>
+        <summary>Why single-letter keys? Won't they conflict?</summary>
+        <p>Keys fire only when no input/textarea/contentEditable is focused, and only on bare presses (no Cmd/Ctrl/Alt). If your page already binds <code>L</code>, disable the overlay's listener by setting <code>window.__a11yOverlayInstalled = null</code> and calling <code>.render()</code> via your own UI.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>a11y-overlay · v0.1 · MIT</span>
+    <div class="links">
+      <a href="#humans">Humans</a>
+      <a href="#agents">Agents</a>
+      <a href="#demo">Demo</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // --------- build the bookmarklet ----------
+  (function buildBookmarklet() {
+    const src =
+      window.A11Y_OVERLAY_SRC ||
+      document.documentElement.getAttribute('data-overlay-src') ||
+      new URL('a11y-overlay.js', location.href).href;
+    const code =
+      "(function(){if(window.__a11yOverlayInstalled){window.__a11yOverlayInstalled.toggleHelp();return;}var s=document.createElement('script');s.src=" +
+      JSON.stringify(src) +
+      ";document.body.appendChild(s);})();";
+    const bm = document.getElementById('bm');
+    if (bm) bm.href = 'javascript:' + encodeURIComponent(code);
+  })();
+
+  // --------- hero: auto-cycle the mock overlay ----------
+  (function cycleMock() {
+    const mock = document.getElementById('mock');
+    const cycleRow = document.getElementById('cycle');
+    const stream = document.getElementById('stream');
+    if (!mock || !cycleRow || !stream) return;
+
+    const sequence = ['landmark', 'heading', 'interact', 'alt', 'focus'];
+
+    // pre-build the "stream" of JSON lines — one block per layer.
+    // Each line knows which layer it belongs to so we can highlight the
+    // matching block as the mock cycles.
+    const blocks = {
+      landmark: [
+        '<span class="c">// window.__a11yOverlayInstalled.state</span>',
+        '{',
+        '  <span class="k">"landmark"</span>: <span class="b">true</span>,',
+        '  <span class="k">"heading"</span>:  <span class="b">false</span>,',
+        '  <span class="k">"interact"</span>: <span class="b">false</span>,',
+        '  <span class="k">"alt"</span>:      <span class="b">false</span>,',
+        '  <span class="k">"focus"</span>:    <span class="b">false</span>',
+        '}',
+        '',
+        '<span class="c">// 4 landmarks detected</span>',
+        '[<span class="s">"header"</span>, <span class="s">"nav"</span>, <span class="s">"main"</span>, <span class="s">"footer"</span>]'
+      ],
+      heading: [
+        '<span class="c">// headings outline</span>',
+        '[',
+        '  { <span class="k">"lvl"</span>: <span class="n">1</span>, <span class="k">"text"</span>: <span class="s">"Pricing that scales."</span> }',
+        ']',
+        '',
+        '<span class="c">// no hierarchy jumps detected ✓</span>'
+      ],
+      interact: [
+        '<span class="c">// interactive elements</span>',
+        '[',
+        '  { <span class="k">"tag"</span>: <span class="s">"a"</span>,      <span class="k">"text"</span>: <span class="s">"log in"</span> },',
+        '  { <span class="k">"tag"</span>: <span class="s">"button"</span>, <span class="k">"text"</span>: <span class="s">"Buy now"</span> }',
+        ']'
+      ],
+      alt: [
+        '<span class="c">// images missing alt</span>',
+        '[',
+        '  { <span class="k">"src"</span>: <span class="s">"card-1.png"</span>, <span class="k">"near"</span>: <span class="s">"Starter"</span> },',
+        '  { <span class="k">"src"</span>: <span class="s">"card-2.png"</span>, <span class="k">"near"</span>: <span class="s">"Team"</span> },',
+        '  { <span class="k">"src"</span>: <span class="s">"card-3.png"</span>, <span class="k">"near"</span>: <span class="s">"Pro"</span> }',
+        ']',
+        '<span class="c">// 3 violations</span>'
+      ],
+      focus: [
+        '<span class="c">// tab order</span>',
+        '[',
+        '  { <span class="k">"i"</span>: <span class="n">1</span>, <span class="k">"el"</span>: <span class="s">"a.home"</span> },',
+        '  { <span class="k">"i"</span>: <span class="n">2</span>, <span class="k">"el"</span>: <span class="s">"a.products"</span> },',
+        '  { <span class="k">"i"</span>: <span class="n">3</span>, <span class="k">"el"</span>: <span class="s">"button.buy"</span> }',
+        ']'
+      ]
+    };
+
+    function paintStream(active) {
+      const frag = [];
+      for (const layer of sequence) {
+        const hot = layer === active;
+        frag.push(
+          `<span class="ln ${hot ? 'hot' : ''}" data-layer="${layer}">` +
+          blocks[layer].join('<br>') +
+          `</span><br><br>`
+        );
+      }
+      stream.innerHTML = frag.join('');
+      // keep the hero stream scrolling inside its own box only
+      const hotEl = stream.querySelector('.ln.hot');
+      if (hotEl) {
+        const target = Math.max(
+          0,
+          hotEl.offsetTop - (stream.clientHeight / 2) + (hotEl.offsetHeight / 2)
+        );
+        stream.scrollTo({ top: target, behavior: 'smooth' });
+      }
+    }
+
+    function setActive(layer) {
+      mock.setAttribute('data-active', layer);
+      // update cycle chips
+      cycleRow.querySelectorAll('span').forEach(s => {
+        s.classList.toggle('on', s.dataset.k === layer);
+      });
+      paintStream(layer);
+    }
+
+    // initial paint + cycle
+    setActive(sequence[0]);
+    let i = 0;
+    const iv = setInterval(() => {
+      i = (i + 1) % sequence.length;
+      setActive(sequence[i]);
+    }, 2400);
+
+    // allow manual control by clicking the cycle chips
+    cycleRow.querySelectorAll('span').forEach(s => {
+      s.style.cursor = 'pointer';
+      s.addEventListener('click', () => {
+        clearInterval(iv);
+        setActive(s.dataset.k);
+      });
+    });
+  })();
+
+  // --------- inject the overlay into the live demo iframe ----------
+  (function injectDemo() {
+    const f = document.getElementById('demoframe');
+    if (!f) return;
+    f.addEventListener('load', () => {
+      try {
+        const doc = f.contentDocument;
+        if (!doc) return;
+        const s = doc.createElement('script');
+        s.src = 'a11y-overlay.js';
+        doc.body.appendChild(s);
+      } catch (e) {
+        console.warn('[a11y-overlay demo] injection blocked:', e.message);
+      }
+    });
+    // forward keystrokes from the outer page to the iframe
+    document.addEventListener('keydown', (e) => {
+      if (!f.contentWindow) return;
+      // only forward when the iframe or its surrounding shell has focus
+      const shell = document.querySelector('.demo-shell');
+      if (!shell) return;
+      if (!shell.contains(document.activeElement) && document.activeElement !== f) return;
+      f.contentWindow.postMessage({ __a11yov: true, key: e.key }, '*');
+    });
+  })();
+
+  // --------- copy-to-clipboard on code blocks ----------
+  (function copyButtons() {
+    document.querySelectorAll('.copy').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const target = document.getElementById(btn.dataset.copy);
+        if (!target) return;
+        const text = target.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          const orig = btn.textContent;
+          btn.textContent = 'Copied';
+          btn.style.color = 'var(--lime)';
+          btn.style.borderColor = 'var(--lime)';
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+          }, 1400);
+        } catch (_) {}
+      });
+    });
+  })();
+</script>
+</body>
+</html>

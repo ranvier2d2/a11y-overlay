@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>a11y-overlay — live demo</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0c0a09; font-family: ui-monospace, Menlo, monospace; color: #e7e5e4; }
+  .bar {
+    padding: 8px 14px;
+    background: #151210;
+    border-bottom: 1px solid #292524;
+    font-size: 11px;
+    color: #a8a29e;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .bar strong { color: #a3e635; letter-spacing: 0.1em; }
+  .bar kbd {
+    background: #0c0a09;
+    border: 1px solid #44403c;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #e7e5e4;
+  }
+  .bar a { color: #22d3ee; text-decoration: none; margin-left: auto; }
+  iframe { width: 100%; height: calc(100% - 36px); border: 0; display: block; background: white; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <strong>A11Y OVERLAY · DEMO</strong>
+  <span>click inside the page, then press <kbd>L</kbd> <kbd>H</kbd> <kbd>I</kbd> <kbd>A</kbd> <kbd>R</kbd> <kbd>F</kbd> <kbd>D</kbd> <kbd>G</kbd> <kbd>?</kbd> <kbd>X</kbd></span>
+  <span>or use the floating toolbar (top-right of the page)</span>
+  <a href="index.html">← landing</a>
+</div>
+<iframe id="f" src="reference.html"></iframe>
+<script>
+  const f = document.getElementById('f');
+  f.addEventListener('load', () => {
+    try {
+      const doc = f.contentDocument;
+      const s = doc.createElement('script');
+      s.src = 'a11y-overlay.js';
+      doc.body.appendChild(s);
+    } catch (e) {
+      console.error('Could not inject overlay (cross-origin iframe).', e);
+    }
+  });
+  // forward key events from the parent (outer toolbar area) to the iframe
+  document.addEventListener('keydown', (e) => {
+    if (!f.contentWindow) return;
+    f.contentWindow.postMessage({ __a11yov: true, key: e.key }, '*');
+  });
+</script>
+</body>
+</html>

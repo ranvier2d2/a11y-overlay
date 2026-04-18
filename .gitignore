@@ -1,0 +1,6 @@
+dist/
+.site-dist/
+.DS_Store
+.playwright-mcp/
+output/flashback/
+output/playwright/

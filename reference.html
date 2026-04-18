@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Handoff · Cloud Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0a09;
+    --bg-soft: #151210;
+    --bg-raised: #1c1917;
+    --border: #292524;
+    --border-soft: #1f1b18;
+    --text: #e7e5e4;
+    --text-dim: #a8a29e;
+    --text-faint: #57534e;
+
+    --accent: #f59e0b;
+    --accent-soft: rgba(245, 158, 11, 0.12);
+    --cool: #22d3ee;
+    --cool-soft: rgba(34, 211, 238, 0.12);
+    --ok: #a3e635;
+    --warn: #fb7185;
+    --note: #a78bfa;
+
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body: 'Geist', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  code { font-family: var(--font-mono); font-size: 0.9em; color: var(--accent); }
+  p code, li code, td code { background: var(--bg-soft); padding: 1px 5px; border: 1px solid var(--border-soft); border-radius: 2px; }
+
+  .frame {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+
+  @media (min-width: 768px) {
+    .frame { padding: 64px 40px 120px; }
+  }
+
+  header {
+    margin-bottom: 48px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(36px, 5vw, 52px);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  h1 em { font-style: italic; color: var(--accent); }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 680px;
+    line-height: 1.55;
+  }
+
+  section { margin-bottom: 72px; scroll-margin-top: 30px; }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: baseline;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(24px, 3vw, 30px);
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 13.5px;
+    max-width: 720px;
+    grid-column: 2;
+    margin-top: 6px;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 400;
+    margin: 28px 0 12px;
+    color: var(--text);
+  }
+
+  p.body {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.65;
+    margin-bottom: 14px;
+    max-width: 740px;
+  }
+
+  p.body strong { color: var(--text); font-weight: 500; }
+
+  .code-frame {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 16px 0 24px;
+  }
+
+  .code-head {
+    padding: 10px 16px;
+    background: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .code-head .name { color: var(--text); }
+  .code-head .tag { color: var(--accent); }
+
+  pre.code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    padding: 18px;
+    overflow-x: auto;
+    color: var(--text-dim);
+  }
+
+  pre.code .h { color: var(--text); font-weight: 500; }
+  pre.code .co { color: var(--text-faint); font-style: italic; }
+  pre.code .kw { color: var(--warn); }
+  pre.code .str { color: #86efac; }
+  pre.code .pp { color: var(--accent); }
+  pre.code .cm { color: var(--cool); }
+  pre.code .bold { color: var(--text); font-weight: 500; }
+
+  pre.tree {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 18px;
+    overflow-x: auto;
+    color: var(--text-dim);
+  }
+
+  pre.tree .dir { color: var(--note); font-weight: 500; }
+  pre.tree .new { color: var(--ok); }
+  pre.tree .file { color: var(--text); }
+  pre.tree .cm { color: var(--text-faint); font-style: italic; }
+
+  .repos {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .repo {
+    padding: 18px 22px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 720px) {
+    .repo { grid-template-columns: 240px 1fr; gap: 28px; }
+  }
+
+  .repo-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  .repo-role {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .repo-role.ref { color: var(--cool); }
+  .repo-role.fork { color: var(--accent); }
+  .repo-role.existing { color: var(--ok); }
+
+  .repo-use { font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+  .repo-use strong { color: var(--text); font-weight: 500; }
+
+  .repo-look {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 8px 10px;
+    border: 1px solid var(--border-soft);
+    border-left: 2px solid var(--cool);
+    line-height: 1.5;
+  }
+  .repo-look .l { color: var(--text-faint); }
+
+  .prompt {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--note);
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+
+  .prompt-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--note);
+    margin-bottom: 12px;
+  }
+
+  .prompt-content {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .skills { display: grid; gap: 12px; margin-top: 16px; }
+
+  .skill {
+    padding: 16px 22px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--accent);
+    display: grid;
+    gap: 6px;
+  }
+
+  .skill-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .skill-desc { font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+  .skill-desc strong { color: var(--text); font-weight: 500; }
+
+  .escape {
+    padding: 18px 22px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--warn);
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .escape-q { font-size: 14px; font-weight: 500; color: var(--text); }
+  .escape-ctx { font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+  .escape-ctx strong { color: var(--warn); font-weight: 500; }
+
+  .callout {
+    margin: 32px 0;
+    padding: 24px 28px;
+    border-left: 2px solid var(--accent);
+    background: linear-gradient(90deg, var(--accent-soft), transparent 80%);
+  }
+
+  .callout-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .callout-text {
+    font-family: var(--font-display);
+    font-size: 21px;
+    line-height: 1.35;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: 96px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+<header>
+  <div class="eyebrow">Handoff kit · day 0</div>
+  <h1>What you <em>actually</em> give<br>the coding agent.</h1>
+  <p class="subtitle">
+    The architecture notes are reference material, not prompt fodder. This doc is the operational bundle — the CLAUDE.md hierarchy, the repos to clone, the phase-scoped prompts, and the escape hatches for decisions an agent can't make alone.
+  </p>
+</header>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 01</div>
+    <div><h2>The approach</h2></div>
+  </div>
+  <p class="body">
+    Agent delegation fails when you paste everything into one megaprompt. It also fails when you paste too little and the agent has to guess. The pattern that actually works is a <strong>CLAUDE.md hierarchy</strong> — a top-level rules file at the repo root, per-directory CLAUDE.md files for area conventions, and a <code>.agents/</code> folder for context and skills.
+  </p>
+  <p class="body">
+    The agent reads the top-level CLAUDE.md on every turn, but only reads subtree CLAUDE.mds when it enters those subtrees. That gives you layered context without overwhelming every conversation. Reference documents live in <code>.agents/context/</code>; the agent pulls them in via <code>cat</code> when relevant.
+  </p>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 02</div>
+    <div>
+      <h2>Repo structure &amp; bootstrap</h2>
+      <p class="section-desc">One-time setup. Clone the donor repos into <code>.agents/references/</code>.</p>
+    </div>
+  </div>
+
+  <h3>Target layout</h3>
+  <div class="code-frame">
+    <div class="code-head"><span><span class="name">t3-cloud-planner/</span></span><span>target directory tree</span></div>
+<pre class="tree"><span class="dir">t3-cloud-planner/</span>
+├── <span class="new file">CLAUDE.md</span>                   <span class="cm"># top-level rules</span>
+├── <span class="new dir">.agents/</span>
+│   ├── <span class="new dir">context/</span>
+│   │   ├── <span class="file">prd.md</span>
+│   │   ├── <span class="file">arch-notes.md</span>
+│   │   └── <span class="file">schemas.md</span>
+│   ├── <span class="new dir">references/</span>
+│   ├── <span class="new dir">skills/</span>
+│   └── <span class="new dir">tasks/</span>
+└── <span class="dir">convex/</span>
+    └── <span class="new file">CLAUDE.md</span></pre>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 03</div>
+    <div>
+      <h2>Donor repos · what to reference when</h2>
+      <p class="section-desc">For each donor, the specific files the agent should read first.</p>
+    </div>
+  </div>
+
+  <div class="repos">
+    <div class="repo">
+      <div>
+        <div class="repo-name">vercel-labs/just-bash</div>
+        <div class="repo-role ref">reference · npm dep</div>
+      </div>
+      <div>
+        <div class="repo-use"><strong>When:</strong> writing <code>convex/sandbox/exec.ts</code>, configuring the bash environment.</div>
+        <div class="repo-look"><span class="l">Read first:</span> <code>src/index.ts</code> (Bash class), <code>AGENTS.md</code>, <code>src/fs/overlay-fs.ts</code>.</div>
+      </div>
+    </div>
+
+    <div class="repo">
+      <div>
+        <div class="repo-name">wantpinow/convex-sandbox</div>
+        <div class="repo-role fork">fork &amp; adapt</div>
+      </div>
+      <div>
+        <div class="repo-use"><strong>When:</strong> Phase 1 kickoff. Copy-adapt the clever parts. This is your skeleton, not a dependency.</div>
+        <div class="repo-look"><span class="l">Read first:</span> <code>convex/exec.ts</code>, <code>convex/schema.ts</code>, <code>convex/run.ts</code>, <code>convex/agent.ts</code>.</div>
+      </div>
+    </div>
+
+    <div class="repo">
+      <div>
+        <div class="repo-name">get-convex/workflow</div>
+        <div class="repo-role ref">reference · npm dep</div>
+      </div>
+      <div>
+        <div class="repo-use"><strong>When:</strong> writing <code>convex/flows/orchestrator.ts</code>, designing the suspend/resume pattern.</div>
+        <div class="repo-look"><span class="l">Read first:</span> <code>README.md</code>, <code>src/client/index.ts</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 04</div>
+    <div>
+      <h2>Top-level <code>CLAUDE.md</code></h2>
+      <p class="section-desc">The root rules file. Read on every turn. Keep it under 200 lines.</p>
+    </div>
+  </div>
+
+  <div class="code-frame">
+    <div class="code-head"><span><span class="name">CLAUDE.md</span></span><span>copy verbatim</span></div>
+<pre class="code"><span class="h"># T3 Cloud Planner</span>
+
+Cloud planner integration. An async agent that runs as a durable Convex
+workflow, reads a synced repo via convex-sandbox + just-bash, produces
+structured plans, dispatches executable steps to T3 Code desktop.
+
+<span class="h">## Stack</span>
+
+- <span class="bold">Backend:</span> Convex (TypeScript strict)
+- <span class="bold">Agent:</span> @convex-dev/agent + AI Gateway + bash-tool
+- <span class="bold">Workflow:</span> @convex-dev/workflow for durability
+
+<span class="h">## Non-negotiable conventions</span>
+
+1. TypeScript strict mode. No <span class="pp">any</span> outside storage boundaries.
+2. Convex <span class="pp">v.*</span> validators on every mutation/query/action.
+3. ULIDs for event IDs, assigned at creation.
+4. Idempotency keys on every state-changing mutation.</pre>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 05</div>
+    <div><h2>Phase prompts · what you actually type</h2></div>
+  </div>
+
+  <h3>Phase 1 kickoff</h3>
+  <div class="prompt">
+    <div class="prompt-label">→ kickoff · phase 1</div>
+    <div class="prompt-content">We're starting Phase 1 of the cloud planner integration. Read CLAUDE.md first, then .agents/tasks/phase-1.md for the specific task list.
+
+Goal: an end-to-end planner turn that reads a synced repo, produces /plan/steps.json, validates it, and finalizes. No dispatch yet.</div>
+  </div>
+
+  <h3>General re-engagement</h3>
+  <div class="prompt">
+    <div class="prompt-label">→ resume work</div>
+    <div class="prompt-content">Check git status and the open PRs. Read CLAUDE.md and the current phase's task file. Tell me the current state and the next two tasks you'd pick up.
+
+Don't start coding until I confirm.</div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 06</div>
+    <div><h2>Skills to pre-create</h2></div>
+  </div>
+
+  <div class="skills">
+    <div class="skill">
+      <div class="skill-name">new-convex-function</div>
+      <div class="skill-desc"><strong>Invoked:</strong> adding any new mutation/query/action. <strong>Enforces:</strong> validator shape, auth check, colocated test file.</div>
+    </div>
+    <div class="skill">
+      <div class="skill-name">new-workflow-step</div>
+      <div class="skill-desc"><strong>Invoked:</strong> extending the orchestrator workflow. <strong>Enforces:</strong> idempotency, proper step.runAction vs step.runMutation.</div>
+    </div>
+    <div class="skill">
+      <div class="skill-name">new-event-kind</div>
+      <div class="skill-desc"><strong>Invoked:</strong> adding a new kind to the event log. <strong>Enforces:</strong> envelope shape, Zod schema, ULID generation.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <div class="section-num">§ 07</div>
+    <div>
+      <h2>What the agent can't do alone</h2>
+      <p class="section-desc">Decisions the agent should flag and wait on, not guess.</p>
+    </div>
+  </div>
+
+  <div class="escape">
+    <div class="escape-q">Authorization model for sandbox-to-repo sync.</div>
+    <div class="escape-ctx"><strong>Flag:</strong> affects <code>sandboxes.repoSourceUrl</code> and how <code>pinnedCommit</code> is obtained.</div>
+  </div>
+
+  <div class="escape">
+    <div class="escape-q">Default model for the planner.</div>
+    <div class="escape-ctx"><strong>Flag:</strong> PRD says claude-sonnet-4 default but it's an open question. Confirm before prompt-tuning locks in.</div>
+  </div>
+
+  <div class="escape">
+    <div class="escape-q">Usage bar exhaustion mid-run behavior.</div>
+    <div class="escape-ctx"><strong>Flag:</strong> does the run pause? Complete partially? Overage-charge? Don't implement until decided.</div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Operating principle</div>
+    <div class="callout-text">The agent is good at mechanical correctness. It's bad at knowing what you want the product to be. Keep mechanical work in the prompt scope; keep product decisions in the escape hatches.</div>
+  </div>
+</section>
+
+<footer>
+  <span>handoff kit v0.1</span>
+  <span>CLAUDE.md hierarchy + donor refs + phase prompts</span>
+  <span>Bastian · 2026</span>
+</footer>
+
+</div>
+</body>
+</html>
