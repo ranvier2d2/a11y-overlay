@@ -133,6 +133,8 @@ Use [`store-assets/STORE_LISTING.md`](./store-assets/STORE_LISTING.md) for:
 - reviewer test instructions
 - screenshot mapping
 
+Use [`store-assets/SUBMISSION_CHECKLIST.md`](./store-assets/SUBMISSION_CHECKLIST.md) for the actual store upload flow and exact asset files.
+
 ### Privacy policy
 
 The repo includes [`privacy.html`](./privacy.html), which is meant to be published alongside the landing page.
