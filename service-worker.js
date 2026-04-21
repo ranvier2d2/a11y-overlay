@@ -72,6 +72,7 @@ function exportContextStorageKey(token) {
 }
 
 async function setPendingExportContext(token, context) {
+  await pruneExpiredExportContexts();
   await chrome.storage.session.set({
     [exportContextStorageKey(token)]: context
   });
@@ -82,6 +83,28 @@ async function getPendingExportContext(token) {
   const key = exportContextStorageKey(token);
   const stored = await chrome.storage.session.get(key);
   return stored[key] || null;
+}
+
+async function removePendingExportContext(token) {
+  if (!token) return;
+  await chrome.storage.session.remove(exportContextStorageKey(token));
+}
+
+async function pruneExpiredExportContexts(now = Date.now()) {
+  const stored = await chrome.storage.session.get(null);
+  const expiredKeys = Object.entries(stored || {})
+    .filter(([key, context]) => (
+      key.startsWith(EXPORT_CONTEXT_PREFIX) &&
+      (
+        !context ||
+        typeof context.createdAt !== "number" ||
+        (now - context.createdAt) > EXPORT_CONTEXT_TTL_MS
+      )
+    ))
+    .map(([key]) => key);
+  if (expiredKeys.length) {
+    await chrome.storage.session.remove(expiredKeys);
+  }
 }
 
 function isFreshExportContext(context) {
@@ -179,11 +202,14 @@ async function handleOpenExportWindow(sender) {
 }
 
 async function handleLoadExportCapture(message) {
-  const context = await getPendingExportContext(message && message.token);
+  const token = message && message.token;
+  const context = await getPendingExportContext(token);
   if (!isFreshExportContext(context)) {
+    await removePendingExportContext(token);
     throw new Error("No recent export is ready. Run Copy PNG from the overlay again.");
   }
 
+  await removePendingExportContext(token);
   return {
     ok: true,
     dataUrl: context.dataUrl,
