@@ -1,17 +1,18 @@
 # a11y-overlay
 
-Static scaffold for an accessibility structure overlay and its product landing page.
+Accessibility overlay runtime, Chrome extension, and static marketing site.
 
 ## Primary files
 
-- `landing.html` — canonical buyer-facing landing page
+- `site/index.html` — canonical public landing page and Vercel entrypoint
+- `site/` — self-contained static deploy surface for the marketing site
 - `demo.html` — guided proof path for the runtime contract and reports
 - `demo.js` — private controller for the guided demo page
 - `a11y-overlay.js` — generated zero-dependency overlay runtime
 - `playwright/overlay-client.mjs` — Playwright-facing helper for injection, contract reads, and failure packages
 - `src/overlay/` — modular source of truth for the overlay runtime
 - `reference.html` — deterministic product-like target used by the demo iframe
-- `index.html` — original handoff landing prototype kept for reference
+- `landing.html` — older landing variant kept in the repo but no longer canonical
 
 ## Overlay source layout
 
@@ -43,10 +44,23 @@ python3 -m http.server 8765
 
 Then open:
 
-- `http://localhost:8765/landing.html`
+- `http://localhost:8765/site/`
 - `http://localhost:8765/demo.html`
 
 Local `http://` preview is the most reliable path for the site and demo. Direct `file:///` opens can work, but browser restrictions around local files and extension access vary.
+
+## Public site deployment
+
+The public landing site is the `site/` directory.
+
+For Vercel:
+
+- set the project Root Directory to `site`
+- use the `Other` framework preset
+- no build command is required
+
+That keeps the public deployment isolated from extension-only files such as
+`manifest.json`, `service-worker.js`, tests, and build scripts.
 
 ## How the script works
 
@@ -204,7 +218,8 @@ Without that toggle, the extension will not inject into local HTML files.
 
 ## Distribution scaffold
 
-This repo now includes a release path for browser stores and GitHub Pages.
+This repo includes a release path for browser stores. The public website is
+served from `site/` separately.
 
 ### Generate icons
 
@@ -232,15 +247,6 @@ The Firefox package is generated from the same source and keeps the same focused
 
 Outputs land in `dist/`.
 
-### Build the GitHub Pages artifact locally
-
-```bash
-python3 scripts/build_site.py
-```
-
-This stages the deployable site into `.site-dist/`. The GitHub Actions workflow at `.github/workflows/pages.yml`
-does the same thing on push to `main`.
-
 ## Verification
 
 Fixture-based browser verification lives in `tests/`.
@@ -249,7 +255,6 @@ Run it with:
 
 ```bash
 python3 tests/verify_overlay.py
-python3 tests/verify_site.py
 node tests/verify_overlay_client.mjs
 ```
 
@@ -257,7 +262,8 @@ That script opens deterministic HTML fixtures, checks the expected findings, ver
 
 It also verifies that workflow presets apply the expected layer, slices, and touch profile, and that the automation contract is exposed.
 
-`tests/verify_site.py` checks the shipped static site routes (`landing.html`, `demo.html`, and `reference.html`) over a local HTTP server, verifies keyboard/focus behavior, confirms the demo injects the runtime and surfaces the contract, and audits the pages with the overlay itself.
+`tests/verify_site.py` still targets the older static-site routes and is not the
+primary validation path for `site/`.
 
 ### Store metadata
 
