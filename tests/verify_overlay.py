@@ -79,10 +79,17 @@ def verify_session_fixture(page) -> None:
           api.setLayerMode('review');
           if (!api.state.repeat) api.toggle('repeat');
           api.annotations.notes.push({
-            id: 'note-1',
+            id: 'note-3',
             x: 220,
             y: 260,
             text: 'Saved note'
+          });
+          api.annotations.arrows.push({
+            id: 'arrow-7',
+            x1: 260,
+            y1: 320,
+            x2: 340,
+            y2: 360
           });
           api.render();
           await api.saveSession();
@@ -92,6 +99,16 @@ def verify_session_fixture(page) -> None:
 
     page.reload(wait_until="load")
     wait_for_overlay(page)
+    page.wait_for_function(
+        """
+        () => {
+          const api = window.__a11yOverlayInstalled;
+          return api.state.layerMode === 'review' &&
+            api.annotations.notes.some((note) => note.id === 'note-3') &&
+            api.annotations.arrows.some((arrow) => arrow.id === 'arrow-7');
+        }
+        """
+    )
 
     restored = page.evaluate(
         """
@@ -101,6 +118,7 @@ def verify_session_fixture(page) -> None:
             layerMode: api.state.layerMode,
             repeat: api.state.repeat,
             noteCount: api.annotations.notes.length,
+            arrowCount: api.annotations.arrows.length,
             noteText: api.annotations.notes[0] ? api.annotations.notes[0].text : ''
           };
         }
@@ -113,6 +131,98 @@ def verify_session_fixture(page) -> None:
         raise AssertionError("expected repeat slice to stay enabled after reload")
     if restored["noteCount"] != 1 or restored["noteText"] != "Saved note":
         raise AssertionError("expected saved annotations to restore after reload")
+    if restored["arrowCount"] != 1:
+        raise AssertionError("expected saved arrows to restore after reload")
+
+    created = page.evaluate(
+        """
+        () => {
+          const api = window.__a11yOverlayInstalled;
+          const capture = document
+            .getElementById('a11yov-host')
+            .shadowRoot
+            .getElementById('annotation-capture');
+          const pointerDown = (x, y) => capture.dispatchEvent(new PointerEvent('pointerdown', {
+            clientX: x,
+            clientY: y,
+            bubbles: true,
+            cancelable: true
+          }));
+
+          api.setAnnotationMode('note');
+          pointerDown(360, 320);
+          api.setAnnotationMode('arrow');
+          pointerDown(420, 360);
+          pointerDown(500, 420);
+
+          return {
+            noteIds: api.annotations.notes.map((note) => note.id),
+            arrowIds: api.annotations.arrows.map((arrow) => arrow.id)
+          };
+        }
+        """
+    )
+    if "note-8" not in created["noteIds"] or len(created["noteIds"]) != len(set(created["noteIds"])):
+        raise AssertionError(f"restored note ids did not advance the annotation counter: {created['noteIds']}")
+    if "arrow-9" not in created["arrowIds"] or len(created["arrowIds"]) != len(set(created["arrowIds"])):
+        raise AssertionError(f"restored arrow ids did not advance the annotation counter: {created['arrowIds']}")
+
+
+def verify_extension_storage_restore_order(browser) -> None:
+    fixture_url = (FIXTURES / "session-fixture.html").as_uri()
+    context = browser.new_context(viewport={"width": 1440, "height": 1100})
+    page = context.new_page()
+    page.add_init_script(
+        """
+        (() => {
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          globalThis.chrome = {
+            storage: {
+              local: {
+                async get(keys) {
+                  const key = Array.isArray(keys) ? keys[0] : keys;
+                  if (key === 'a11y-overlay-touch-profile') {
+                    await sleep(80);
+                    return { [key]: 'apple-44pt' };
+                  }
+                  if (String(key).startsWith('a11y-overlay-session::')) {
+                    await sleep(1);
+                    return {
+                      [key]: {
+                        version: 1,
+                        layerMode: 'review',
+                        touchProfile: 'both',
+                        enabledSlices: { repeat: true },
+                        annotations: { notes: [], arrows: [] }
+                      }
+                    };
+                  }
+                  return {};
+                },
+                async set() {},
+                async remove() {}
+              }
+            }
+          };
+        })();
+        """
+    )
+
+    try:
+        page.goto(fixture_url, wait_until="load")
+        wait_for_overlay(page)
+        page.wait_for_function(
+            """
+            () => {
+              const api = window.__a11yOverlayInstalled;
+              return api.state.layerMode === 'review' &&
+                api.state.touchProfile === 'both' &&
+                api.state.repeat === true;
+            }
+            """
+        )
+    finally:
+        context.close()
 
 
 def verify_presets(page) -> None:
@@ -208,6 +318,7 @@ def main() -> None:
         try:
             verify_audit_fixture(page)
             verify_session_fixture(page)
+            verify_extension_storage_restore_order(browser)
             verify_presets(page)
             verify_automation_contract(page)
             print("overlay verification passed")

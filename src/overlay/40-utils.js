@@ -433,7 +433,7 @@
       const savedAnnotations = stored.annotations || {};
       annotations.notes = Array.isArray(savedAnnotations.notes)
         ? savedAnnotations.notes.map((note) => ({
-          id: String(note.id || nextAnnotationId('note')),
+          id: restoredAnnotationId(note.id, 'note'),
           x: Number(note.x) || 0,
           y: clampNoteY(Number(note.y) || 0),
           text: String(note.text || '')
@@ -441,7 +441,7 @@
         : [];
       annotations.arrows = Array.isArray(savedAnnotations.arrows)
         ? savedAnnotations.arrows.map((arrow) => ({
-          id: String(arrow.id || nextAnnotationId('arrow')),
+          id: restoredAnnotationId(arrow.id, 'arrow'),
           x1: Number(arrow.x1) || 0,
           y1: Number(arrow.y1) || 0,
           x2: Number(arrow.x2) || 0,
@@ -739,6 +739,18 @@
   function nextAnnotationId(prefix) {
     annotationCounter += 1;
     return `${prefix}-${annotationCounter}`;
+  }
+
+  function advanceAnnotationCounterFromId(id) {
+    const match = String(id || '').match(/^(?:note|arrow)-(\d+)$/);
+    if (!match) return;
+    annotationCounter = Math.max(annotationCounter, Number(match[1]) || 0);
+  }
+
+  function restoredAnnotationId(value, prefix) {
+    const id = String(value || nextAnnotationId(prefix));
+    advanceAnnotationCounterFromId(id);
+    return id;
   }
 
   function docPointFromEvent(e) {

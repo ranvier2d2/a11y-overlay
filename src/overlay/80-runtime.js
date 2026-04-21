@@ -258,10 +258,12 @@
 
     // initial paint
     render();
-    loadPersistedSettings();
-    loadPersistedSession().then((restored) => {
-      if (restored) render();
-    });
+    loadPersistedSettings()
+      .catch(() => {})
+      .then(() => loadPersistedSession())
+      .then((restored) => {
+        if (restored) render();
+      });
   }
 
   install();
