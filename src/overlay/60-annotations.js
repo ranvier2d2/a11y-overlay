@@ -447,7 +447,7 @@
       visible.setAttribute('x2', String(end.x));
       visible.setAttribute('y2', String(end.y));
       visible.setAttribute('class', `annotation-line${selected ? ' selected' : ''}`);
-      if (selected) visible.setAttribute('marker-end', 'url(#a11yov-arrowhead-selected)');
+      visible.setAttribute('marker-end', selected ? 'url(#a11yov-arrowhead-selected)' : 'url(#a11yov-arrowhead)');
       annotationSvg.appendChild(visible);
 
       const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -549,7 +549,7 @@
         scheduleSessionPersist();
       });
       textarea.addEventListener('focus', () => {
-        annotations.selected = { type: 'note', id: note.id };
+        selectAnnotation('note', note.id, { render: false });
         syncEditingNoteFromFocus();
       });
       textarea.addEventListener('blur', () => {
@@ -603,4 +603,3 @@
   annotationCapture.addEventListener('pointerdown', handleCapturePointerDown, true);
   annotationCapture.addEventListener('pointermove', handleCapturePointerMove, true);
   annotationCapture.addEventListener('pointerleave', handleCapturePointerLeave, true);
-

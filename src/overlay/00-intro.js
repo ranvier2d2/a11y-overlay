@@ -30,7 +30,13 @@
 (function () {
   function install() {
     if (window.__a11yOverlayInstalled) {
-      window.__a11yOverlayInstalled.toggleHelp();
+      const existingRuntime = window.__a11yOverlayInstalled;
+      if (
+        (typeof existingRuntime === 'object' || typeof existingRuntime === 'function') &&
+        typeof existingRuntime.toggleHelp === 'function'
+      ) {
+        existingRuntime.toggleHelp();
+      }
       return;
     }
 

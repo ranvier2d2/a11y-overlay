@@ -5,7 +5,7 @@ const OPEN_EXPORT_WINDOW_MESSAGE = "a11y-overlay-open-export-window";
 const LOAD_EXPORT_CAPTURE_MESSAGE = "a11y-overlay-load-export-capture";
 const GET_VIEWPORT_CAPTURE_MESSAGE = "a11y-overlay-get-viewport-capture";
 const EXPORT_PAGE = "export.html";
-const EXPORT_CONTEXT_KEY = "pendingExportContext";
+const EXPORT_CONTEXT_PREFIX = "pendingExportContext::";
 const EXPORT_CONTEXT_TTL_MS = 5 * 60 * 1000;
 
 function isSupportedUrl(url) {
@@ -49,30 +49,47 @@ function buildExportFilename(tabLike) {
   return `a11y-overlay-${host}-${stamp}.png`;
 }
 
-function buildExportContext(tab) {
+function buildExportContext(tab, dataUrl) {
   return {
     createdAt: Date.now(),
+    dataUrl,
+    filename: buildExportFilename(tab),
     tabId: tab.id,
     url: tab.url || "",
     windowId: tab.windowId
   };
 }
 
-async function setPendingExportContext(tab) {
+function createExportToken() {
+  if (typeof crypto === "object" && crypto && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function exportContextStorageKey(token) {
+  return `${EXPORT_CONTEXT_PREFIX}${token}`;
+}
+
+async function setPendingExportContext(token, context) {
   await chrome.storage.session.set({
-    [EXPORT_CONTEXT_KEY]: buildExportContext(tab)
+    [exportContextStorageKey(token)]: context
   });
 }
 
-async function getPendingExportContext() {
-  const stored = await chrome.storage.session.get(EXPORT_CONTEXT_KEY);
-  return stored[EXPORT_CONTEXT_KEY] || null;
+async function getPendingExportContext(token) {
+  if (!token) return null;
+  const key = exportContextStorageKey(token);
+  const stored = await chrome.storage.session.get(key);
+  return stored[key] || null;
 }
 
 function isFreshExportContext(context) {
   return !!(
     context &&
     typeof context.windowId === "number" &&
+    typeof context.dataUrl === "string" &&
+    typeof context.filename === "string" &&
     typeof context.createdAt === "number" &&
     (Date.now() - context.createdAt) <= EXPORT_CONTEXT_TTL_MS
   );
@@ -147,29 +164,30 @@ async function handleOpenExportWindow(sender) {
     throw new Error("No active tab is available for copy export.");
   }
 
-  await setPendingExportContext(tab);
+  const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
+  const token = createExportToken();
+  await setPendingExportContext(token, buildExportContext(tab, dataUrl));
   await chrome.windows.create({
     focused: true,
     height: 720,
     type: "popup",
-    url: chrome.runtime.getURL(`${EXPORT_PAGE}?ts=${Date.now()}`),
+    url: chrome.runtime.getURL(`${EXPORT_PAGE}?token=${encodeURIComponent(token)}&ts=${Date.now()}`),
     width: 540
   });
 
   return { ok: true };
 }
 
-async function handleLoadExportCapture() {
-  const context = await getPendingExportContext();
+async function handleLoadExportCapture(message) {
+  const context = await getPendingExportContext(message && message.token);
   if (!isFreshExportContext(context)) {
     throw new Error("No recent export is ready. Run Copy PNG from the overlay again.");
   }
 
-  const dataUrl = await chrome.tabs.captureVisibleTab(context.windowId, { format: "png" });
   return {
     ok: true,
-    dataUrl,
-    filename: buildExportFilename(context),
+    dataUrl: context.dataUrl,
+    filename: context.filename,
     sourceUrl: context.url || ""
   };
 }
@@ -204,7 +222,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message && message.type === OPEN_EXPORT_WINDOW_MESSAGE) {
     task = handleOpenExportWindow(sender);
   } else if (message && message.type === LOAD_EXPORT_CAPTURE_MESSAGE) {
-    task = handleLoadExportCapture();
+    task = handleLoadExportCapture(message);
   } else if (message && message.type === GET_VIEWPORT_CAPTURE_MESSAGE) {
     task = handleViewportCapture(sender);
   }

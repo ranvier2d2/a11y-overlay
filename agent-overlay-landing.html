@@ -27,6 +27,7 @@
       --gutter: clamp(24px, 5vw, 80px);
       --radius: 8px;
       --shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      --topbar-height: 68px;
     }
 
     * {
@@ -35,6 +36,13 @@
 
     html {
       scroll-behavior: smooth;
+    }
+
+    section,
+    h2,
+    h3,
+    :target {
+      scroll-margin-top: calc(var(--topbar-height) + 16px);
     }
 
     body {

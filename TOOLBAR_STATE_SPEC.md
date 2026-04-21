@@ -145,8 +145,11 @@ A slice button can be:
 
 - `inactive`: slice hidden
 - `active`: slice visible
-- `disabled`: unavailable in current layer mode
+- `disabled`: unavailable because the runtime cannot perform that action
 - `busy`: recomputing
+
+A `slice button` for `heuristic slices` is not `disabled` only because the toolbar is in `conformance mode`.
+Pressing it should switch the layer control to `Review` and make that slice `active`.
 
 ### Placement buttons
 
@@ -285,12 +288,12 @@ They must not share the same severity badge.
 
 ## Heuristic Policy
 
-Heuristic slices should be disabled by default.
+Heuristic slices should be inactive by default, not `disabled`.
 
 They are available only when:
 
-- the user switches to `review`, or
-- the user clicks a heuristic slice, which auto-switches to `review`
+- the user switches to `Review`, or
+- the user clicks a heuristic slice, which auto-switches to `Review`
 
 Each heuristic finding should show:
 
@@ -453,7 +456,7 @@ Recommended meanings:
 
 - neutral dark = inactive
 - bright slice color = active
-- dimmed = disabled in current layer
+- dimmed = unavailable runtime action
 - accent outline = armed placement mode
 - temporary status text = one-shot action feedback
 

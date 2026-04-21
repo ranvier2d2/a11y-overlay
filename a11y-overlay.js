@@ -30,7 +30,13 @@
 (function () {
   function install() {
     if (window.__a11yOverlayInstalled) {
-      window.__a11yOverlayInstalled.toggleHelp();
+      const existingRuntime = window.__a11yOverlayInstalled;
+      if (
+        (typeof existingRuntime === 'object' || typeof existingRuntime === 'function') &&
+        typeof existingRuntime.toggleHelp === 'function'
+      ) {
+        existingRuntime.toggleHelp();
+      }
       return;
     }
 
@@ -614,7 +620,6 @@
   const annotationHtml = shadow.getElementById('annotation-html');
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
-
   // ---------- state ----------
   /** @type {OverlayState} */
   const state = {
@@ -1339,10 +1344,18 @@
         .join(' ');
       if (value) return value;
     }
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const inputType = tag === 'input' && el.getAttribute
+      ? (el.getAttribute('type') || 'text').toLowerCase()
+      : '';
+    const valueCanNameControl = tag === 'button' || (
+      tag === 'input' &&
+      (inputType === 'button' || inputType === 'submit' || inputType === 'reset')
+    );
     const direct = [
       el.getAttribute && el.getAttribute('aria-label'),
       el.getAttribute && el.getAttribute('alt'),
-      el.value,
+      valueCanNameControl ? el.value : '',
       el.getAttribute && el.getAttribute('placeholder'),
       el.textContent
     ];
@@ -1701,10 +1714,20 @@
     const r = el.getAttribute && el.getAttribute('role');
     if (r) return r;
     const tag = el.tagName.toLowerCase();
+    if (tag === 'input') {
+      const type = (el.getAttribute && (el.getAttribute('type') || '')).toLowerCase();
+      if (type === 'checkbox') return 'checkbox';
+      if (type === 'radio') return 'radio';
+      if (type === 'range') return 'slider';
+      if (type === 'button' || type === 'submit' || type === 'reset') return 'button';
+      if (type === 'search') return 'searchbox';
+      if (type === 'password') return 'password';
+      return 'textbox';
+    }
     const map = {
       nav: 'navigation', main: 'main', header: 'banner', footer: 'contentinfo',
       aside: 'complementary', section: 'region', form: 'form', article: 'article',
-      a: 'link', button: 'button', input: 'textbox', textarea: 'textbox',
+      a: 'link', button: 'button', textarea: 'textbox',
       select: 'listbox', img: 'img', ul: 'list', ol: 'list', li: 'listitem'
     };
     return map[tag] || '';
@@ -1953,8 +1976,8 @@
 
       if (standardMiss) {
         const reliefBox = {
-          x: box.x + ((box.w - minSize) / 2),
-          y: box.y + ((box.h - minSize) / 2),
+          x: box.w < minSize ? box.x + ((box.w - minSize) / 2) : box.x,
+          y: box.h < minSize ? box.y + ((box.h - minSize) / 2) : box.y,
           w: Math.max(box.w, minSize),
           h: Math.max(box.h, minSize)
         };
@@ -2466,7 +2489,7 @@
     findings.forEach((finding) => {
       const meta = finding.meta || {};
       const severity = String(meta.severity || 'unspecified');
-      if (severity === 'pass') return;
+      if (severity === 'pass' || severity === 'unspecified') return;
 
       const title = String(meta.summary || finding.label || finding.kind || 'Review finding');
       const suggestedFix = String(meta.suggestedFix || 'Review this finding in context.');
@@ -3405,7 +3428,7 @@
       visible.setAttribute('x2', String(end.x));
       visible.setAttribute('y2', String(end.y));
       visible.setAttribute('class', `annotation-line${selected ? ' selected' : ''}`);
-      if (selected) visible.setAttribute('marker-end', 'url(#a11yov-arrowhead-selected)');
+      visible.setAttribute('marker-end', selected ? 'url(#a11yov-arrowhead-selected)' : 'url(#a11yov-arrowhead)');
       annotationSvg.appendChild(visible);
 
       const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -3507,7 +3530,7 @@
         scheduleSessionPersist();
       });
       textarea.addEventListener('focus', () => {
-        annotations.selected = { type: 'note', id: note.id };
+        selectAnnotation('note', note.id, { render: false });
         syncEditingNoteFromFocus();
       });
       textarea.addEventListener('blur', () => {
@@ -3561,7 +3584,6 @@
   annotationCapture.addEventListener('pointerdown', handleCapturePointerDown, true);
   annotationCapture.addEventListener('pointermove', handleCapturePointerMove, true);
   annotationCapture.addEventListener('pointerleave', handleCapturePointerLeave, true);
-
   // ---------- render ----------
   function clearExportNoticeLater() {
     if (exportNoticeTimer) clearTimeout(exportNoticeTimer);
@@ -3599,6 +3621,7 @@
 
     if (!EXTENSION_RUNTIME || state.exportBusy) return;
     state.exportBusy = true;
+    renderToolbar();
 
     try {
       const response = await EXTENSION_RUNTIME.sendMessage({
@@ -3621,12 +3644,14 @@
       );
     } finally {
       state.exportBusy = false;
+      renderToolbar();
     }
   }
 
   async function openCopyWindow() {
     if (!EXTENSION_RUNTIME || state.exportBusy) return;
     state.exportBusy = true;
+    renderToolbar();
 
     try {
       const response = await EXTENSION_RUNTIME.sendMessage({
@@ -3645,6 +3670,7 @@
       );
     } finally {
       state.exportBusy = false;
+      renderToolbar();
     }
   }
 
@@ -3807,12 +3833,14 @@
       e.stopPropagation();
       if (state.exportBusy) return;
       state.exportBusy = true;
+      renderToolbar();
       try {
         await downloadAuditBundle();
       } catch (error) {
         setExportNotice(formatExportError(error), 'error');
       } finally {
         state.exportBusy = false;
+        renderToolbar();
       }
     });
     toolbar.appendChild(bundleReport);
@@ -4066,8 +4094,11 @@
     hotkeyTarget.addEventListener('pointerdown', handleWindowPointerDown, true);
   }
 
+  const allowedMessageSource = window.parent && window.parent !== window ? window.parent : null;
+
   // allow parent frame to forward keys via postMessage
   function onMessage(e) {
+    if (!allowedMessageSource || e.source !== allowedMessageSource) return;
     const d = e.data;
     if (!d || d.__a11yov !== true) return;
     if (d.key) {

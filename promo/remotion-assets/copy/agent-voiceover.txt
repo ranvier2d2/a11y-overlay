@@ -1,6 +1,0 @@
-1. Give browser agents context before they click.
-2. Inject the runtime and wait for the proof surface to settle.
-3. Apply the dense capture preset that turns on the full runtime surface.
-4. Read the live runtime contract instead of guessing what the page exposes.
-5. Build a structured JSON report from the live runtime state.
-6. Turn the same runtime state into a readable handoff report.

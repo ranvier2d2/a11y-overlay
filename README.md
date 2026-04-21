@@ -64,10 +64,13 @@ Local `http://` preview is the most reliable path for the site and demo. Direct 
 - `toggleHelp()`
 - `collectDetections()` — return structured landmark/heading/interactive/focus detections with document-space rects
 - `buildReport(format, opts)` — build JSON report data or an HTML report document string
+- `buildAuditBundle(opts)` — build the standalone evidence bundle HTML string
 - `downloadReport(format, opts)` — download the current audit scope as `json` or `html`
+- `downloadAuditBundle(opts)` — download the report plus viewport evidence when extension capture is available
 - `exportPng(target)` — extension mode only; `clipboard` opens the focused export window, `download` opens the save dialog
 - `getAutomationContract()` — return the versioned method/preset/slice contract for agents and CI
 - `listPresets()` / `applyPreset(id)` — named audit workflows for humans and agents
+- `setLayerMode(mode)` — switch between `conformance` and `review` layer modes
 - `setAnnotationMode(mode)` — `note`, `arrow`, or `idle`
 - `saveSession()` / `clearSavedSession()` / `getSessionSnapshot()`
 - `annotations` — live notes/arrows state for the current page session

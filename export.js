@@ -1,4 +1,5 @@
 const LOAD_EXPORT_CAPTURE_MESSAGE = "a11y-overlay-load-export-capture";
+const exportToken = new URLSearchParams(window.location.search).get("token") || "";
 
 let currentCapture = null;
 let loadInFlight = false;
@@ -78,7 +79,8 @@ async function loadCapture() {
 
   try {
     const response = await chrome.runtime.sendMessage({
-      type: LOAD_EXPORT_CAPTURE_MESSAGE
+      type: LOAD_EXPORT_CAPTURE_MESSAGE,
+      token: exportToken
     });
 
     if (!response || !response.ok || !response.dataUrl) {

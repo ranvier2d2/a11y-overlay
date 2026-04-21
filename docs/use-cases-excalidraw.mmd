@@ -18,6 +18,8 @@ flowchart LR
     N16["Pre-action context for browser agents before click or input."]
     N17["Readiness gating before a step executes."]
     N18["Failure diagnostics after a flaky or blocked run."]
+    N23["Evidence export"]
+    N24["Local evaluation"]
     N19["Product Boundary"]
     N20["Not a generic overlay UI."]
     N21["Semantic execution runtime for browser automation."]
@@ -40,6 +42,8 @@ flowchart LR
   N15 --> N16
   N15 --> N17
   N15 --> N18
+  N15 --> N23
+  N15 --> N24
   N2 --> N19
   N19 --> N20
   N19 --> N21
@@ -51,6 +55,6 @@ flowchart LR
   classDef action fill:#F1EDFF,stroke:#5B4BC4,stroke-width:1.5px,color:#2B245E;
   classDef risk fill:#FDECEC,stroke:#C62828,stroke-width:1.5px,color:#6D1B1B;
   classDef neutral fill:#F3F4F6,stroke:#6B7280,stroke-width:1.5px,color:#1F2937;
-  class N2,N3,N4,N5,N6,N7,N8,N9,N10,N11,N12,N13,N14,N15,N16,N17,N19,N20,N21,N22 finding;
+  class N2,N3,N4,N5,N6,N7,N8,N9,N10,N11,N12,N13,N14,N15,N16,N17,N19,N20,N21,N22,N23,N24 finding;
   class N18 risk;
   class N1 neutral;

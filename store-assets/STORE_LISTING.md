@@ -33,8 +33,8 @@ This extension does not crawl your browsing history, collect analytics, or send 
 
 - `activeTab`: required so the extension can operate only on the page the user explicitly activates.
 - `scripting`: required to inject `a11y-overlay.js` into the active tab.
-- `clipboardWrite`: required so the extension can copy exported PNG images to the system clipboard.
-- `downloads`: required so the extension can save exported PNG images to disk with a predictable filename.
+- `clipboardWrite`: required so the extension can copy exported PNGs to the system clipboard.
+- `downloads`: required so the extension can save exported PNGs to disk with a predictable filename.
 - `storage`: required to keep the most recent export context available while the focused export window opens.
 
 ## Privacy answers
@@ -54,8 +54,8 @@ Privacy policy page: `https://ranvier2d2.github.io/a11y-overlay/privacy.html`
 2. Click the extension action, or press `Cmd+Shift+Y` on macOS / `Ctrl+Shift+Y` on Windows and Linux.
 3. Click inside the page once if the browser keeps focus on the toolbar.
 4. Press `L`, `H`, `I`, `A`, `R`, `F`, `D`, `G`, `?`, and `X` to verify the overlay toggles and teardown.
-5. Press `C` to copy the visible viewport as a PNG, then paste it into an image-capable target.
-6. Press `S` to open the PNG save dialog and confirm the suggested filename is prefilled.
+5. Use `C` to copy the visible viewport as a PNG, then paste it into an image-capable target.
+6. Open the PNG save dialog with `S` and confirm the suggested filename is prefilled.
 
 ## Suggested screenshots
 

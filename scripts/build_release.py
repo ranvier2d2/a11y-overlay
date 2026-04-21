@@ -5,9 +5,10 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
-import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +30,7 @@ ICON_FILES = [
 
 
 def load_manifest() -> dict:
-    subprocess.run(["python3", str(ROOT / "scripts" / "build_overlay.py")], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "build_overlay.py")], check=True)
     return json.loads((ROOT / "manifest.json").read_text())
 
 

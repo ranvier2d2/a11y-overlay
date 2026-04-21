@@ -13,6 +13,3 @@ dist/
 
 # Generated reports, captures, renders, and local proof artifacts
 output/
-
-# Remotion static asset sync target. The source pack lives in promo/remotion-assets/.
-public/remotion-assets/

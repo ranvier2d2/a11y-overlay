@@ -513,10 +513,18 @@
         .join(' ');
       if (value) return value;
     }
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const inputType = tag === 'input' && el.getAttribute
+      ? (el.getAttribute('type') || 'text').toLowerCase()
+      : '';
+    const valueCanNameControl = tag === 'button' || (
+      tag === 'input' &&
+      (inputType === 'button' || inputType === 'submit' || inputType === 'reset')
+    );
     const direct = [
       el.getAttribute && el.getAttribute('aria-label'),
       el.getAttribute && el.getAttribute('alt'),
-      el.value,
+      valueCanNameControl ? el.value : '',
       el.getAttribute && el.getAttribute('placeholder'),
       el.textContent
     ];
@@ -875,10 +883,20 @@
     const r = el.getAttribute && el.getAttribute('role');
     if (r) return r;
     const tag = el.tagName.toLowerCase();
+    if (tag === 'input') {
+      const type = (el.getAttribute && (el.getAttribute('type') || '')).toLowerCase();
+      if (type === 'checkbox') return 'checkbox';
+      if (type === 'radio') return 'radio';
+      if (type === 'range') return 'slider';
+      if (type === 'button' || type === 'submit' || type === 'reset') return 'button';
+      if (type === 'search') return 'searchbox';
+      if (type === 'password') return 'password';
+      return 'textbox';
+    }
     const map = {
       nav: 'navigation', main: 'main', header: 'banner', footer: 'contentinfo',
       aside: 'complementary', section: 'region', form: 'form', article: 'article',
-      a: 'link', button: 'button', input: 'textbox', textarea: 'textbox',
+      a: 'link', button: 'button', textarea: 'textbox',
       select: 'listbox', img: 'img', ul: 'list', ol: 'list', li: 'listitem'
     };
     return map[tag] || '';

@@ -29,6 +29,8 @@
     htmlPreviewUrl: null,
     extensionRuntimeAvailable: false
   };
+  window.__demoState = window.__demoState || {};
+  window.__demoState.presetApplied = false;
 
   function setStatus(state, title, message) {
     statusPill.className = `status-pill ${state}`;
@@ -274,6 +276,7 @@
     actionBuckets.innerHTML = '';
     topActions.innerHTML = '';
     bundleButton.hidden = true;
+    window.__demoState.presetApplied = false;
     setStatus('loading', 'Frame loaded', 'Attempting automatic injection and runtime synchronization.');
     injectOverlay().catch(() => {});
   });
@@ -295,11 +298,14 @@
   });
   presetButton.addEventListener('click', async () => {
     setBusy(true);
+    window.__demoState.presetApplied = false;
     try {
       const presetId = await applyDemoPreset();
       await syncRuntimeSummary();
+      window.__demoState.presetApplied = true;
       setStatus('ready', 'Agent preset applied', presetId ? `Preset "${presetId}" is active in the iframe runtime.` : 'No agent preset was available to apply.');
     } catch (error) {
+      window.__demoState.presetApplied = false;
       setStatus('error', 'Preset error', error && error.message ? error.message : String(error));
     } finally {
       setBusy(false);

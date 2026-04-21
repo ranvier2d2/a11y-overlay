@@ -116,8 +116,16 @@ class FakeTarget {
     try {
       return fn();
     } finally {
-      global.window = previousWindow;
-      global.document = previousDocument;
+      if (previousWindow === undefined) {
+        delete global.window;
+      } else {
+        global.window = previousWindow;
+      }
+      if (previousDocument === undefined) {
+        delete global.document;
+      } else {
+        global.document = previousDocument;
+      }
     }
   }
 }

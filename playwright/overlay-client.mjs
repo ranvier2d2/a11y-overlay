@@ -296,14 +296,17 @@ export class OverlayClient {
     const htmlReportPath = failurePackage.htmlReport ? path.join(dir, 'report.html') : '';
     const auditBundlePath = failurePackage.auditBundleHtml ? path.join(dir, 'audit-bundle.html') : '';
 
-    await writeFile(contractPath, `${JSON.stringify(failurePackage.contract, null, 2)}\n`, 'utf8');
-    await writeFile(reportPath, `${JSON.stringify(failurePackage.report, null, 2)}\n`, 'utf8');
+    const writes = [
+      writeFile(contractPath, `${JSON.stringify(failurePackage.contract, null, 2)}\n`, 'utf8'),
+      writeFile(reportPath, `${JSON.stringify(failurePackage.report, null, 2)}\n`, 'utf8')
+    ];
     if (failurePackage.htmlReport) {
-      await writeFile(htmlReportPath, failurePackage.htmlReport, 'utf8');
+      writes.push(writeFile(htmlReportPath, failurePackage.htmlReport, 'utf8'));
     }
     if (failurePackage.auditBundleHtml) {
-      await writeFile(auditBundlePath, failurePackage.auditBundleHtml, 'utf8');
+      writes.push(writeFile(auditBundlePath, failurePackage.auditBundleHtml, 'utf8'));
     }
+    await Promise.all(writes);
 
     const manifest = {
       generatedAt: failurePackage.generatedAt,
@@ -346,7 +349,7 @@ export class OverlayClient {
         if (typeof method !== 'function') {
           throw new Error(`Overlay runtime method "${methodName}" is not available in this build.`);
         }
-        return method(...args);
+        return method.apply(runtime, args);
       },
       {
         globalName: this.globalName,

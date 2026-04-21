@@ -26,9 +26,9 @@ def build_overlay() -> Path:
         module_path = SOURCE_DIR / module_name
         if not module_path.exists():
             raise SystemExit(f"missing overlay module: {module_path}")
-        parts.append(module_path.read_text())
+        parts.append(module_path.read_text().rstrip("\n"))
 
-    content = "".join(parts)
+    content = "\n".join(parts)
     if not content.endswith("\n"):
         content += "\n"
     OUTPUT.write_text(content)

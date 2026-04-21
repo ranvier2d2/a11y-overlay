@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import shutil
-from pathlib import Path
 import subprocess
+import sys
+from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,7 +25,7 @@ STATIC_FILES = [
 
 
 def main() -> None:
-    subprocess.run(["python3", str(ROOT / "scripts" / "build_overlay.py")], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "build_overlay.py")], check=True)
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)

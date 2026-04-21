@@ -119,8 +119,11 @@
     hotkeyTarget.addEventListener('pointerdown', handleWindowPointerDown, true);
   }
 
+  const allowedMessageSource = window.parent && window.parent !== window ? window.parent : null;
+
   // allow parent frame to forward keys via postMessage
   function onMessage(e) {
+    if (!allowedMessageSource || e.source !== allowedMessageSource) return;
     const d = e.data;
     if (!d || d.__a11yov !== true) return;
     if (d.key) {

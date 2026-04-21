@@ -35,6 +35,7 @@
 
     if (!EXTENSION_RUNTIME || state.exportBusy) return;
     state.exportBusy = true;
+    renderToolbar();
 
     try {
       const response = await EXTENSION_RUNTIME.sendMessage({
@@ -57,12 +58,14 @@
       );
     } finally {
       state.exportBusy = false;
+      renderToolbar();
     }
   }
 
   async function openCopyWindow() {
     if (!EXTENSION_RUNTIME || state.exportBusy) return;
     state.exportBusy = true;
+    renderToolbar();
 
     try {
       const response = await EXTENSION_RUNTIME.sendMessage({
@@ -81,6 +84,7 @@
       );
     } finally {
       state.exportBusy = false;
+      renderToolbar();
     }
   }
 
@@ -243,12 +247,14 @@
       e.stopPropagation();
       if (state.exportBusy) return;
       state.exportBusy = true;
+      renderToolbar();
       try {
         await downloadAuditBundle();
       } catch (error) {
         setExportNotice(formatExportError(error), 'error');
       } finally {
         state.exportBusy = false;
+        renderToolbar();
       }
     });
     toolbar.appendChild(bundleReport);

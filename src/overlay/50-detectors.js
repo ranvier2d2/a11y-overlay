@@ -224,8 +224,8 @@
 
       if (standardMiss) {
         const reliefBox = {
-          x: box.x + ((box.w - minSize) / 2),
-          y: box.y + ((box.h - minSize) / 2),
+          x: box.w < minSize ? box.x + ((box.w - minSize) / 2) : box.x,
+          y: box.h < minSize ? box.y + ((box.h - minSize) / 2) : box.y,
           w: Math.max(box.w, minSize),
           h: Math.max(box.h, minSize)
         };
@@ -737,7 +737,7 @@
     findings.forEach((finding) => {
       const meta = finding.meta || {};
       const severity = String(meta.severity || 'unspecified');
-      if (severity === 'pass') return;
+      if (severity === 'pass' || severity === 'unspecified') return;
 
       const title = String(meta.summary || finding.label || finding.kind || 'Review finding');
       const suggestedFix = String(meta.suggestedFix || 'Review this finding in context.');
