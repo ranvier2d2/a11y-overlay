@@ -1,6 +1,18 @@
+# macOS
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Build artifacts
 dist/
 .site-dist/
-.DS_Store
+
+# Browser automation artifacts
 .playwright-mcp/
-output/flashback/
-output/playwright/
+
+# Generated reports, captures, renders, and local proof artifacts
+output/
+
+# Remotion static asset sync target. The source pack lives in promo/remotion-assets/.
+public/remotion-assets/

@@ -1,0 +1,49 @@
+{
+  "name": "a11y-overlay-remotion-asset-pack",
+  "version": 1,
+  "stills": [
+    "stills/landing-hero.png",
+    "stills/landing-full.png",
+    "stills/github-overlay-default.png",
+    "stills/github-overlay-focus.png",
+    "stills/reference-overlay-proof.png",
+    "stills/demo-summary-proof.png",
+    "stills/agent-overlay-landing-audit.png"
+  ],
+  "clips": [
+    "clips/landing-hero.webm",
+    "clips/demo-inject.webm",
+    "clips/agent-preset.webm",
+    "clips/contract-panel.webm",
+    "clips/json-report.webm",
+    "clips/html-report.webm",
+    "clips/human-slices.webm",
+    "clips/install-card.webm",
+    "clips/privacy-page.webm"
+  ],
+  "clipPosters": [
+    "clips/landing-hero-poster.png",
+    "clips/demo-inject-poster.png",
+    "clips/agent-preset-poster.png",
+    "clips/contract-panel-poster.png",
+    "clips/json-report-poster.png",
+    "clips/html-report-poster.png",
+    "clips/human-slices-poster.png",
+    "clips/install-card-poster.png",
+    "clips/privacy-page-poster.png"
+  ],
+  "copy": [
+    "copy/agent.vtt",
+    "copy/human.vtt",
+    "copy/agent-voiceover.txt",
+    "copy/human-voiceover.txt",
+    "copy/agent-story.md",
+    "copy/human-story.md"
+  ],
+  "references": [
+    "references/landing.html",
+    "references/demo.html",
+    "references/reference.html",
+    "references/privacy.html"
+  ]
+}

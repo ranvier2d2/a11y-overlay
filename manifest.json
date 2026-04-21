@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "a11y-overlay",
-  "version": "0.1.13",
+  "version": "0.1.17",
   "description": "Inject a11y-overlay into the current page to inspect landmarks, headings, focus order, and layout structure.",
   "minimum_chrome_version": "109",
   "icons": {

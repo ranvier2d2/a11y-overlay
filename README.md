@@ -4,10 +4,34 @@ Static scaffold for an accessibility structure overlay and its product landing p
 
 ## Primary files
 
-- `landing.html` — canonical marketing / demo page
-- `a11y-overlay.js` — zero-dependency overlay script
-- `reference.html` — local target page used by the demo iframe
-- `demo.html` — minimal demo shell
+- `landing.html` — canonical buyer-facing landing page
+- `demo.html` — guided proof path for the runtime contract and reports
+- `demo.js` — private controller for the guided demo page
+- `a11y-overlay.js` — generated zero-dependency overlay runtime
+- `playwright/overlay-client.mjs` — Playwright-facing helper for injection, contract reads, and failure packages
+- `src/overlay/` — modular source of truth for the overlay runtime
+- `reference.html` — deterministic product-like target used by the demo iframe
+- `index.html` — original handoff landing prototype kept for reference
+
+## Overlay source layout
+
+The runtime is built from ordered source modules in `src/overlay/`:
+
+- `00-intro.js` — wrapper and install bootstrap
+- `10-constants.js` — constants and runtime capability flags
+- `20-shadow-dom.js` — overlay host and embedded styles
+- `30-state.js` — state, presets, and shared typedefs
+- `40-utils.js` — general helpers and inspector formatting
+- `50-detectors.js` — scanners plus report generation
+- `60-annotations.js` — note and arrow interactions
+- `70-render.js` — toolbar, settings, inspector, and render loop
+- `80-runtime.js` — hotkeys, teardown, and public API
+
+Rebuild the shipped runtime with:
+
+```bash
+python3 scripts/build_overlay.py
+```
 
 ## Local preview
 
@@ -22,6 +46,8 @@ Then open:
 - `http://localhost:8765/landing.html`
 - `http://localhost:8765/demo.html`
 
+Local `http://` preview is the most reliable path for the site and demo. Direct `file:///` opens can work, but browser restrictions around local files and extension access vary.
+
 ## How the script works
 
 1. Inject `a11y-overlay.js` with a bookmarklet, a `<script>` tag, or browser automation.
@@ -29,15 +55,21 @@ Then open:
 3. All overlay chrome lives inside an open shadow root on that host.
 4. Detectors scan visible landmarks, headings, interactive elements, missing-alt images, repeating siblings, focus order, depth, and block-level layout boxes.
 5. Scroll, resize, and DOM mutations funnel into one `requestAnimationFrame` repaint loop.
-6. The public API is exposed at `window.__a11yOverlayInstalled`.
+6. Per-page audit state persists locally, including slice toggles, mode, and annotations.
+7. The public API is exposed at `window.__a11yOverlayInstalled`.
 
 ## Public API
 
 - `toggle(key)`
 - `toggleHelp()`
 - `collectDetections()` — return structured landmark/heading/interactive/focus detections with document-space rects
+- `buildReport(format, opts)` — build JSON report data or an HTML report document string
+- `downloadReport(format, opts)` — download the current audit scope as `json` or `html`
 - `exportPng(target)` — extension mode only; `clipboard` opens the focused export window, `download` opens the save dialog
+- `getAutomationContract()` — return the versioned method/preset/slice contract for agents and CI
+- `listPresets()` / `applyPreset(id)` — named audit workflows for humans and agents
 - `setAnnotationMode(mode)` — `note`, `arrow`, or `idle`
+- `saveSession()` / `clearSavedSession()` / `getSessionSnapshot()`
 - `annotations` — live notes/arrows state for the current page session
 - `render()`
 - `teardown()`
@@ -57,6 +89,64 @@ iframe.contentWindow.postMessage({ __a11yov: true, key: "L" }, "*");
 - Playwright/Puppeteer: agents, CI, scraping, regression screenshots
 
 What will not work with the bookmarklet: sites protected by strict Content Security Policy. For those, the next delivery shape is an extension or a DevTools/userscript flow.
+
+## Playwright client
+
+`playwright/overlay-client.mjs` is the canonical Node-side wrapper for Playwright users.
+
+It keeps the runtime as the source of semantic context and keeps Playwright as the executor for:
+
+- navigation
+- clicks
+- typing
+- assertions
+- screenshots
+
+### Basic usage
+
+```js
+import { OverlayClient } from './playwright/overlay-client.mjs';
+
+const client = new OverlayClient();
+
+await client.inject(page);
+await client.applyPreset(page, 'agent-capture', { announce: false });
+
+const contract = await client.getContract(page);
+const report = await client.buildReport(page, 'json', { scope: 'all' });
+```
+
+### Failure package usage
+
+```js
+import { OverlayClient } from './playwright/overlay-client.mjs';
+
+const client = new OverlayClient();
+
+await client.inject(page);
+await client.applyPreset(page, 'agent-capture', { announce: false });
+
+const artifacts = await client.writeFailurePackage(page, {
+  dir: './artifacts/checkout-failure',
+  scope: 'all',
+  includeHtmlReport: true,
+  includeAuditBundle: true,
+  fullPage: true
+});
+
+console.log(artifacts);
+```
+
+That writes:
+
+- `contract.json`
+- `report.json`
+- `report.html`
+- `audit-bundle.html`
+- `viewport.png`
+- `manifest.json`
+
+The client also exposes forward-compatible wrappers for future runtime methods such as `getReadyState()` and `waitForStableState()`. In the current build those calls fail explicitly because the runtime does not yet expose a readiness contract.
 
 ## Browser extension
 
@@ -84,9 +174,18 @@ This repo root is now also a Chrome/Chromium MV3 extension.
   - `Delete` / `Backspace` removes the selected note or arrow
   - Clicking non-interactive page space while idle also clears the current selection
 - Click any overlay label or badge to open the selection inspector for that element
+- Open `Cfg` for named workflow presets:
+  - `Content`
+  - `Navigation`
+  - `Forms`
+  - `Mobile`
+  - `Agent`
 - In extension mode only:
   - `C` opens a focused export window for clipboard PNG copy
   - `S` opens a save dialog for the current viewport PNG
+- In all modes:
+  - `JSON` downloads the current audit scope as a structured report
+  - `HTML` downloads the current audit scope as a readable review report
 - Press `X` on the page to tear the overlay down.
 
 If the browser shortcut does not fire, open `chrome://extensions/shortcuts` and assign it manually. Chrome may leave an extension shortcut inactive if it conflicts with another extension or a reserved browser / OS shortcut.
@@ -138,6 +237,24 @@ python3 scripts/build_site.py
 
 This stages the deployable site into `.site-dist/`. The GitHub Actions workflow at `.github/workflows/pages.yml`
 does the same thing on push to `main`.
+
+## Verification
+
+Fixture-based browser verification lives in `tests/`.
+
+Run it with:
+
+```bash
+python3 tests/verify_overlay.py
+python3 tests/verify_site.py
+node tests/verify_overlay_client.mjs
+```
+
+That script opens deterministic HTML fixtures, checks the expected findings, verifies report generation, and confirms saved session state survives a reload.
+
+It also verifies that workflow presets apply the expected layer, slices, and touch profile, and that the automation contract is exposed.
+
+`tests/verify_site.py` checks the shipped static site routes (`landing.html`, `demo.html`, and `reference.html`) over a local HTTP server, verifies keyboard/focus behavior, confirms the demo injects the runtime and surfaces the contract, and audits the pages with the overlay itself.
 
 ### Store metadata
 

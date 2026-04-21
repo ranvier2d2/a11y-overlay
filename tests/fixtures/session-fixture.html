@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>a11y-overlay session fixture</title>
+  <style>
+    body {
+      margin: 0;
+      font: 16px/1.5 system-ui, sans-serif;
+      background: #fafaf9;
+      color: #18181b;
+    }
+    header, nav, main {
+      display: block;
+      padding: 16px 24px;
+    }
+    .cluster {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .cluster article {
+      background: white;
+      border: 1px solid #d6d3d1;
+      min-height: 120px;
+      padding: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Session fixture</h1>
+  </header>
+  <nav>
+    <a href="#cards">Cards</a>
+  </nav>
+  <main>
+    <section id="cards" class="cluster">
+      <article><h2>Card one</h2><p>Static body copy.</p></article>
+      <article><h2>Card two</h2><p>Static body copy.</p></article>
+      <article><h2>Card three</h2><p>Static body copy.</p></article>
+    </section>
+  </main>
+  <script src="../../a11y-overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:02.440
+Give browser agents context before they click.
+
+2
+00:00:02.440 --> 00:00:06.320
+Toggle interactives, forms, targets, and tab order on a real page.
+
+3
+00:00:06.320 --> 00:00:09.160
+Show the local extension path without leaving the deterministic demo.
+
+4
+00:00:09.160 --> 00:00:11.680
+Runs locally, with no analytics and no remote code.
+

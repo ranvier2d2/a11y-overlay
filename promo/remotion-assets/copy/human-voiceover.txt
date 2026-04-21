@@ -1,0 +1,4 @@
+1. Give browser agents context before they click.
+2. Toggle interactives, forms, targets, and tab order on a real page.
+3. Show the local extension path without leaving the deterministic demo.
+4. Runs locally, with no analytics and no remote code.

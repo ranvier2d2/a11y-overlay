@@ -3,6 +3,7 @@ const BADGE_RESET_MS = 2200;
 const EXPORT_MESSAGE = "a11y-overlay-export-png";
 const OPEN_EXPORT_WINDOW_MESSAGE = "a11y-overlay-open-export-window";
 const LOAD_EXPORT_CAPTURE_MESSAGE = "a11y-overlay-load-export-capture";
+const GET_VIEWPORT_CAPTURE_MESSAGE = "a11y-overlay-get-viewport-capture";
 const EXPORT_PAGE = "export.html";
 const EXPORT_CONTEXT_KEY = "pendingExportContext";
 const EXPORT_CONTEXT_TTL_MS = 5 * 60 * 1000;
@@ -173,6 +174,21 @@ async function handleLoadExportCapture() {
   };
 }
 
+async function handleViewportCapture(sender) {
+  const tab = sender && sender.tab;
+  if (!tab || typeof tab.windowId !== "number") {
+    throw new Error("No active tab is available for capture.");
+  }
+
+  const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
+  return {
+    ok: true,
+    dataUrl,
+    filename: buildExportFilename(tab),
+    sourceUrl: tab.url || ""
+  };
+}
+
 chrome.action.onClicked.addListener((tab) => {
   const run = tab ? injectIntoTab(tab) : injectActiveTab();
   run.catch((error) => {
@@ -189,6 +205,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     task = handleOpenExportWindow(sender);
   } else if (message && message.type === LOAD_EXPORT_CAPTURE_MESSAGE) {
     task = handleLoadExportCapture();
+  } else if (message && message.type === GET_VIEWPORT_CAPTURE_MESSAGE) {
+    task = handleViewportCapture(sender);
   }
 
   if (!task) {

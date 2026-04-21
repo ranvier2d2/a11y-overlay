@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +12,7 @@ OUT = ROOT / ".site-dist"
 STATIC_FILES = [
     "landing.html",
     "demo.html",
+    "demo.js",
     "reference.html",
     "privacy.html",
     "a11y-overlay.js",
@@ -22,6 +24,7 @@ STATIC_FILES = [
 
 
 def main() -> None:
+    subprocess.run(["python3", str(ROOT / "scripts" / "build_overlay.py")], check=True)
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)

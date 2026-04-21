@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overlay Runtime for Browser Agents</title>
+  <meta
+    name="description"
+    content="Execution context and diagnostics for Playwright and browser agents. Read page structure before acting, wait for stable state, and keep an evidence bundle after failure."
+  >
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c120f;
+      --bg-soft: #131b17;
+      --bg-strong: #18231d;
+      --line: rgba(232, 244, 238, 0.14);
+      --line-strong: rgba(232, 244, 238, 0.26);
+      --text: #edf5f1;
+      --muted: #b6c8c0;
+      --soft: #8ea39a;
+      --lime: #b6eb5f;
+      --cyan: #6ce7d8;
+      --amber: #f0bf5d;
+      --danger: #ff8d74;
+      --max: 1180px;
+      --gutter: clamp(24px, 5vw, 80px);
+      --radius: 8px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    code,
+    pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #101513;
+      transform: translateY(-160%);
+      transition: transform 0.2s ease;
+      z-index: 40;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    .wrap {
+      width: min(var(--max), calc(100vw - (var(--gutter) * 2)));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(232, 244, 238, 0.08);
+      background: rgba(12, 18, 15, 0.84);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, var(--lime), var(--cyan));
+      box-shadow: 0 0 0 5px rgba(182, 235, 95, 0.12);
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 18px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 6px 0;
+    }
+
+    .nav a:hover,
+    .nav a:focus-visible,
+    .button:hover,
+    .button:focus-visible,
+    .cta-link:hover,
+    .cta-link:focus-visible {
+      color: var(--text);
+    }
+
+    .nav a:focus-visible,
+    .button:focus-visible,
+    .cta-link:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 4px;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 78svh;
+      display: flex;
+      align-items: flex-end;
+      padding: 72px 0 0;
+      background:
+        linear-gradient(180deg, rgba(12, 18, 15, 0.12), rgba(12, 18, 15, 0.76) 72%, rgba(12, 18, 15, 0.95)),
+        linear-gradient(90deg, rgba(12, 18, 15, 0.9), rgba(12, 18, 15, 0.52) 48%, rgba(12, 18, 15, 0.18)),
+        url("./landing-hero.png");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-copy {
+      width: 100%;
+      padding: 12px 0 52px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--lime);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--lime);
+      box-shadow: 0 0 0 8px rgba(182, 235, 95, 0.12);
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 12ch;
+      font-size: clamp(3rem, 7vw, 5.6rem);
+      line-height: 0.96;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.02;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      line-height: 1.2;
+    }
+
+    .hero-copy p,
+    .section-head p,
+    .panel p,
+    .run-copy p,
+    .contract-intro p,
+    .cta p,
+    li {
+      font-size: 1rem;
+    }
+
+    .hero-text {
+      margin-top: 18px;
+      max-width: 58ch;
+      font-size: 1.12rem;
+      color: var(--muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 20px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      background: var(--lime);
+      color: #11200d;
+      box-shadow: 0 18px 36px rgba(182, 235, 95, 0.16);
+    }
+
+    .button-secondary {
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+    }
+
+    .button-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.34);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-points {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .hero-points div {
+      max-width: 28ch;
+    }
+
+    .hero-points strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+
+    .hero-points span {
+      color: var(--muted);
+    }
+
+    .peek {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(12, 18, 15, 0.95);
+    }
+
+    .peek .wrap {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+    }
+
+    .peek strong {
+      color: var(--text);
+    }
+
+    section.band {
+      padding: 86px 0;
+    }
+
+    section.band.alt {
+      background: linear-gradient(180deg, #101612, #121a16);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 22px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      color: var(--cyan);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .section-tag::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--cyan);
+      box-shadow: 0 0 0 8px rgba(108, 231, 216, 0.12);
+    }
+
+    .section-head p {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .buyers-layout,
+    .compare,
+    .contract-grid,
+    .proof-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .buyers-layout {
+      grid-template-columns: 1.25fr 0.75fr;
+    }
+
+    .compare {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .contract-grid {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+
+    .proof-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--bg-soft);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+
+    .panel strong {
+      color: var(--text);
+    }
+
+    .panel ul,
+    .steps {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .panel ul li + li,
+    .adjacent-list li + li {
+      margin-top: 10px;
+    }
+
+    .primary-buyer {
+      border-color: rgba(182, 235, 95, 0.42);
+      box-shadow: var(--shadow);
+    }
+
+    .buyer-chip {
+      display: inline-flex;
+      margin-bottom: 14px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      color: var(--soft);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .buyer-chip.primary {
+      border-color: rgba(182, 235, 95, 0.42);
+      color: var(--lime);
+    }
+
+    .primary-buyer h3 {
+      margin-bottom: 10px;
+      font-size: 1.45rem;
+    }
+
+    .primary-buyer p {
+      color: var(--muted);
+      margin-bottom: 18px;
+      max-width: 52ch;
+    }
+
+    .adjacent-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .adjacent-list li {
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .adjacent-list strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .compare .panel em {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: var(--soft);
+      font-style: normal;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.82rem;
+    }
+
+    .compare .panel.good {
+      border-color: rgba(108, 231, 216, 0.4);
+    }
+
+    .compare .panel.good em {
+      color: var(--cyan);
+    }
+
+    .run-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .steps {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: 62px 1fr;
+      gap: 16px;
+      padding: 18px 0 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .steps li:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .step-num {
+      color: var(--soft);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .steps h3 {
+      margin-bottom: 6px;
+    }
+
+    .steps p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    figure {
+      margin: 0;
+    }
+
+    .shot {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--bg-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .shot img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+    }
+
+    figcaption {
+      padding: 14px 16px 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .contract-intro {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .contract-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .contract-list li {
+      padding: 14px 0 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .contract-list li:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .code-block {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #0b100d;
+      padding: 18px;
+      color: #d7f9ef;
+      overflow-x: auto;
+      font-size: 0.94rem;
+      line-height: 1.65;
+    }
+
+    .proof-grid .panel {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .proof-copy {
+      padding: 18px 18px 20px;
+    }
+
+    .proof-copy h3 {
+      margin-bottom: 8px;
+    }
+
+    .proof-copy p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .definition {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .definition .panel h3 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+
+    .definition .panel p {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .cta {
+      padding: 88px 0 96px;
+    }
+
+    .cta-band {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px;
+      border: 1px solid rgba(182, 235, 95, 0.28);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(182, 235, 95, 0.08), rgba(108, 231, 216, 0.05));
+    }
+
+    .cta p {
+      margin: 10px 0 0;
+      max-width: 56ch;
+      color: var(--muted);
+    }
+
+    .cta-link {
+      color: var(--lime);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    footer {
+      border-top: 1px solid rgba(232, 244, 238, 0.08);
+      padding: 24px 0 38px;
+      color: var(--soft);
+      font-size: 0.94rem;
+    }
+
+    @media (max-width: 980px) {
+      .hero-points,
+      .compare,
+      .contract-grid,
+      .definition,
+      .buyers-layout,
+      .proof-grid,
+      .run-layout,
+      .section-head {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .cta-band {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .wrap {
+        width: min(var(--max), calc(100vw - (var(--gutter) * 2)));
+      }
+
+      .topbar .wrap,
+      .peek .wrap {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      h1 {
+        max-width: 11ch;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Overlay Runtime</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#buyers">Buyer</a>
+        <a href="#problem">Difference</a>
+        <a href="#run-loop">Run Loop</a>
+        <a href="#contract">Contract</a>
+        <a href="#proof">Proof</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero-copy">
+        <div class="eyebrow">Execution context for Playwright and browser agents</div>
+        <h1 id="hero-title">Give browser agents context before they click.</h1>
+        <p class="hero-text">
+          A semantic runtime that lets automation inspect page structure, wait for stable state,
+          and keep an evidence bundle when a run fails. The wedge is not generic AI tooling. It is
+          faster, more defensible browser execution.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#buyers">Start with the buyer</a>
+          <a class="button button-secondary" href="#contract">See the runtime contract</a>
+        </div>
+        <div class="hero-points" aria-label="Product summary">
+          <div>
+            <strong>Read structure first</strong>
+            <span>Landmarks, headings, interactive targets, and repeated groups make the next action smaller.</span>
+          </div>
+          <div>
+            <strong>Wait on the right signal</strong>
+            <span>Use rendered and idle state instead of sleeps, selector luck, or screenshot guessing.</span>
+          </div>
+          <div>
+            <strong>Keep the failure package</strong>
+            <span>Diagnostics, screenshots, traces, and summaries stay attached to the run that produced them.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="peek">
+      <div class="wrap">
+        <span><strong>Best fit:</strong> teams running Playwright or browser agents on DOM-heavy product surfaces where failure review costs more than the original test.</span>
+        <a class="cta-link" href="#buyers">See the positioning</a>
+      </div>
+    </div>
+
+    <section id="buyers" class="band" aria-labelledby="buyers-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">Buyer</span>
+            <h2 id="buyers-title">Start with the team already paying for flaky, under-explained runs.</h2>
+          </div>
+          <p>
+            The primary buyer is not every accessibility team and not every frontend group. The clean wedge is
+            automation or platform teams running Playwright and browser agents who need execution context plus
+            post-run diagnostics.
+          </p>
+        </div>
+        <div class="buyers-layout">
+          <article class="panel primary-buyer">
+            <span class="buyer-chip primary">Primary buyer</span>
+            <h3>Automation and platform teams</h3>
+            <p>
+              They already own browser execution, already feel the cost of vague failures, and already have budget
+              for tools that reduce triage time without making tests less deterministic.
+            </p>
+            <ul>
+              <li><strong>Job:</strong> keep browser runs reliable when the product surface is dynamic, repeated, and stateful.</li>
+              <li><strong>Pain:</strong> the DOM is too noisy, screenshots are too opaque, and failures arrive with weak evidence.</li>
+              <li><strong>Win:</strong> one runtime layer for planning, waiting, asserting, and handing off proof.</li>
+            </ul>
+          </article>
+          <div>
+            <ul class="adjacent-list">
+              <li>
+                <strong>Accessibility teams are a secondary expansion.</strong>
+                Missing alt text, heading order, target sizing, and evidence bundles fit naturally, but they are not the clearest first buyer story.
+              </li>
+              <li>
+                <strong>Frontend engineers benefit after the wedge lands.</strong>
+                Runtime structure and bundles make refactor verification better, but that is adjacent to the execution problem.
+              </li>
+              <li>
+                <strong>Regression triage is where the value compounds.</strong>
+                Once runs keep their own context and proof, red builds get shorter to explain and cheaper to reopen.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="problem" class="band alt" aria-labelledby="problem-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">Difference</span>
+            <h2 id="problem-title">Raw DOM and screenshots both leave browser automation half blind.</h2>
+          </div>
+          <p>
+            The product is strongest when framed as the layer between those two extremes: enough structure to guide action, enough evidence to explain what happened after.
+          </p>
+        </div>
+        <div class="compare">
+          <article class="panel">
+            <em>Raw DOM only</em>
+            <h3>Detailed but noisy</h3>
+            <p>The page exposes everything, but the agent still has to guess which parts matter now.</p>
+            <ul>
+              <li>Weak ranking of likely targets in repeated layouts</li>
+              <li>Fragile against style and class churn</li>
+              <li>Little help deciding when the page is truly ready</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <em>Screenshots only</em>
+            <h3>Readable but opaque</h3>
+            <p>The run looks plausible to a human, but structure and queryable state disappear.</p>
+            <ul>
+              <li>No direct semantic query surface</li>
+              <li>Weak for deterministic assertions</li>
+              <li>Hard to distinguish cosmetic change from structural drift</li>
+            </ul>
+          </article>
+          <article class="panel good">
+            <em>Overlay runtime</em>
+            <h3>Readable and queryable</h3>
+            <p>Structure becomes shared language for planning, waiting, debugging, and handoff.</p>
+            <ul>
+              <li>Action planning grounded in semantics</li>
+              <li>Ready state exposed before and after interaction</li>
+              <li>Artifacts that explain failures instead of only recording them</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="run-loop" class="band" aria-labelledby="run-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">Run loop</span>
+            <h2 id="run-title">The loop is simple: inspect, wait, act, explain.</h2>
+          </div>
+          <p>
+            The product gets real when it fits inside an existing Playwright workflow. No one needs another dashboard if it does not improve the run itself.
+          </p>
+        </div>
+        <div class="run-layout">
+          <div class="panel run-copy">
+            <ol class="steps">
+              <li>
+                <div class="step-num">01</div>
+                <div>
+                  <h3>Open a real target or a deterministic fixture</h3>
+                  <p>Use the same runtime for development fixtures, CI smoke flows, and brittle production surfaces.</p>
+                </div>
+              </li>
+              <li>
+                <div class="step-num">02</div>
+                <div>
+                  <h3>Connect the semantic layer</h3>
+                  <p>Expose landmarks, headings, repeated groups, interactive targets, and diagnostics before the next action is chosen.</p>
+                </div>
+              </li>
+              <li>
+                <div class="step-num">03</div>
+                <div>
+                  <h3>Wait on rendered and idle state</h3>
+                  <p>Replace selector sleeps and screenshot polling with a state model that actually describes the page.</p>
+                </div>
+              </li>
+              <li>
+                <div class="step-num">04</div>
+                <div>
+                  <h3>Keep the evidence bundle</h3>
+                  <p>When a run fails, the page already produced the diagnostics, visuals, and summaries needed for review.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+          <figure class="shot">
+            <img
+              src="./github-overlay-default.png"
+              alt="Browser page with overlay landmarks, headings, and structural markers visible over the content"
+            >
+            <figcaption>
+              The overlay is a visible surface, but the product thesis is the runtime contract behind it.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="contract" class="band alt" aria-labelledby="contract-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">Contract</span>
+            <h2 id="contract-title">A small runtime contract is the right product boundary.</h2>
+          </div>
+          <p>
+            The visual overlay helps people. The durable asset is a compact execution surface that agents and test code can trust without reading the whole DOM tree by hand.
+          </p>
+        </div>
+        <div class="contract-grid">
+          <div class="panel">
+            <div class="contract-intro">
+              <p>
+                The contract should stay tight: state, findings, ready signals, export paths, and teardown. That is enough to guide action and defend failure review.
+              </p>
+            </div>
+            <ul class="contract-list">
+              <li><strong>State:</strong> read active lenses, mode, and session context.</li>
+              <li><strong>Diagnostics:</strong> counts, findings, summaries, and actionable rollups that can travel into reports.</li>
+              <li><strong>Ready signal:</strong> wait for rendered or idle state instead of sleeping and hoping the page settled down.</li>
+              <li><strong>Evidence export:</strong> keep one artifact bundle with report data and viewport proof.</li>
+            </ul>
+          </div>
+          <pre class="code-block" aria-label="Example runtime contract">
+getState()
+getDiagnostics()
+getFindings("interactive")
+waitForIdle()
+buildReport("json")
+downloadAuditBundle()
+teardown()</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="proof" class="band" aria-labelledby="proof-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <span class="section-tag">Proof</span>
+            <h2 id="proof-title">The product should make review shorter, not just more visual.</h2>
+          </div>
+          <p>
+            The value compounds when the same runtime supports planning before the click and explanation after the run. That is where the evidence bundle and accessibility overlays meet.
+          </p>
+        </div>
+        <div class="proof-grid">
+          <figure class="panel">
+            <img
+              src="./github-overlay-focus.png"
+              alt="Browser page with focus order markers and structural labels shown by the overlay runtime"
+            >
+            <div class="proof-copy">
+              <h3>Proof for the person reviewing the run</h3>
+              <p>The visible layer makes structure and focus drift legible without replaying the entire failure ritual.</p>
+            </div>
+          </figure>
+          <div class="definition">
+            <article class="panel">
+              <h3>What it is</h3>
+              <p>An execution layer for browser automation with semantic inspection, stable waiting, and exportable evidence.</p>
+              <ul>
+                <li>Runtime context for Playwright and agents</li>
+                <li>Built-in accessibility diagnostics</li>
+                <li>Artifacts ready for handoff and review</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>What it is not</h3>
+              <p>Not a generic AI shell, not a screenshot annotator alone, and not a replacement for deterministic tests.</p>
+              <ul>
+                <li>Does not replace product-specific assertions</li>
+                <li>Does not turn flaky flows into magic</li>
+                <li>Does not need a heavy control plane to justify itself</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta" aria-labelledby="cta-title">
+      <div class="wrap">
+        <div class="cta-band">
+          <div>
+            <h2 id="cta-title">Ship browser runs that can explain themselves.</h2>
+            <p>
+              Start with the automation team, keep the runtime contract small, and let accessibility proof land as built-in leverage instead of an afterthought.
+            </p>
+          </div>
+          <a class="cta-link" href="#top">Back to top</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      Overlay Runtime for Browser Agents. Execution context, ready state, and evidence bundles for browser automation.
+    </div>
+  </footer>
+</body>
+</html>

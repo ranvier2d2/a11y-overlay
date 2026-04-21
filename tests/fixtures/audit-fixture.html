@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>a11y-overlay audit fixture</title>
+  <style>
+    body {
+      margin: 0;
+      font: 16px/1.45 system-ui, sans-serif;
+      background: #f4f4f5;
+      color: #18181b;
+    }
+    header, nav, main, footer {
+      display: block;
+      padding: 16px 24px;
+    }
+    header, nav, footer {
+      background: white;
+      border-bottom: 1px solid #d4d4d8;
+    }
+    main {
+      display: grid;
+      gap: 20px;
+      max-width: 880px;
+      margin: 0 auto;
+      padding-top: 24px;
+      padding-bottom: 80px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #d4d4d8;
+      padding: 12px;
+    }
+    .missing-alt,
+    .suspicious-empty-alt {
+      display: block;
+      background: #d4d4d8;
+      object-fit: cover;
+    }
+    .missing-alt {
+      width: 240px;
+      height: 140px;
+    }
+    .suspicious-empty-alt {
+      width: 220px;
+      height: 160px;
+    }
+    .tiny-button {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 1px solid #27272a;
+      background: #18181b;
+      color: white;
+    }
+    .form-stack {
+      display: grid;
+      gap: 12px;
+      max-width: 360px;
+    }
+    label {
+      display: grid;
+      gap: 4px;
+    }
+    input {
+      padding: 8px 10px;
+      border: 1px solid #71717a;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Audit fixture header</p>
+  </header>
+  <nav>
+    <a href="#content">Skip to content</a>
+  </nav>
+  <main id="content">
+    <section>
+      <h1>Fixture heading</h1>
+      <h3>Intentional heading jump</h3>
+      <p>This page exists to trigger stable overlay findings.</p>
+      <div style="display:flex; gap:2px; align-items:center;">
+        <button class="tiny-button" aria-label="Open">+</button>
+        <button class="tiny-button" aria-label="Add">+</button>
+      </div>
+    </section>
+
+    <section class="cards">
+      <article class="card">
+        <img
+          class="missing-alt"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='140'%3E%3Crect width='240' height='140' fill='%2394a3b8'/%3E%3C/svg%3E">
+        <p>Missing alt image</p>
+      </article>
+      <article class="card">
+        <img
+          class="suspicious-empty-alt"
+          alt=""
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='160'%3E%3Crect width='220' height='160' fill='%23cbd5e1'/%3E%3C/svg%3E">
+      </article>
+      <article class="card">
+        <img
+          alt="Decorative divider"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='160'%3E%3Crect width='220' height='160' fill='%23e4e4e7'/%3E%3C/svg%3E">
+        <p>Present alt image</p>
+      </article>
+    </section>
+
+    <section class="form-stack">
+      <label for="email">
+        Email
+        <input id="email" type="email" value="reader@example.com">
+      </label>
+      <input type="text" placeholder="Nickname">
+      <input type="text">
+    </section>
+  </main>
+  <footer>
+    <p>Audit fixture footer</p>
+  </footer>
+  <script src="../../a11y-overlay.js"></script>
+</body>
+</html>
