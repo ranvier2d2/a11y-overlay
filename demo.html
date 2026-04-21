@@ -1,59 +1,757 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>a11y-overlay — live demo</title>
-<style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #0c0a09; font-family: ui-monospace, Menlo, monospace; color: #e7e5e4; }
-  .bar {
-    padding: 8px 14px;
-    background: #151210;
-    border-bottom: 1px solid #292524;
-    font-size: 11px;
-    color: #a8a29e;
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .bar strong { color: #a3e635; letter-spacing: 0.1em; }
-  .bar kbd {
-    background: #0c0a09;
-    border: 1px solid #44403c;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 10px;
-    color: #e7e5e4;
-  }
-  .bar a { color: #22d3ee; text-decoration: none; margin-left: auto; }
-  iframe { width: 100%; height: calc(100% - 36px); border: 0; display: block; background: white; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overlay Runtime Demo</title>
+  <meta
+    name="description"
+    content="Guided demo for the overlay runtime. Inject the runtime, apply the agent preset, inspect the contract, and generate reports against a deterministic product surface."
+  >
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c120f;
+      --bg-soft: #131b17;
+      --bg-strong: #18231d;
+      --line: rgba(232, 244, 238, 0.14);
+      --line-strong: rgba(232, 244, 238, 0.26);
+      --text: #edf5f1;
+      --muted: #b6c8c0;
+      --soft: #8ea39a;
+      --lime: #b6eb5f;
+      --cyan: #6ce7d8;
+      --amber: #f0bf5d;
+      --danger: #ff8d74;
+      --max: 1260px;
+      --gutter: clamp(24px, 5vw, 80px);
+      --radius: 8px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    code,
+    pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #101513;
+      transform: translateY(-160%);
+      transition: transform 0.2s ease;
+      z-index: 40;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    .wrap {
+      width: min(var(--max), calc(100vw - (var(--gutter) * 2)));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      border-bottom: 1px solid rgba(232, 244, 238, 0.08);
+      background: rgba(12, 18, 15, 0.88);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .topbar .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, var(--lime), var(--cyan));
+      box-shadow: 0 0 0 5px rgba(182, 235, 95, 0.12);
+    }
+
+    .nav {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+    }
+
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 6px 0;
+    }
+
+    .nav a:hover,
+    .nav a:focus-visible,
+    .button:hover,
+    .button:focus-visible,
+    .install-link:hover,
+    .install-link:focus-visible {
+      color: var(--text);
+    }
+
+    .nav a:focus-visible,
+    .button:focus-visible,
+    .install-link:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 4px;
+    }
+
+    main {
+      padding: 34px 0 80px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 24px;
+    }
+
+    .hero-copy {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg-soft);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--lime);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--lime);
+      box-shadow: 0 0 0 8px rgba(182, 235, 95, 0.12);
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      line-height: 0.98;
+      max-width: 12ch;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    .hero-copy p,
+    .card p,
+    .install-card p,
+    li {
+      font-size: 1rem;
+      color: var(--muted);
+    }
+
+    .hero-copy p {
+      max-width: 56ch;
+    }
+
+    .status-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(108, 231, 216, 0.06), rgba(182, 235, 95, 0.05));
+      padding: 24px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--soft);
+      text-transform: uppercase;
+    }
+
+    .status-pill.loading {
+      color: var(--amber);
+      border-color: rgba(240, 191, 93, 0.4);
+    }
+
+    .status-pill.ready {
+      color: var(--lime);
+      border-color: rgba(182, 235, 95, 0.4);
+    }
+
+    .status-pill.error {
+      color: var(--danger);
+      border-color: rgba(255, 141, 116, 0.4);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      background: var(--lime);
+      border-color: var(--lime);
+      color: #11200d;
+    }
+
+    .button-secondary {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: var(--line-strong);
+    }
+
+    .button-ghost {
+      border-color: var(--line);
+    }
+
+    .button[disabled] {
+      opacity: 0.45;
+      cursor: default;
+      transform: none;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.95fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .frame-card,
+    .card,
+    .install-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg-soft);
+      overflow: hidden;
+    }
+
+    .frame-head,
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .frame-head span,
+    .card-head span,
+    .card-head h2 {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0;
+    }
+
+    .frame-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .demo-frame {
+      width: 100%;
+      height: min(72vh, 760px);
+      border: 0;
+      display: block;
+      background: #ffffff;
+    }
+
+    .card-body,
+    .install-body {
+      padding: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-grid,
+    .counts-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .summary-item,
+    .count {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .summary-item strong,
+    .count strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.82rem;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .summary-item span,
+    .count span {
+      color: var(--text);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .list,
+    .actions-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li,
+    .actions-list li {
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .list li:first-child,
+    .actions-list li:first-child {
+      padding-top: 0;
+      border-top: none;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      color: var(--soft);
+      font-size: 0.84rem;
+    }
+
+    .chip.active {
+      color: var(--cyan);
+      border-color: rgba(108, 231, 216, 0.45);
+    }
+
+    .chip.fix-now {
+      color: var(--danger);
+      border-color: rgba(255, 141, 116, 0.45);
+    }
+
+    .chip.fix-next {
+      color: var(--amber);
+      border-color: rgba(240, 191, 93, 0.45);
+    }
+
+    .chip.review {
+      color: var(--cyan);
+      border-color: rgba(108, 231, 216, 0.45);
+    }
+
+    .contract-code,
+    .report-output {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #0b100d;
+      padding: 14px;
+      color: #d7f9ef;
+      overflow-x: auto;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .muted-note {
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .inline-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .install-card {
+      margin-top: 20px;
+    }
+
+    .install-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .install-step {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .install-step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .install-step code {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--cyan);
+    }
+
+    .install-link {
+      color: var(--lime);
+      font-weight: 700;
+    }
+
+    @media (max-width: 1040px) {
+      .hero,
+      .layout,
+      .install-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .topbar .wrap {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      .summary-grid,
+      .counts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .demo-frame {
+        height: 58vh;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="bar">
-  <strong>A11Y OVERLAY · DEMO</strong>
-  <span>click inside the page, then press <kbd>L</kbd> <kbd>H</kbd> <kbd>I</kbd> <kbd>A</kbd> <kbd>R</kbd> <kbd>F</kbd> <kbd>D</kbd> <kbd>G</kbd> <kbd>?</kbd> <kbd>X</kbd></span>
-  <span>or use the floating toolbar (top-right of the page)</span>
-  <a href="index.html">← landing</a>
-</div>
-<iframe id="f" src="reference.html"></iframe>
-<script>
-  const f = document.getElementById('f');
-  f.addEventListener('load', () => {
-    try {
-      const doc = f.contentDocument;
-      const s = doc.createElement('script');
-      s.src = 'a11y-overlay.js';
-      doc.body.appendChild(s);
-    } catch (e) {
-      console.error('Could not inject overlay (cross-origin iframe).', e);
-    }
-  });
-  // forward key events from the parent (outer toolbar area) to the iframe
-  document.addEventListener('keydown', (e) => {
-    if (!f.contentWindow) return;
-    f.contentWindow.postMessage({ __a11yov: true, key: e.key }, '*');
-  });
-</script>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="landing.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Overlay Runtime Demo</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="landing.html">Back to landing</a>
+        <a href="#summary">Summary</a>
+        <a href="#contract">Contract</a>
+        <a href="#install">Load extension</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <div class="wrap">
+      <section class="hero" aria-labelledby="demo-title">
+        <div class="hero-copy">
+          <div class="eyebrow">Guided proof surface</div>
+          <h1 id="demo-title">Inspect, wait, act, explain.</h1>
+          <p>
+            This demo injects the real overlay runtime into a deterministic product surface, applies the agent preset,
+            reads the current automation contract, and generates report outputs without adding any framework or backend.
+          </p>
+          <div class="hero-actions">
+            <button id="injectButton" class="button button-primary" type="button">Inject overlay</button>
+            <button id="presetButton" class="button button-secondary" type="button">Apply agent preset</button>
+            <button id="refreshButton" class="button button-secondary" type="button">Refresh summary</button>
+          </div>
+        </div>
+        <aside class="status-card" aria-labelledby="statusTitle" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span id="statusPill" class="status-pill loading">Loading</span>
+            <strong id="statusTitle">Waiting for iframe load</strong>
+          </div>
+          <p id="statusMessage" class="muted-note">
+            The demo stays same-origin so it can inject the shipped runtime and inspect its public API directly.
+          </p>
+          <div class="hero-actions">
+            <button id="jsonButton" class="button button-secondary" type="button">Build JSON report</button>
+            <button id="htmlButton" class="button button-secondary" type="button">Build HTML report</button>
+            <button id="bundleButton" class="button button-ghost" type="button" hidden>Download audit bundle</button>
+          </div>
+        </aside>
+      </section>
+
+      <section class="layout" aria-label="Live demo layout">
+        <div class="frame-card">
+          <div class="frame-head">
+            <span>Deterministic target</span>
+            <div class="frame-note">`reference.html` loaded same-origin</div>
+          </div>
+          <iframe
+            id="demoFrame"
+            class="demo-frame"
+            src="reference.html"
+            title="Overlay runtime reference application"
+          ></iframe>
+        </div>
+
+        <div class="stack">
+          <section id="summary" class="card" aria-labelledby="summary-title">
+            <div class="card-head">
+              <h2 id="summary-title">Runtime summary</h2>
+            </div>
+            <div class="card-body">
+              <div class="summary-grid" aria-label="Runtime state summary">
+                <div class="summary-item">
+                  <strong>Status</strong>
+                  <span id="summaryStatus">Loading</span>
+                </div>
+                <div class="summary-item">
+                  <strong>Preset</strong>
+                  <span id="summaryPreset">None</span>
+                </div>
+                <div class="summary-item">
+                  <strong>Layer mode</strong>
+                  <span id="summaryMode">Unknown</span>
+                </div>
+                <div class="summary-item">
+                  <strong>Touch profile</strong>
+                  <span id="summaryTouch">Unknown</span>
+                </div>
+              </div>
+
+              <h3>Active slices</h3>
+              <div id="activeSlices" class="chip-row" aria-live="polite"></div>
+
+              <h3>Finding counts</h3>
+              <div class="counts-grid" aria-label="Finding counts">
+                <div class="count">
+                  <strong>Total findings</strong>
+                  <span id="countTotal">0</span>
+                </div>
+                <div class="count">
+                  <strong>Standard findings</strong>
+                  <span id="countStandard">0</span>
+                </div>
+                <div class="count">
+                  <strong>Heuristic findings</strong>
+                  <span id="countHeuristic">0</span>
+                </div>
+                <div class="count">
+                  <strong>Action items</strong>
+                  <span id="countActions">0</span>
+                </div>
+              </div>
+
+              <h3>Action buckets</h3>
+              <div id="actionBuckets" class="chip-row"></div>
+
+              <h3>Top actions</h3>
+              <ul id="topActions" class="actions-list"></ul>
+            </div>
+          </section>
+
+          <section id="contract" class="card" aria-labelledby="contract-title">
+            <div class="card-head">
+              <h2 id="contract-title">Automation contract</h2>
+            </div>
+            <div class="card-body">
+              <p class="muted-note">
+                The demo reads the current versioned contract from <code>getAutomationContract()</code> and surfaces the methods it actually exposes.
+              </p>
+              <pre id="contractOutput" class="contract-code">Waiting for runtime contract…</pre>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="report-title">
+            <div class="card-head">
+              <h2 id="report-title">Report output</h2>
+            </div>
+            <div class="card-body">
+              <div class="inline-links">
+                <a id="htmlPreviewLink" class="install-link" href="#" target="_blank" rel="noopener" hidden>Open HTML preview</a>
+                <span id="bundleHint" class="muted-note">Bundle export appears only when extension capture is available.</span>
+              </div>
+              <pre id="reportOutput" class="report-output">No report generated yet.</pre>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="install" class="install-card" aria-labelledby="install-title">
+        <div class="card-head">
+          <h2 id="install-title">Load extension locally</h2>
+        </div>
+        <div class="install-body">
+          <p>
+            The static demo proves the runtime contract without extension privileges. If you want PNG copy/save flows or capture-backed audit bundles, load the extension locally and enable file URL access when needed.
+          </p>
+          <div class="install-grid">
+            <div class="install-step">
+              <strong>1. Start a local preview</strong>
+              <div>Use a local HTTP server for the most reliable same-origin demo path.</div>
+              <code>python3 -m http.server 8765</code>
+            </div>
+            <div class="install-step">
+              <strong>2. Load the unpacked extension</strong>
+              <div>Open <code>chrome://extensions</code>, enable Developer mode, then choose this repo root with <em>Load unpacked</em>.</div>
+            </div>
+            <div class="install-step">
+              <strong>3. Allow local files if needed</strong>
+              <div>When opening <code>file:///…</code> pages directly, turn on <em>Allow access to file URLs</em> for the extension.</div>
+            </div>
+            <div class="install-step">
+              <strong>4. Return here for proof</strong>
+              <div>Once extension runtime is available, bundle export becomes active in this demo.</div>
+            </div>
+          </div>
+          <div class="inline-links" style="margin-top: 18px;">
+            <a class="install-link" href="landing.html">Back to landing</a>
+            <a class="install-link" href="privacy.html">Privacy policy</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="demo.js"></script>
 </body>
 </html>

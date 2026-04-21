@@ -5,6 +5,8 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -14,6 +16,8 @@ DIST = ROOT / "dist"
 BUILD = DIST / "build"
 EXTENSION_FILES = [
     "a11y-overlay.js",
+    "export.html",
+    "export.js",
     "manifest.json",
     "service-worker.js",
 ]
@@ -26,6 +30,7 @@ ICON_FILES = [
 
 
 def load_manifest() -> dict:
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "build_overlay.py")], check=True)
     return json.loads((ROOT / "manifest.json").read_text())
 
 

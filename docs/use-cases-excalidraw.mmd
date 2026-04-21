@@ -1,0 +1,60 @@
+flowchart LR
+  N1["Overlay Runtime Use Cases"]
+  subgraph SG_FINDINGS["Capability Findings"]
+    N2["Capability Findings"]
+    N3["Buyer-Led Surface"]
+    N4["Primary buyer: automation and platform teams running Playwright or browser agents."]
+    N5["Adjacent users: frontend engineers and accessibility reviewers who consume the same evidence."]
+    N6["Core jobs: read structure before acting, wait on stable rendered state, and keep the failure package after a broken run."]
+    N7["Site Story Flow"]
+    N8["The landing page explains what the runtime is, who it is for, and why DOM-only or screenshot-only tooling is insufficient."]
+    N9["The primary CTA sends the user to the guided demo."]
+    N10["The secondary CTA sends the user to the local extension install path."]
+    N11["Guided Demo Flow"]
+    N12["Open demo.html."]
+    N13["Load reference.html in a same-origin iframe."]
+    N14["Inject a11y-overlay.js."]
+    N15["Core Product Use Cases"]
+    N16["Pre-action context for browser agents before click or input."]
+    N17["Readiness gating before a step executes."]
+    N18["Failure diagnostics after a flaky or blocked run."]
+    N23["Evidence export"]
+    N24["Local evaluation"]
+    N19["Product Boundary"]
+    N20["Not a generic overlay UI."]
+    N21["Semantic execution runtime for browser automation."]
+    N22["Queryable diagnostics and durable post-run evidence."]
+  end
+  N1 --> N2
+  N2 --> N3
+  N3 --> N4
+  N3 --> N5
+  N3 --> N6
+  N2 --> N7
+  N7 --> N8
+  N7 --> N9
+  N7 --> N10
+  N2 --> N11
+  N11 --> N12
+  N11 --> N13
+  N11 --> N14
+  N2 --> N15
+  N15 --> N16
+  N15 --> N17
+  N15 --> N18
+  N15 --> N23
+  N15 --> N24
+  N2 --> N19
+  N19 --> N20
+  N19 --> N21
+  N19 --> N22
+
+  classDef source fill:#E8F0FF,stroke:#3159B8,stroke-width:1.5px,color:#132B63;
+  classDef finding fill:#EAF8EE,stroke:#2E7D32,stroke-width:1.5px,color:#17351D;
+  classDef decision fill:#FFF4E5,stroke:#B76E00,stroke-width:1.5px,color:#5A3A00;
+  classDef action fill:#F1EDFF,stroke:#5B4BC4,stroke-width:1.5px,color:#2B245E;
+  classDef risk fill:#FDECEC,stroke:#C62828,stroke-width:1.5px,color:#6D1B1B;
+  classDef neutral fill:#F3F4F6,stroke:#6B7280,stroke-width:1.5px,color:#1F2937;
+  class N2,N3,N4,N5,N6,N7,N8,N9,N10,N11,N12,N13,N14,N15,N16,N17,N19,N20,N21,N22,N23,N24 finding;
+  class N18 risk;
+  class N1 neutral;
