@@ -35,7 +35,63 @@
   <div id="__bundler_loading">Unpacking...</div>
 
   <script>
-    
+  const PROMO_STAGE_WIDTH = 1920;
+  const PROMO_STAGE_HEIGHT = 1080;
+
+  function installResponsivePromoScale() {
+    const root = document.getElementById('root');
+    if (!root) return false;
+    const stage = root.firstElementChild;
+    if (!stage) return false;
+
+    const viewportWidth = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0);
+    const viewportHeight = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0);
+    if (!viewportWidth || !viewportHeight) return false;
+
+    const scale = Math.min(1, viewportWidth / PROMO_STAGE_WIDTH, viewportHeight / PROMO_STAGE_HEIGHT);
+    root.style.width = `${Math.round(PROMO_STAGE_WIDTH * scale)}px`;
+    root.style.height = `${Math.round(PROMO_STAGE_HEIGHT * scale)}px`;
+    root.style.position = 'relative';
+    root.style.overflow = 'hidden';
+    root.style.flex = '0 0 auto';
+
+    stage.style.width = `${PROMO_STAGE_WIDTH}px`;
+    stage.style.height = `${PROMO_STAGE_HEIGHT}px`;
+    stage.style.transform = `scale(${scale})`;
+    stage.style.transformOrigin = 'top left';
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.margin = '0';
+    document.body.style.overflow = 'hidden';
+    document.body.style.background = '#0c0a09';
+    document.body.style.minHeight = '100vh';
+    document.body.style.display = 'grid';
+    document.body.style.placeItems = 'center';
+    return true;
+  }
+
+  function bindResponsivePromoScale() {
+    let raf = 0;
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        installResponsivePromoScale();
+      });
+    };
+
+    const root = document.getElementById('root');
+    if (root) {
+      const observer = new MutationObserver(schedule);
+      observer.observe(root, { childList: true });
+    }
+
+    window.addEventListener('resize', schedule, { passive: true });
+    schedule();
+    setTimeout(schedule, 120);
+    setTimeout(schedule, 500);
+  }
+
 document.addEventListener('DOMContentLoaded', async function() {
   const loading = document.getElementById('__bundler_loading');
   function setStatus(msg) { if (loading) loading.textContent = msg; }
@@ -158,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       old.replaceWith(s);
       if (p) await p;
     }
+    bindResponsivePromoScale();
     // Babel standalone auto-transforms type=text/babel on DOMContentLoaded,
     // which fired before we swapped the document. Trigger manually if present.
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
