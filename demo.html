@@ -344,12 +344,14 @@
     }
 
     .frame-head span,
-    .card-head span {
+    .card-head span,
+    .card-head h2 {
       font-size: 0.84rem;
       font-weight: 700;
       color: var(--soft);
       text-transform: uppercase;
       letter-spacing: 0.06em;
+      margin: 0;
     }
 
     .frame-note {
@@ -601,7 +603,7 @@
             <button id="refreshButton" class="button button-secondary" type="button">Refresh summary</button>
           </div>
         </div>
-        <aside class="status-card" aria-labelledby="statusTitle">
+        <aside class="status-card" aria-labelledby="statusTitle" aria-live="polite" aria-atomic="true">
           <div class="status-row">
             <span id="statusPill" class="status-pill loading">Loading</span>
             <strong id="statusTitle">Waiting for iframe load</strong>
@@ -634,7 +636,7 @@
         <div class="stack">
           <section id="summary" class="card" aria-labelledby="summary-title">
             <div class="card-head">
-              <span id="summary-title">Runtime summary</span>
+              <h2 id="summary-title">Runtime summary</h2>
             </div>
             <div class="card-body">
               <div class="summary-grid" aria-label="Runtime state summary">
@@ -689,7 +691,7 @@
 
           <section id="contract" class="card" aria-labelledby="contract-title">
             <div class="card-head">
-              <span id="contract-title">Automation contract</span>
+              <h2 id="contract-title">Automation contract</h2>
             </div>
             <div class="card-body">
               <p class="muted-note">
@@ -701,7 +703,7 @@
 
           <section class="card" aria-labelledby="report-title">
             <div class="card-head">
-              <span id="report-title">Report output</span>
+              <h2 id="report-title">Report output</h2>
             </div>
             <div class="card-body">
               <div class="inline-links">
@@ -716,7 +718,7 @@
 
       <section id="install" class="install-card" aria-labelledby="install-title">
         <div class="card-head">
-          <span id="install-title">Load extension locally</span>
+          <h2 id="install-title">Load extension locally</h2>
         </div>
         <div class="install-body">
           <p>
