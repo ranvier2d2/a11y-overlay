@@ -61,6 +61,10 @@
     return false;
   }
 
+  function overlayTextEntryActive() {
+    return !!annotations.editingNoteId || isEditableNode(getDeepActiveElement(shadow));
+  }
+
   function isInteractivePageTarget(node) {
     if (!node || typeof node.closest !== 'function') return false;
     return !!node.closest(
@@ -70,7 +74,7 @@
 
   function handleHotkey(e) {
     // don't hijack typing
-    if (isEditableEventTarget(e)) return;
+    if (overlayTextEntryActive() || isEditableEventTarget(e)) return;
     // don't fire on modified combos (Cmd+R, Ctrl+F, etc.)
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if ((e.key === 'Delete' || e.key === 'Backspace') && annotations.selected) {
@@ -100,6 +104,12 @@
   }
 
   let hotkeyTarget = null;
+  function syncEditingNoteSoon() {
+    requestAnimationFrame(() => {
+      syncEditingNoteFromFocus();
+    });
+  }
+
   function handleWindowPointerDown(e) {
     if (annotations.mode !== 'idle') return;
     if (!annotations.selected && !inspector.selection) return;
@@ -117,6 +127,8 @@
     hotkeyTarget = window;
     hotkeyTarget.addEventListener('keydown', handleHotkey, true);
     hotkeyTarget.addEventListener('pointerdown', handleWindowPointerDown, true);
+    shadow.addEventListener('focusin', syncEditingNoteFromFocus, true);
+    shadow.addEventListener('focusout', syncEditingNoteSoon, true);
   }
 
   const allowedMessageSource = window.parent && window.parent !== window ? window.parent : null;
@@ -142,6 +154,8 @@
       hotkeyTarget.removeEventListener('pointerdown', handleWindowPointerDown, true);
       hotkeyTarget = null;
     }
+    shadow.removeEventListener('focusin', syncEditingNoteFromFocus, true);
+    shadow.removeEventListener('focusout', syncEditingNoteSoon, true);
     window.removeEventListener('message', onMessage);
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     if (exportNoticeTimer) { clearTimeout(exportNoticeTimer); exportNoticeTimer = 0; }

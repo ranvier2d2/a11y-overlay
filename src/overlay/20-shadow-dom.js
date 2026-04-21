@@ -429,14 +429,15 @@
         border-color: ${COLOR.annotateSelected};
       }
       .note-body {
-        padding: 8px;
+        padding: 0;
       }
       .note-body textarea {
         display: block;
         width: 100%;
         min-height: 96px;
         border: 0;
-        padding: 0;
+        box-sizing: border-box;
+        padding: 8px;
         margin: 0;
         background: transparent;
         color: inherit;
@@ -499,4 +500,3 @@
   const annotationHtml = shadow.getElementById('annotation-html');
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
-
