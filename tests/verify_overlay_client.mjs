@@ -183,7 +183,7 @@ async function verifyFailurePackageWrite() {
     assert.equal(manifest.files.contract, 'contract.json');
     assert.equal(manifest.files.htmlReport, 'report.html');
     assert.equal(manifest.files.auditBundle, 'audit-bundle.html');
-    assert.equal(manifest.files.screenshot, 'viewport.png');
+    assert.equal(manifest.files.screenshot, 'fullpage.png');
 
     const report = JSON.parse(await readFile(result.reportPath, 'utf8'));
     assert.equal(report.audit.scope, 'all');

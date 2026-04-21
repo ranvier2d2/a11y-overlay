@@ -281,7 +281,8 @@ export class OverlayClient {
 
     const screenshotType = options.screenshotType === 'jpeg' ? 'jpeg' : 'png';
     const screenshotExtension = screenshotType === 'jpeg' ? 'jpg' : 'png';
-    const screenshotPath = path.join(dir, `viewport.${screenshotExtension}`);
+    const screenshotBaseName = options.fullPage === false ? 'viewport' : 'fullpage';
+    const screenshotPath = path.join(dir, `${screenshotBaseName}.${screenshotExtension}`);
 
     const failurePackage = await this.collectFailurePackage(target, {
       ...options,

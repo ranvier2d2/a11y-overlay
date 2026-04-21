@@ -54,6 +54,16 @@ type FocusContext = "page" | "overlay-text-entry" | "overlay-control";
 
 type OverlayState = {
   layerMode: LayerMode;
+  landmark: boolean;
+  heading: boolean;
+  interact: boolean;
+  form: boolean;
+  target: boolean;
+  alt: boolean;
+  repeat: boolean;
+  focus: boolean;
+  depth: boolean;
+  grid: boolean;
   placementMode: PlacementMode;
   selection: {
     kind: SelectionKind;
@@ -67,9 +77,11 @@ type OverlayState = {
   helpOpen: boolean;
   focusContext: FocusContext;
   touchProfile: TouchProfile;
-  enabledSlices: Record<string, boolean>;
 };
 ```
+
+Public snapshots, presets, and persisted sessions may serialize those slice flags
+as an `enabledSlices` object with the same keys.
 
 ## Main Axes of Behavior
 
@@ -206,30 +218,30 @@ This is better than a dead disabled click because it teaches the model without f
 ```ts
 {
   layerMode: "conformance",
+  landmark: true,
+  heading: true,
+  interact: false,
+  form: false,
+  target: false,
+  alt: true,
+  repeat: false,
+  focus: false,
+  depth: false,
+  grid: false,
   placementMode: "none",
   selection: { kind: "none", id: null },
   inspector: { open: false, findingId: null },
   exportWindowOpen: false,
-  helpOpen: false,
+  helpOpen: true,
   focusContext: "page",
-  touchProfile: "web-default",
-  enabledSlices: {
-    landmarks: false,
-    headings: false,
-    interactive: false,
-    altErrors: false,
-    repeats: false,
-    tabOrder: false,
-    depth: false,
-    grid: false
-  }
+  touchProfile: "web-default"
 }
 ```
 
 Notes:
 
-- startup should favor a quiet surface
-- no heuristic slices should auto-enable
+- startup should expose the low-noise content baseline: landmarks, headings, and image semantics
+- heuristic slices should remain off until `Review` or explicit heuristic-slice activation
 - advisory platform profiles should be off by default
 
 ## `A` Slice Decision
