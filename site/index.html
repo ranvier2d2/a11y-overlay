@@ -1028,7 +1028,7 @@
 
       <!-- Dogfood: use the tool on its own landing -->
       <div class="live-try" role="group" aria-label="Try the overlay on this page">
-        <button class="live-try-btn" id="try-it" type="button">
+        <button class="live-try-btn" id="try-it" type="button" aria-pressed="false">
           <span class="live-try-dot" aria-hidden="true"></span>
           Try it on <em>this</em> page
         </button>
@@ -1791,25 +1791,55 @@
   if (!btn) return;
 
   let scriptPromise = null;
+  const defaultLabel = btn.innerHTML;
+
+  function overlayApi() {
+    const api = window.__a11yOverlayInstalled;
+    return api && typeof api.teardown === 'function' ? api : null;
+  }
+
+  function setToggleState(isOn) {
+    btn.classList.toggle('is-on', isOn);
+    btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+  }
+
+  function syncToggleState() {
+    setToggleState(!!overlayApi());
+  }
+
   function loadOverlay() {
-    if (window.__a11yOverlayInstalled) return Promise.resolve();
+    const existing = overlayApi();
+    if (existing) return Promise.resolve(existing);
     if (scriptPromise) return scriptPromise;
     scriptPromise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = 'a11y-overlay.js';
-      s.onload = resolve;
-      s.onerror = reject;
+      s.onload = () => {
+        scriptPromise = null;
+        const api = overlayApi();
+        if (api) {
+          resolve(api);
+          return;
+        }
+        reject(new Error('Overlay script loaded but did not install'));
+      };
+      s.onerror = (err) => {
+        scriptPromise = null;
+        reject(err);
+      };
       document.body.appendChild(s);
     });
     return scriptPromise;
   }
 
-  // Opens the overlay help panel robustly — session-restore can race with
-  // our initial toggle, so we re-check after a beat and re-toggle if it closed.
-  async function openHelp() {
-    await loadOverlay();
-    const api = window.__a11yOverlayInstalled;
-    if (!api || typeof api.toggleHelp !== 'function') return;
+  // Session restore can briefly fight the first help toggle, so we retry
+  // until the overlay is visibly open.
+  async function enableOverlay() {
+    const api = await loadOverlay();
+    if (!api || typeof api.toggleHelp !== 'function') {
+      setToggleState(true);
+      return;
+    }
 
     const isOpen = () => !!(api.state && api.state.helpOpen);
 
@@ -1817,8 +1847,14 @@
     const budget = 8;
     return new Promise((resolve) => {
       const tick = () => {
-        if (isOpen()) { btn.classList.add('is-on'); return resolve(); }
-        if (attempts++ >= budget) return resolve();
+        if (isOpen()) {
+          setToggleState(true);
+          return resolve();
+        }
+        if (attempts++ >= budget) {
+          setToggleState(true);
+          return resolve();
+        }
         api.toggleHelp();
         requestAnimationFrame(() => setTimeout(tick, 160));
       };
@@ -1826,25 +1862,46 @@
     });
   }
 
+  function disableOverlay() {
+    const api = overlayApi();
+    if (api && typeof api.teardown === 'function') {
+      api.teardown();
+    }
+    setToggleState(false);
+  }
+
   btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    btn.disabled = true;
     try {
-      await openHelp();
+      if (overlayApi()) {
+        disableOverlay();
+      } else {
+        btn.innerHTML = defaultLabel;
+        await enableOverlay();
+      }
     } catch (e) {
       btn.textContent = 'Failed to load overlay';
       btn.disabled = true;
+      setToggleState(false);
+      return;
+    } finally {
+      if (btn.textContent !== 'Failed to load overlay') {
+        btn.disabled = false;
+      }
     }
   });
 
-  // Mirror overlay keypress states on the try button.
+  // Keep the button in sync when the overlay is closed from its own hotkeys.
   window.addEventListener('keydown', (ev) => {
-    if (!window.__a11yOverlayInstalled) return;
     const k = ev.key ? ev.key.toLowerCase() : '';
     if (k === 'x') {
-      btn.classList.remove('is-on');
-    } else if (['?', 'l', 'h', 'i', 'f', 't', 'r', 'd', 'g', 'm', 'a'].includes(k)) {
-      btn.classList.add('is-on');
+      requestAnimationFrame(syncToggleState);
     }
   });
+
+  window.setInterval(syncToggleState, 400);
+  syncToggleState();
 })();
 </script>
 
