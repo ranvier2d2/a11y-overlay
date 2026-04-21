@@ -35,6 +35,10 @@ Then open:
 
 - `toggle(key)`
 - `toggleHelp()`
+- `collectDetections()` — return structured landmark/heading/interactive/focus detections with document-space rects
+- `exportPng(target)` — extension mode only; `clipboard` opens the focused export window, `download` opens the save dialog
+- `setAnnotationMode(mode)` — `note`, `arrow`, or `idle`
+- `annotations` — live notes/arrows state for the current page session
 - `render()`
 - `teardown()`
 - `state`
@@ -72,7 +76,17 @@ This repo root is now also a Chrome/Chromium MV3 extension.
   - `Command+Shift+Y` on macOS
   - `Ctrl+Shift+Y` on Windows / Linux
 - After injection, click the page once if needed, then use the in-page keys:
-  - `L H I A R F D G ? X`
+  - `L H I A R F D G N W V C S ? X`
+- Annotation keys:
+  - `N` places one note
+  - `W` places one arrow with two clicks
+  - `V` or `Esc` exits placement and clears the current note/arrow selection
+  - `Delete` / `Backspace` removes the selected note or arrow
+  - Clicking non-interactive page space while idle also clears the current selection
+- Click any overlay label or badge to open the selection inspector for that element
+- In extension mode only:
+  - `C` opens a focused export window for clipboard PNG copy
+  - `S` opens a save dialog for the current viewport PNG
 - Press `X` on the page to tear the overlay down.
 
 If the browser shortcut does not fire, open `chrome://extensions/shortcuts` and assign it manually. Chrome may leave an extension shortcut inactive if it conflicts with another extension or a reserved browser / OS shortcut.
@@ -111,6 +125,8 @@ Chrome plus Firefox package:
 ```bash
 FIREFOX_EXTENSION_ID='a11y-overlay@yourdomain.com' python3 scripts/build_release.py --firefox
 ```
+
+The Firefox package is generated from the same source and keeps the same focused export-window flow for PNG copy.
 
 Outputs land in `dist/`.
 

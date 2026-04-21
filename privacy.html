@@ -81,7 +81,10 @@
   <p>
     The extension requests <code>activeTab</code> and <code>scripting</code> so it can inject
     <code>a11y-overlay.js</code> into the current tab when the user explicitly clicks the extension action or uses
-    the assigned shortcut.
+    the assigned shortcut. It also requests <code>clipboardWrite</code> so a focused extension export window can copy
+    locally generated PNG exports to the clipboard, <code>downloads</code> so it can save locally generated PNG exports
+    to disk when the user asks for that, and <code>storage</code> so the focused export window can load the most recent
+    export context without sending data to a server.
   </p>
 
   <h2>Third-party services</h2>

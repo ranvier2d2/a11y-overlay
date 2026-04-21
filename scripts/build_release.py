@@ -14,6 +14,8 @@ DIST = ROOT / "dist"
 BUILD = DIST / "build"
 EXTENSION_FILES = [
     "a11y-overlay.js",
+    "export.html",
+    "export.js",
     "manifest.json",
     "service-worker.js",
 ]

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>a11y-overlay export</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #111215;
+      --line: #27272a;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --cyan: #22d3ee;
+      --lime: #a3e635;
+      --rose: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .shell {
+      display: grid;
+      gap: 14px;
+    }
+
+    .topbar,
+    .preview,
+    .statusbar {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+    }
+
+    .topbar {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .eyebrow {
+      color: var(--cyan);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .subtle {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #18181b;
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover:enabled {
+      border-color: var(--cyan);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .primary {
+      border-color: var(--cyan);
+    }
+
+    .preview {
+      display: grid;
+      place-items: center;
+      min-height: 320px;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .preview img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      display: block;
+    }
+
+    .placeholder {
+      color: var(--muted);
+      text-align: center;
+      max-width: 32ch;
+    }
+
+    .statusbar {
+      display: grid;
+      gap: 8px;
+      padding: 12px 14px;
+    }
+
+    .status {
+      color: var(--muted);
+    }
+
+    .status.success { color: var(--lime); }
+    .status.error { color: var(--rose); }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="shell">
+      <section class="topbar">
+        <div class="eyebrow">a11y-overlay export · v0.1.13</div>
+        <h1>Copy the current viewport PNG</h1>
+        <p class="subtle">This focused window handles clipboard export directly.</p>
+        <div class="meta">
+          <span id="sourceLabel">Waiting for source page…</span>
+          <span id="filenameLabel">Preparing filename…</span>
+        </div>
+        <div class="actions">
+          <button id="copyButton" class="primary" disabled>Copy PNG</button>
+          <button id="saveButton" disabled>Save PNG</button>
+          <button id="refreshButton">Refresh Capture</button>
+          <button id="closeButton">Close</button>
+        </div>
+      </section>
+
+      <section class="preview">
+        <div id="placeholder" class="placeholder">Preparing the latest viewport capture…</div>
+        <img id="previewImage" alt="Captured viewport preview" hidden>
+      </section>
+
+      <section class="statusbar">
+        <div id="statusText" class="status">Waiting for the current viewport capture…</div>
+        <div class="hint">If copy is blocked here too, Save PNG remains the reliable fallback.</div>
+      </section>
+    </div>
+  </main>
+  <script src="export.js"></script>
+</body>
+</html>
