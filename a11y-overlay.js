@@ -644,6 +644,7 @@
   let exportNoticeTimer = 0;
   let sessionPersistTimer = 0;
   let sessionReady = false;
+  let sessionReadyWaiters = [];
   let annotationCounter = 0;
   let dragState = null;
   const inspector = {
@@ -1209,9 +1210,26 @@
     };
   }
 
+  function markSessionReady() {
+    if (sessionReady) return;
+    sessionReady = true;
+    const waiters = sessionReadyWaiters;
+    sessionReadyWaiters = [];
+    waiters.forEach((resolve) => resolve());
+  }
+
+  function waitForSessionReady() {
+    if (sessionReady) return Promise.resolve();
+    return new Promise((resolve) => {
+      sessionReadyWaiters.push(resolve);
+    });
+  }
+
   async function persistOverlaySessionNow() {
-    if (!sessionReady) return serializeOverlaySession();
     const snapshot = serializeOverlaySession();
+    if (!sessionReady) {
+      await waitForSessionReady();
+    }
     await writePersistedValue(pageStorageKey(), snapshot);
     return snapshot;
   }
@@ -1237,7 +1255,7 @@
     try {
       const stored = await readPersistedValue(pageStorageKey());
       if (!stored || stored.version !== SESSION_STORAGE_VERSION) {
-        sessionReady = true;
+        markSessionReady();
         return false;
       }
 
@@ -1294,10 +1312,10 @@
       }
 
       restoreInspectorSelection(stored.inspector);
-      sessionReady = true;
+      markSessionReady();
       return true;
     } catch (_error) {
-      sessionReady = true;
+      markSessionReady();
       return false;
     }
   }

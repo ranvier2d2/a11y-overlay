@@ -22,6 +22,7 @@
   let exportNoticeTimer = 0;
   let sessionPersistTimer = 0;
   let sessionReady = false;
+  let sessionReadyWaiters = [];
   let annotationCounter = 0;
   let dragState = null;
   const inspector = {

@@ -59,8 +59,7 @@ export class OverlayClient {
    * @returns {Promise<OverlayContract>}
    */
   async inject(target, options = {}) {
-    const force = !!options.force;
-    const installed = force ? false : await this.isInstalled(target);
+    const installed = await this.isInstalled(target);
 
     if (!installed) {
       const tagOptions = this._scriptTagOptions(options);

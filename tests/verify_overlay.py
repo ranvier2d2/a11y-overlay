@@ -225,6 +225,77 @@ def verify_extension_storage_restore_order(browser) -> None:
         context.close()
 
 
+def verify_save_session_waits_for_restore(browser) -> None:
+    fixture_url = (FIXTURES / "session-fixture.html").as_uri()
+    context = browser.new_context(viewport={"width": 1440, "height": 1100})
+    page = context.new_page()
+    page.add_init_script(
+        """
+        (() => {
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const storage = Object.create(null);
+          globalThis.__overlayTestStorage = storage;
+          globalThis.chrome = {
+            storage: {
+              local: {
+                async get(keys) {
+                  const key = Array.isArray(keys) ? keys[0] : keys;
+                  if (key === 'a11y-overlay-touch-profile') {
+                    await sleep(80);
+                    return {};
+                  }
+                  if (String(key).startsWith('a11y-overlay-session::')) {
+                    await sleep(80);
+                    return storage[key] ? { [key]: storage[key] } : {};
+                  }
+                  return {};
+                },
+                async set(values) {
+                  Object.assign(storage, values);
+                },
+                async remove(keys) {
+                  const list = Array.isArray(keys) ? keys : [keys];
+                  list.forEach((key) => {
+                    delete storage[key];
+                  });
+                }
+              }
+            }
+          };
+        })();
+        """
+    )
+
+    try:
+        page.goto(fixture_url, wait_until="load")
+        wait_for_overlay(page)
+        persisted = page.evaluate(
+            """
+            async () => {
+              const api = window.__a11yOverlayInstalled;
+              api.setLayerMode('review');
+              if (!api.state.repeat) api.toggle('repeat');
+              const snapshot = await api.saveSession();
+              const entries = Object.entries(globalThis.__overlayTestStorage || {})
+                .filter(([key]) => key.startsWith('a11y-overlay-session::'));
+              return {
+                snapshot,
+                stored: entries.length ? entries[0][1] : null
+              };
+            }
+            """
+        )
+    finally:
+        context.close()
+
+    if persisted["snapshot"]["layerMode"] != "review" or not persisted["snapshot"]["enabledSlices"]["repeat"]:
+        raise AssertionError("saveSession() did not capture the expected pre-restore snapshot")
+    if not persisted["stored"]:
+        raise AssertionError("saveSession() resolved before persisting the session snapshot")
+    if persisted["stored"]["layerMode"] != "review" or not persisted["stored"]["enabledSlices"]["repeat"]:
+        raise AssertionError("saveSession() did not persist the requested session state")
+
+
 def verify_presets(page) -> None:
     fixture_url = (FIXTURES / "session-fixture.html").as_uri()
     page.goto(fixture_url, wait_until="load")
@@ -319,6 +390,7 @@ def main() -> None:
             verify_audit_fixture(page)
             verify_session_fixture(page)
             verify_extension_storage_restore_order(browser)
+            verify_save_session_waits_for_restore(browser)
             verify_presets(page)
             verify_automation_contract(page)
             print("overlay verification passed")

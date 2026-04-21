@@ -154,6 +154,17 @@ async function verifyInjectAndDelegation() {
   assert.equal(report.audit.presetId, 'agent-capture');
 }
 
+async function verifyForceInjectIsIdempotent() {
+  const runtime = new FakeRuntime();
+  const target = new FakeTarget(runtime);
+  target.installed = true;
+  const client = new OverlayClient();
+
+  const contract = await client.inject(target, { force: true });
+  assert.equal(contract.contractVersion, 1);
+  assert.equal(target.scriptTags.length, 0);
+}
+
 async function verifyFailurePackageWrite() {
   const runtime = new FakeRuntime();
   runtime.applyPreset('agent-capture');
@@ -219,6 +230,7 @@ async function verifyUnavailableMethodError() {
 
 async function main() {
   await verifyInjectAndDelegation();
+  await verifyForceInjectIsIdempotent();
   await verifyFailurePackageWrite();
   await verifyUnavailableMethodError();
   console.log('overlay client verification passed');
