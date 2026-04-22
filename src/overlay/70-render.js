@@ -253,221 +253,246 @@
       return;
     }
 
-    toolbar.className = 'toolbar';
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
 
-    const title = document.createElement('span');
-    title.className = 'title';
-    title.textContent = 'a11y';
-    toolbar.appendChild(title);
+    const renderDesktopToolbarVariant = (variant) => {
+      const compact = variant !== 'full';
+      const tight = variant === 'tight';
+      toolbar.innerHTML = '';
+      toolbar.className = 'toolbar' + (compact ? ' compact' : '') + (tight ? ' tight' : '');
 
-    const modeSeg = document.createElement('div');
-    modeSeg.className = 'seg';
-    [
-      { key: 'conformance', label: 'Conf' },
-      { key: 'review', label: 'Review' }
-    ].forEach((mode) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'segbtn' + (state.layerMode === mode.key ? ' on' : '');
-      button.textContent = mode.label;
-      button.title = mode.key === 'conformance'
-        ? 'Conformance mode: standard and advisory slices'
-        : 'Review mode: enables heuristic slices';
-      button.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (applyLayerMode(mode.key)) {
-          render();
-        }
+      const title = document.createElement('span');
+      title.className = 'title';
+      title.textContent = 'a11y';
+      toolbar.appendChild(title);
+
+      const modeSeg = document.createElement('div');
+      modeSeg.className = 'seg';
+      [
+        { key: 'conformance', label: 'Conf' },
+        { key: 'review', label: 'Review' }
+      ].forEach((mode) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'segbtn' + (state.layerMode === mode.key ? ' on' : '');
+        button.textContent = mode.label;
+        button.title = mode.key === 'conformance'
+          ? 'Conformance mode: standard and advisory slices'
+          : 'Review mode: enables heuristic slices';
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (applyLayerMode(mode.key)) {
+            render();
+          }
+        });
+        modeSeg.appendChild(button);
       });
-      modeSeg.appendChild(button);
-    });
-    toolbar.appendChild(modeSeg);
+      toolbar.appendChild(modeSeg);
 
-    SLICES.forEach((slice) => {
-      const visibleActive = sliceVisible(slice.key);
-      const reviewOnly = slice.minLayer === 'review' && state.layerMode !== 'review';
-      const b = document.createElement('button');
-      b.className = 'tbtn' + (visibleActive ? ' on' : '') + (reviewOnly ? ' review-only' : '');
-      b.style.background = visibleActive ? slice.color : 'transparent';
-      b.style.borderColor = visibleActive ? slice.color : '';
-      b.innerHTML = `<span>${slice.label}</span><span class="kbd">${slice.kbd}</span>`;
-      b.title = reviewOnly
-        ? `${slice.label} is available in Review mode (${slice.kbd})`
-        : `Toggle ${slice.label} (${slice.kbd})`;
-      b.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (toggleSliceState(slice.key)) {
-          render();
-        }
+      SLICES.forEach((slice) => {
+        const visibleActive = sliceVisible(slice.key);
+        const reviewOnly = slice.minLayer === 'review' && state.layerMode !== 'review';
+        const b = document.createElement('button');
+        b.className = 'tbtn' + (visibleActive ? ' on' : '') + (reviewOnly ? ' review-only' : '');
+        b.style.background = visibleActive ? slice.color : 'transparent';
+        b.style.borderColor = visibleActive ? slice.color : '';
+        b.innerHTML = `<span>${slice.label}</span><span class="kbd">${slice.kbd}</span>`;
+        b.title = reviewOnly
+          ? `${slice.label} is available in Review mode (${slice.kbd})`
+          : `Toggle ${slice.label} (${slice.kbd})`;
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (toggleSliceState(slice.key)) {
+            render();
+          }
+        });
+        toolbar.appendChild(b);
       });
-      toolbar.appendChild(b);
-    });
 
-    const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
-    const help = document.createElement('button');
-    help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
-    help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
-    help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
-    help.innerHTML = `<span>?</span>`;
-    help.title = 'Toggle help';
-    help.addEventListener('click', (e) => { e.stopPropagation(); state.helpOpen = !state.helpOpen; render(); });
-    toolbar.appendChild(help);
-
-    const settings = document.createElement('button');
-    settings.className = 'tbtn' + (state.settingsOpen ? ' on' : '');
-    settings.style.background = state.settingsOpen ? '#22d3ee' : 'transparent';
-    settings.style.borderColor = state.settingsOpen ? '#22d3ee' : '';
-    settings.innerHTML = '<span>Cfg</span>';
-    settings.title = 'Audit settings and workflow presets';
-    settings.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.settingsOpen = !state.settingsOpen;
-      render();
-    });
-    toolbar.appendChild(settings);
-
-    const annotationSep = document.createElement('span'); annotationSep.className = 'sep'; toolbar.appendChild(annotationSep);
-    [
-      { mode: 'note', label: 'Note', kbd: 'N', color: COLOR.noteBorder },
-      { mode: 'arrow', label: 'Arrow', kbd: 'W', color: COLOR.annotate }
-    ].forEach((item) => {
-      const button = document.createElement('button');
-      button.className = 'tbtn' + (annotations.mode === item.mode ? ' on' : '');
-      button.style.background = annotations.mode === item.mode ? item.color : 'transparent';
-      button.style.borderColor = annotations.mode === item.mode ? item.color : '';
-      button.innerHTML = `<span>${item.label}</span><span class="kbd">${item.kbd}</span>`;
-      button.title = `${item.label} mode (${item.kbd})`;
-      button.addEventListener('click', (e) => {
+      const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
+      const help = document.createElement('button');
+      help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
+      help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
+      help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
+      help.innerHTML = '<span>?</span>';
+      help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
+      help.addEventListener('click', (e) => {
         e.stopPropagation();
-        setAnnotationMode(item.mode);
+        state.helpOpen = !state.helpOpen;
+        render();
       });
-      toolbar.appendChild(button);
-    });
+      toolbar.appendChild(help);
 
-    const select = document.createElement('button');
-    const deselectActive = annotations.mode !== 'idle' || !!annotations.selected;
-    select.className = 'tbtn' + (deselectActive ? ' on' : '');
-    select.style.background = deselectActive ? '#38bdf8' : 'transparent';
-    select.style.borderColor = deselectActive ? '#38bdf8' : '';
-    select.innerHTML = '<span>Deselect</span><span class="kbd">V</span>';
-    select.title = 'Exit placement mode and clear selection (V)';
-    select.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deselectAnnotations();
-    });
-    toolbar.appendChild(select);
-
-    if (CAN_EXPORT_FROM_EXTENSION) {
-      const exportSep = document.createElement('span'); exportSep.className = 'sep'; toolbar.appendChild(exportSep);
-
-      const copy = document.createElement('button');
-      copy.className = 'tbtn';
-      copy.innerHTML = '<span>Copy PNG</span><span class="kbd">C</span>';
-      copy.title = 'Open the focused copy window for this viewport (C)';
-      copy.addEventListener('click', (e) => {
+      const settings = document.createElement('button');
+      settings.className = 'tbtn' + (state.settingsOpen ? ' on' : '');
+      settings.style.background = state.settingsOpen ? '#22d3ee' : 'transparent';
+      settings.style.borderColor = state.settingsOpen ? '#22d3ee' : '';
+      settings.innerHTML = compact ? '<span>More</span><span class="kbd">Cfg</span>' : '<span>Cfg</span>';
+      settings.title = compact ? 'Workflow settings, reports, and export actions' : 'Audit settings and workflow presets';
+      settings.addEventListener('click', (e) => {
         e.stopPropagation();
-        openCopyWindow();
+        state.settingsOpen = !state.settingsOpen;
+        render();
       });
-      toolbar.appendChild(copy);
+      toolbar.appendChild(settings);
 
-      const save = document.createElement('button');
-      save.className = 'tbtn';
-      save.innerHTML = '<span>Save PNG</span><span class="kbd">S</span>';
-      save.title = 'Save current viewport as PNG (S)';
-      save.addEventListener('click', (e) => {
+      const annotationSep = document.createElement('span'); annotationSep.className = 'sep'; toolbar.appendChild(annotationSep);
+      [
+        { mode: 'note', label: 'Note', kbd: 'N', color: COLOR.noteBorder },
+        { mode: 'arrow', label: 'Arrow', kbd: 'W', color: COLOR.annotate }
+      ].forEach((item) => {
+        const button = document.createElement('button');
+        button.className = 'tbtn' + (annotations.mode === item.mode ? ' on' : '');
+        button.style.background = annotations.mode === item.mode ? item.color : 'transparent';
+        button.style.borderColor = annotations.mode === item.mode ? item.color : '';
+        button.innerHTML = `<span>${item.label}</span><span class="kbd">${item.kbd}</span>`;
+        button.title = `${item.label} mode (${item.kbd})`;
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setAnnotationMode(item.mode);
+        });
+        toolbar.appendChild(button);
+      });
+
+      const select = document.createElement('button');
+      const deselectActive = annotations.mode !== 'idle' || !!annotations.selected;
+      select.className = 'tbtn' + (deselectActive ? ' on' : '');
+      select.style.background = deselectActive ? '#38bdf8' : 'transparent';
+      select.style.borderColor = deselectActive ? '#38bdf8' : '';
+      select.innerHTML = '<span>Deselect</span><span class="kbd">V</span>';
+      select.title = 'Exit placement mode and clear selection (V)';
+      select.addEventListener('click', (e) => {
         e.stopPropagation();
-        exportPng('download');
+        deselectAnnotations();
       });
-      toolbar.appendChild(save);
-    }
+      toolbar.appendChild(select);
 
-    const reportSep = document.createElement('span'); reportSep.className = 'sep'; toolbar.appendChild(reportSep);
+      if (!compact && CAN_EXPORT_FROM_EXTENSION) {
+        const exportSep = document.createElement('span'); exportSep.className = 'sep'; toolbar.appendChild(exportSep);
 
-    const jsonReport = document.createElement('button');
-    jsonReport.className = 'tbtn';
-    jsonReport.innerHTML = '<span>JSON</span>';
-    jsonReport.title = 'Download the current audit scope as JSON report';
-    jsonReport.addEventListener('click', (e) => {
-      e.stopPropagation();
-      downloadReport('json');
-    });
-    toolbar.appendChild(jsonReport);
+        const copy = document.createElement('button');
+        copy.className = 'tbtn';
+        copy.innerHTML = '<span>Copy PNG</span><span class="kbd">C</span>';
+        copy.title = 'Open the focused copy window for this viewport (C)';
+        copy.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openCopyWindow();
+        });
+        toolbar.appendChild(copy);
 
-    const htmlReport = document.createElement('button');
-    htmlReport.className = 'tbtn';
-    htmlReport.innerHTML = '<span>HTML</span>';
-    htmlReport.title = 'Download the current audit scope as HTML report';
-    htmlReport.addEventListener('click', (e) => {
-      e.stopPropagation();
-      downloadReport('html');
-    });
-    toolbar.appendChild(htmlReport);
-
-    const bundleReport = document.createElement('button');
-    bundleReport.className = 'tbtn';
-    bundleReport.disabled = state.exportBusy;
-    bundleReport.innerHTML = '<span>Bundle</span>';
-    bundleReport.title = 'Download report + viewport evidence when extension capture is available';
-    bundleReport.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (state.exportBusy) return;
-      state.exportBusy = true;
-      renderToolbar();
-      try {
-        await downloadAuditBundle();
-      } catch (error) {
-        setExportNotice(formatExportError(error), 'error');
-      } finally {
-        state.exportBusy = false;
-        renderToolbar();
+        const save = document.createElement('button');
+        save.className = 'tbtn';
+        save.innerHTML = '<span>Save PNG</span><span class="kbd">S</span>';
+        save.title = 'Save current viewport as PNG (S)';
+        save.addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportPng('download');
+        });
+        toolbar.appendChild(save);
       }
-    });
-    toolbar.appendChild(bundleReport);
 
-    const modeStatus = modeLabel();
-    if (modeStatus) {
-      const status = document.createElement('span');
-      status.className = 'status mode';
-      status.textContent = modeStatus;
-      toolbar.appendChild(status);
+      if (!compact) {
+        const reportSep = document.createElement('span'); reportSep.className = 'sep'; toolbar.appendChild(reportSep);
+
+        const jsonReport = document.createElement('button');
+        jsonReport.className = 'tbtn';
+        jsonReport.innerHTML = '<span>JSON</span>';
+        jsonReport.title = 'Download the current audit scope as JSON report';
+        jsonReport.addEventListener('click', (e) => {
+          e.stopPropagation();
+          downloadReport('json');
+        });
+        toolbar.appendChild(jsonReport);
+
+        const htmlReport = document.createElement('button');
+        htmlReport.className = 'tbtn';
+        htmlReport.innerHTML = '<span>HTML</span>';
+        htmlReport.title = 'Download the current audit scope as HTML report';
+        htmlReport.addEventListener('click', (e) => {
+          e.stopPropagation();
+          downloadReport('html');
+        });
+        toolbar.appendChild(htmlReport);
+
+        const bundleReport = document.createElement('button');
+        bundleReport.className = 'tbtn';
+        bundleReport.disabled = state.exportBusy;
+        bundleReport.innerHTML = '<span>Bundle</span>';
+        bundleReport.title = 'Download report + viewport evidence when extension capture is available';
+        bundleReport.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (state.exportBusy) return;
+          state.exportBusy = true;
+          renderToolbar();
+          try {
+            await downloadAuditBundle();
+          } catch (error) {
+            setExportNotice(formatExportError(error), 'error');
+          } finally {
+            state.exportBusy = false;
+            renderToolbar();
+          }
+        });
+        toolbar.appendChild(bundleReport);
+
+        const modeStatus = modeLabel();
+        if (modeStatus) {
+          const status = document.createElement('span');
+          status.className = 'status mode';
+          status.textContent = modeStatus;
+          toolbar.appendChild(status);
+        }
+
+        const presetStatus = document.createElement('span');
+        presetStatus.className = 'status';
+        presetStatus.textContent = `Preset: ${activePresetLabel()}`;
+        toolbar.appendChild(presetStatus);
+
+        const editingStatus = editingAnnotationLabel();
+        if (editingStatus) {
+          const status = document.createElement('span');
+          status.className = 'status paused';
+          status.textContent = editingStatus;
+          toolbar.appendChild(status);
+        }
+
+        const selectionStatus = selectedAnnotationLabel();
+        if (selectionStatus) {
+          const status = document.createElement('span');
+          status.className = 'status';
+          status.textContent = selectionStatus;
+          toolbar.appendChild(status);
+        }
+
+        if (state.exportNotice) {
+          const status = document.createElement('span');
+          status.className = `status ${state.exportNoticeTone || 'muted'}`;
+          status.textContent = state.exportNotice;
+          toolbar.appendChild(status);
+        }
+      }
+
+      const close = document.createElement('button');
+      close.className = 'close';
+      close.textContent = '×';
+      close.title = 'Remove overlay (X)';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        teardown();
+      });
+      toolbar.appendChild(close);
+    };
+
+    renderDesktopToolbarVariant('full');
+    const availableWidth = window.innerWidth - 24;
+    const needsCompact = toolbar.scrollWidth > (availableWidth - 32);
+    if (needsCompact) {
+      renderDesktopToolbarVariant('compact');
+      if (toolbar.scrollWidth > (toolbar.clientWidth + 1)) {
+        renderDesktopToolbarVariant('tight');
+      }
     }
-
-    const presetStatus = document.createElement('span');
-    presetStatus.className = 'status';
-    presetStatus.textContent = `Preset: ${activePresetLabel()}`;
-    toolbar.appendChild(presetStatus);
-
-    const editingStatus = editingAnnotationLabel();
-    if (editingStatus) {
-      const status = document.createElement('span');
-      status.className = 'status paused';
-      status.textContent = editingStatus;
-      toolbar.appendChild(status);
-    }
-
-    const selectionStatus = selectedAnnotationLabel();
-    if (selectionStatus) {
-      const status = document.createElement('span');
-      status.className = 'status';
-      status.textContent = selectionStatus;
-      toolbar.appendChild(status);
-    }
-
-    if (state.exportNotice) {
-      const status = document.createElement('span');
-      status.className = `status ${state.exportNoticeTone || 'muted'}`;
-      status.textContent = state.exportNotice;
-      toolbar.appendChild(status);
-    }
-
-    const close = document.createElement('button');
-    close.className = 'close';
-    close.textContent = '×';
-    close.title = 'Remove overlay (X)';
-    close.addEventListener('click', (e) => { e.stopPropagation(); teardown(); });
-    toolbar.appendChild(close);
   }
 
   function render() {

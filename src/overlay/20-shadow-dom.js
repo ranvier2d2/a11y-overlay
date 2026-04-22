@@ -80,6 +80,7 @@
         position: fixed;
         top: 12px;
         right: 12px;
+        max-width: calc(100vw - 24px);
         pointer-events: auto;
         background: #0c0a09;
         color: #e7e5e4;
@@ -91,7 +92,22 @@
         display: flex;
         gap: 4px;
         align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
         box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      }
+      .toolbar::-webkit-scrollbar { display: none; }
+      .toolbar.compact {
+        padding: 5px 6px;
+        gap: 3px;
+      }
+      .toolbar.tight {
+        width: calc(100vw - 24px);
+        max-width: none;
+        flex-wrap: wrap;
+        row-gap: 4px;
+        overflow-x: visible;
       }
       .toolbar .title {
         color: #a3e635;
@@ -100,6 +116,14 @@
         text-transform: uppercase;
         padding: 0 6px 0 4px;
         border-right: 1px solid #292524;
+        margin-right: 4px;
+      }
+      .toolbar.compact .title {
+        padding-right: 4px;
+        margin-right: 2px;
+      }
+      .toolbar.tight .title {
+        padding-right: 6px;
         margin-right: 4px;
       }
       .toolbar .seg {
@@ -161,6 +185,8 @@
       }
       .toolbar .tbtn.on .kbd { opacity: 0.9; }
       .toolbar .sep { width: 1px; align-self: stretch; background: #292524; margin: 2px 4px; }
+      .toolbar.compact .sep { margin: 2px 2px; }
+      .toolbar.tight .sep { margin: 2px 3px; }
       .toolbar .close {
         background: transparent;
         border: 1px solid #44403c;

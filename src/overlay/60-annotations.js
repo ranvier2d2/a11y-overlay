@@ -674,6 +674,81 @@
     });
     panel.appendChild(grid);
 
+    const actionsTitle = document.createElement('h4');
+    actionsTitle.textContent = 'Reports and export';
+    panel.appendChild(actionsTitle);
+
+    const actionsSubtle = document.createElement('div');
+    actionsSubtle.className = 'subtle';
+    actionsSubtle.textContent = 'Desktop compact mode keeps JSON, HTML, Bundle, and PNG actions here.';
+    panel.appendChild(actionsSubtle);
+
+    const actionsGrid = document.createElement('div');
+    actionsGrid.className = 'seg';
+    if (CAN_EXPORT_FROM_EXTENSION) {
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.className = 'segbtn';
+      copy.textContent = 'Copy PNG';
+      copy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCopyWindow();
+      });
+      actionsGrid.appendChild(copy);
+
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.className = 'segbtn';
+      save.textContent = 'Save PNG';
+      save.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportPng('download');
+      });
+      actionsGrid.appendChild(save);
+    }
+
+    const json = document.createElement('button');
+    json.type = 'button';
+    json.className = 'segbtn';
+    json.textContent = 'JSON';
+    json.addEventListener('click', (e) => {
+      e.stopPropagation();
+      downloadReport('json');
+    });
+    actionsGrid.appendChild(json);
+
+    const html = document.createElement('button');
+    html.type = 'button';
+    html.className = 'segbtn';
+    html.textContent = 'HTML';
+    html.addEventListener('click', (e) => {
+      e.stopPropagation();
+      downloadReport('html');
+    });
+    actionsGrid.appendChild(html);
+
+    const bundle = document.createElement('button');
+    bundle.type = 'button';
+    bundle.className = 'segbtn';
+    bundle.textContent = 'Bundle';
+    bundle.disabled = state.exportBusy;
+    bundle.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (state.exportBusy) return;
+      state.exportBusy = true;
+      renderHud();
+      try {
+        await downloadAuditBundle();
+      } catch (error) {
+        setExportNotice(formatExportError(error), 'error');
+      } finally {
+        state.exportBusy = false;
+        renderHud();
+      }
+    });
+    actionsGrid.appendChild(bundle);
+    panel.appendChild(actionsGrid);
+
     const meta = document.createElement('div');
     meta.className = 'meta';
     meta.textContent = `Active preset · ${activePresetLabel()} · profile ${currentTouchProfileLabel()} · mode ${state.layerMode}`;
