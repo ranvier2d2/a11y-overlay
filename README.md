@@ -5,9 +5,9 @@ Accessibility overlay runtime, Chrome extension, and static marketing site.
 ## Primary files
 
 - `site/index.html` — canonical public landing page and Vercel entrypoint
-- `site/` — self-contained static deploy surface for the marketing site
+- `site/` — self-contained static deploy surface for the marketing site, including the public privacy page
 - `demo.html` — guided proof path for the runtime contract and reports
-- `demo.js` — private controller for the guided demo page
+- `demo.js` — controller for the guided demo page
 - `a11y-overlay.js` — generated zero-dependency overlay runtime
 - `playwright/overlay-client.mjs` — Playwright-facing helper for injection, contract reads, and failure packages
 - `src/overlay/` — modular source of truth for the overlay runtime

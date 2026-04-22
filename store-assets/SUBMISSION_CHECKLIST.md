@@ -3,8 +3,8 @@
 ## Live URLs
 
 - Repo: `https://github.com/ranvier2d2/a11y-overlay`
-- Site: `https://ranvier2d2.github.io/a11y-overlay/`
-- Privacy policy: `https://ranvier2d2.github.io/a11y-overlay/privacy.html`
+- Site: `https://a11y-overlay.vercel.app/`
+- Privacy policy: `https://a11y-overlay.vercel.app/privacy.html`
 
 ## Build commands
 
@@ -44,7 +44,7 @@ Upload:
 - Package: `dist/a11y-overlay-chrome-v0.1.0.zip`
 - At least one screenshot is required. Use the files in `store-assets/screenshots/`.
 - Use the copy in `store-assets/STORE_LISTING.md`.
-- Privacy policy URL: `https://ranvier2d2.github.io/a11y-overlay/privacy.html`
+- Privacy policy URL: `https://a11y-overlay.vercel.app/privacy.html`
 
 Recommended Chrome screenshots:
 
@@ -68,7 +68,7 @@ Upload:
 - Small promotional tile: `store-assets/edge/edge-small-promotional-tile-440x280.jpg`
 - Large promotional tile: `store-assets/edge/edge-large-promotional-tile-1400x560.jpg`
 - Screenshots: prefer the `.jpg` files in `store-assets/screenshots/`
-- Privacy policy URL: `https://ranvier2d2.github.io/a11y-overlay/privacy.html`
+- Privacy policy URL: `https://a11y-overlay.vercel.app/privacy.html`
 
 ## Manual answers you may still need in store UI
 

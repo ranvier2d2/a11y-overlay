@@ -46,7 +46,7 @@ This extension does not crawl your browsing history, collect analytics, or send 
 - Uses analytics: `No`
 - Uses ads or affiliate tracking: `No`
 
-Privacy policy page: `https://ranvier2d2.github.io/a11y-overlay/privacy.html`
+Privacy policy page: `https://a11y-overlay.vercel.app/privacy.html`
 
 ## Test instructions for reviewers
 
