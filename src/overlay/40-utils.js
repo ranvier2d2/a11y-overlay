@@ -59,6 +59,14 @@
     return preset ? preset.label : 'Custom';
   }
 
+  function isMobileOverlayViewport() {
+    const narrow = window.innerWidth <= 760;
+    const coarse = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(pointer: coarse)').matches
+      : false;
+    return narrow || (coarse && window.innerWidth <= 900);
+  }
+
   function formatFindingType(value) {
     if (value === 'standard') return 'Standard';
     if (value === 'advisory') return 'Advisory';

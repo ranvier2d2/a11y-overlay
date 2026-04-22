@@ -33,9 +33,19 @@
     'n': () => { setAnnotationMode('note'); },
     'w': () => { setAnnotationMode('arrow'); },
     'v': () => { deselectAnnotations(); },
-    '?': () => { state.helpOpen = !state.helpOpen; },
-    '/': () => { state.helpOpen = !state.helpOpen; }
+    '?': () => { toggleHelpSurface(); },
+    '/': () => { toggleHelpSurface(); }
   };
+
+  function toggleHelpSurface() {
+    if (isMobileOverlayViewport()) {
+      const sameTab = state.mobileSheetOpen && state.mobileSheetTab === 'more';
+      state.mobileSheetTab = 'more';
+      state.mobileSheetOpen = !sameTab;
+      return;
+    }
+    state.helpOpen = !state.helpOpen;
+  }
 
   function isEditableNode(node) {
     if (!node || typeof node !== 'object' || node.nodeType !== 1) return false;
@@ -86,6 +96,12 @@
     const k = e.key.toLowerCase();
     if (k === 'x') { teardown(); return; }
     if (e.key === 'Escape') {
+      if (isMobileOverlayViewport() && state.mobileSheetOpen) {
+        state.mobileSheetOpen = false;
+        renderHud();
+        e.preventDefault();
+        return;
+      }
       deselectAnnotations();
       e.preventDefault();
       return;
@@ -216,7 +232,7 @@
    * browser-driving agents once the overlay installs successfully.
    */
   window.__a11yOverlayInstalled = {
-    toggleHelp() { state.helpOpen = !state.helpOpen; render(); },
+    toggleHelp() { toggleHelpSurface(); render(); },
     toggle(key) {
       if (getSliceMeta(key)) {
         if (toggleSliceState(key)) render();

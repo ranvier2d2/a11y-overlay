@@ -306,6 +306,307 @@
       .toolbar .status.error { color: #fb7185; }
       .toolbar .status.mode { color: #22d3ee; }
       .toolbar .status.paused { color: #facc15; }
+      .toolbar.mobile {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        padding: 10px 12px;
+        gap: 10px;
+        justify-content: space-between;
+      }
+      .toolbar.mobile .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      .toolbar.mobile .mobile-title {
+        color: #a3e635;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .toolbar.mobile .mobile-summary {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .toolbar.mobile .mobile-summary .eyebrow {
+        color: #a8a29e;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .toolbar.mobile .mobile-summary .value {
+        color: #fafaf9;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .toolbar.mobile .mobile-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+      }
+      .toolbar.mobile .mobile-chip {
+        border: 1px solid #292524;
+        background: #14110f;
+        color: #a8a29e;
+        padding: 5px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .toolbar.mobile .mobile-close {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #44403c;
+        background: transparent;
+        color: #fb7185;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 700;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .toolbar.mobile .mobile-close:hover {
+        background: #fb7185;
+        color: #0c0a09;
+      }
+      .mobile-dock {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        display: none;
+        gap: 8px;
+        padding: 8px;
+        pointer-events: auto;
+        background: rgba(12, 10, 9, 0.98);
+        color: #e7e5e4;
+        border: 1px solid #44403c;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+      }
+      .mobile-dock.open { display: flex; }
+      .mobile-dock .dockbtn {
+        flex: 1 1 0;
+        min-width: 0;
+        border: 1px solid #292524;
+        background: #14110f;
+        color: #a8a29e;
+        border-radius: 12px;
+        padding: 8px 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+        justify-content: center;
+        font: inherit;
+        cursor: pointer;
+      }
+      .mobile-dock .dockbtn:hover {
+        border-color: #57534e;
+        color: #e7e5e4;
+      }
+      .mobile-dock .dockbtn.on {
+        color: #0c0a09;
+        border-color: currentColor;
+      }
+      .mobile-dock .dockbtn .dock-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        border: 1px solid currentColor;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      .mobile-dock .dockbtn .dock-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .mobile-dock .dockbtn .dock-meta {
+        font-size: 9px;
+        color: rgba(231, 229, 228, 0.72);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      .mobile-sheet-backdrop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        pointer-events: auto;
+        background: rgba(0,0,0,0.42);
+      }
+      .mobile-sheet-backdrop.open { display: block; }
+      .mobile-sheet {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        max-height: min(58vh, 520px);
+        display: none;
+        overflow: auto;
+        pointer-events: auto;
+        background: #0c0a09;
+        color: #e7e5e4;
+        border: 1px solid #44403c;
+        border-radius: 18px;
+        box-shadow: 0 18px 40px rgba(0,0,0,0.5);
+        font-family: ui-monospace, monospace;
+      }
+      .mobile-sheet.open { display: block; }
+      .mobile-sheet-head {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 14px 12px;
+        background: rgba(12,10,9,0.98);
+        border-bottom: 1px solid #292524;
+      }
+      .mobile-sheet-head .eyebrow {
+        color: #a8a29e;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .mobile-sheet-head .title {
+        margin-top: 4px;
+        color: #fafaf9;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .mobile-sheet-close {
+        border: 1px solid #44403c;
+        background: transparent;
+        color: #a8a29e;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .mobile-sheet-close:hover {
+        border-color: #78716c;
+        color: #fafaf9;
+      }
+      .mobile-sheet-section {
+        padding: 14px;
+        border-bottom: 1px solid #1c1917;
+      }
+      .mobile-sheet-section:last-child { border-bottom: 0; }
+      .mobile-sheet-section h4 {
+        margin: 0 0 8px;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #a3e635;
+      }
+      .mobile-sheet-section .subtle {
+        color: #a8a29e;
+        font-size: 11px;
+        line-height: 1.55;
+        margin-bottom: 10px;
+      }
+      .mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .mobile-grid.one { grid-template-columns: 1fr; }
+      .mobile-action {
+        border: 1px solid #292524;
+        background: #14110f;
+        color: #a8a29e;
+        border-radius: 12px;
+        padding: 10px 12px;
+        text-align: left;
+        font: inherit;
+        font-size: 11px;
+        line-height: 1.45;
+        cursor: pointer;
+      }
+      .mobile-action:hover {
+        border-color: #57534e;
+        color: #e7e5e4;
+      }
+      .mobile-action.on {
+        color: #0c0a09;
+        border-color: currentColor;
+      }
+      .mobile-action .label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .mobile-action .meta {
+        display: block;
+        margin-top: 4px;
+        color: inherit;
+        opacity: 0.82;
+      }
+      .mobile-empty {
+        border: 1px dashed #292524;
+        border-radius: 12px;
+        padding: 14px;
+        color: #a8a29e;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .mobile-inspector-rows {
+        display: grid;
+        gap: 8px;
+      }
+      .mobile-inspector-row {
+        border: 1px solid #1c1917;
+        background: #14110f;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .mobile-inspector-row .key {
+        color: #a8a29e;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 10px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .mobile-inspector-row .value {
+        color: #f5f5f4;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
       .help {
         position: fixed;
         bottom: 12px;
@@ -614,6 +915,9 @@
     <div class="annotation-html" id="annotation-html"></div>
     <div class="annotation-capture" id="annotation-capture" aria-hidden="true"></div>
     <div class="toolbar" id="toolbar"></div>
+    <div class="mobile-dock" id="mobile-dock"></div>
+    <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop"></div>
+    <div class="mobile-sheet" id="mobile-sheet"></div>
   `;
 
   const layer = shadow.getElementById('layer');
@@ -621,6 +925,9 @@
   const annotationHtml = shadow.getElementById('annotation-html');
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
+  const mobileDock = shadow.getElementById('mobile-dock');
+  const mobileSheetBackdrop = shadow.getElementById('mobile-sheet-backdrop');
+  const mobileSheet = shadow.getElementById('mobile-sheet');
   // ---------- state ----------
   /** @type {OverlayState} */
   const state = {
@@ -637,6 +944,8 @@
     grid: false,
     helpOpen: true,
     settingsOpen: false,
+    mobileSheetOpen: false,
+    mobileSheetTab: 'layers',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
@@ -797,6 +1106,8 @@
    * @property {boolean} grid
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
+   * @property {boolean} mobileSheetOpen
+   * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
    * @property {boolean} exportBusy
    * @property {string} exportNotice
    * @property {string} exportNoticeTone
@@ -890,6 +1201,14 @@
     if (!presetId) return 'Custom';
     const preset = getPresetMeta(presetId);
     return preset ? preset.label : 'Custom';
+  }
+
+  function isMobileOverlayViewport() {
+    const narrow = window.innerWidth <= 760;
+    const coarse = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(pointer: coarse)').matches
+      : false;
+    return narrow || (coarse && window.innerWidth <= 900);
   }
 
   function formatFindingType(value) {
@@ -3036,6 +3355,10 @@
       label: entry.label || '',
       color: entry.color || '#e7e5e4'
     };
+    if (isMobileOverlayViewport()) {
+      state.mobileSheetTab = 'inspect';
+      state.mobileSheetOpen = true;
+    }
     scheduleSessionPersist();
     render();
   }
@@ -3079,9 +3402,369 @@
 
   function renderHud() {
     renderToolbar();
+    if (isMobileOverlayViewport()) {
+      const help = shadow.querySelector('.help');
+      if (help) help.remove();
+      const settings = shadow.querySelector('.settings');
+      if (settings) settings.remove();
+      const inspectorPanel = shadow.querySelector('.inspector');
+      if (inspectorPanel) inspectorPanel.remove();
+      renderMobileSheet();
+      return;
+    }
+    mobileSheetBackdrop.classList.remove('open');
+    mobileSheetBackdrop.onclick = null;
+    mobileSheet.classList.remove('open');
+    mobileSheet.innerHTML = '';
     renderHelp();
     renderSettings();
     renderInspector();
+  }
+
+  function renderMobileSheet() {
+    mobileSheetBackdrop.classList.remove('open');
+    mobileSheetBackdrop.onclick = null;
+    mobileSheet.classList.remove('open');
+    mobileSheet.innerHTML = '';
+    if (!state.mobileSheetOpen) return;
+
+    const titles = {
+      'layers': 'Layers',
+      'inspect': 'Inspect',
+      'annotate': 'Annotate',
+      'more': 'More'
+    };
+
+    mobileSheetBackdrop.classList.add('open');
+    mobileSheetBackdrop.onclick = (e) => {
+      e.stopPropagation();
+      state.mobileSheetOpen = false;
+      renderHud();
+    };
+    mobileSheet.classList.add('open');
+
+    const head = document.createElement('div');
+    head.className = 'mobile-sheet-head';
+
+    const titleWrap = document.createElement('div');
+    const eyebrow = document.createElement('div');
+    eyebrow.className = 'eyebrow';
+    eyebrow.textContent = `Overlay · ${activePresetLabel()}`;
+    titleWrap.appendChild(eyebrow);
+
+    const title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = titles[state.mobileSheetTab] || 'Overlay';
+    titleWrap.appendChild(title);
+    head.appendChild(titleWrap);
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'mobile-sheet-close';
+    close.textContent = '×';
+    close.title = 'Close panel';
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.mobileSheetOpen = false;
+      renderHud();
+    });
+    head.appendChild(close);
+    mobileSheet.appendChild(head);
+
+    const appendSection = (sectionTitle, subtleText) => {
+      const section = document.createElement('section');
+      section.className = 'mobile-sheet-section';
+      if (sectionTitle) {
+        const h = document.createElement('h4');
+        h.textContent = sectionTitle;
+        section.appendChild(h);
+      }
+      if (subtleText) {
+        const subtle = document.createElement('div');
+        subtle.className = 'subtle';
+        subtle.textContent = subtleText;
+        section.appendChild(subtle);
+      }
+      mobileSheet.appendChild(section);
+      return section;
+    };
+
+    const appendAction = (grid, { label, meta = '', on = false, tone = '', click }) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'mobile-action' + (on ? ' on' : '');
+      if (tone) {
+        button.style.borderColor = tone;
+        if (on) {
+          button.style.background = tone;
+          button.style.color = '#0c0a09';
+        }
+      }
+      button.innerHTML = `<span class="label">${label}</span>${meta ? `<span class="meta">${meta}</span>` : ''}`;
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        click();
+      });
+      grid.appendChild(button);
+      return button;
+    };
+
+    if (state.mobileSheetTab === 'layers') {
+      const modeSection = appendSection(
+        'Audit mode',
+        `Preset ${activePresetLabel()} · touch profile ${currentTouchProfileLabel()}.`
+      );
+      const modeGrid = document.createElement('div');
+      modeGrid.className = 'mobile-grid';
+      appendAction(modeGrid, {
+        label: 'Conformance',
+        meta: 'Standards and advisory slices',
+        on: state.layerMode === 'conformance',
+        tone: '#e7e5e4',
+        click: () => {
+          if (applyLayerMode('conformance', { announce: true })) render();
+        }
+      });
+      appendAction(modeGrid, {
+        label: 'Review',
+        meta: 'Enables heuristic slices',
+        on: state.layerMode === 'review',
+        tone: '#a3e635',
+        click: () => {
+          if (applyLayerMode('review', { announce: true })) render();
+        }
+      });
+      modeSection.appendChild(modeGrid);
+
+      const presetSection = appendSection('Workflow presets', 'Apply a fixed layer, slice, and target-profile mix.');
+      const presetGrid = document.createElement('div');
+      presetGrid.className = 'mobile-grid';
+      PRESETS.forEach((preset) => {
+        appendAction(presetGrid, {
+          label: preset.label,
+          meta: preset.description,
+          on: activePresetId() === preset.id,
+          tone: preset.id === 'mobile' ? '#38bdf8' : '#22d3ee',
+          click: () => { applyPreset(preset.id); }
+        });
+      });
+      presetSection.appendChild(presetGrid);
+
+      const sliceSection = appendSection('Slices', 'Turn individual overlays on and off.');
+      const sliceGrid = document.createElement('div');
+      sliceGrid.className = 'mobile-grid';
+      SLICES.forEach((slice) => {
+        const visibleActive = sliceVisible(slice.key);
+        const reviewOnly = slice.minLayer === 'review' && state.layerMode !== 'review';
+        appendAction(sliceGrid, {
+          label: slice.label,
+          meta: reviewOnly ? `${slice.kbd} · review only` : slice.kbd,
+          on: visibleActive,
+          tone: slice.color,
+          click: () => {
+            if (toggleSliceState(slice.key)) render();
+          }
+        });
+      });
+      sliceSection.appendChild(sliceGrid);
+
+      const targetSection = appendSection('Touch profile', 'WCAG 24×24 stays standard. Platform profiles add advisory findings.');
+      const targetGrid = document.createElement('div');
+      targetGrid.className = 'mobile-grid';
+      [
+        { key: 'web-default', label: 'Web default' },
+        { key: 'apple-44pt', label: 'Apple 44pt' },
+        { key: 'android-48dp', label: 'Android 48dp' },
+        { key: 'both', label: 'Apple + Android' }
+      ].forEach((option) => {
+        appendAction(targetGrid, {
+          label: option.label,
+          on: state.touchProfile === option.key,
+          tone: '#f59e0b',
+          click: () => { setTouchProfile(option.key); }
+        });
+      });
+      targetSection.appendChild(targetGrid);
+      return;
+    }
+
+    if (state.mobileSheetTab === 'inspect') {
+      const selection = inspector.selection;
+      if (!selection || !selection.el || !selection.el.isConnected || !isVisible(selection.el)) {
+        inspector.selection = null;
+        const empty = appendSection('', '');
+        const msg = document.createElement('div');
+        msg.className = 'mobile-empty';
+        msg.textContent = 'Tap any badge or label on the page to open a receipt-style inspector for that finding.';
+        empty.appendChild(msg);
+        return;
+      }
+
+      const intro = appendSection('', '');
+      const rows = document.createElement('div');
+      rows.className = 'mobile-inspector-rows';
+
+      const headline = document.createElement('div');
+      headline.className = 'mobile-empty';
+      headline.textContent = `${selection.label || selection.meta.kind} · ${selection.meta.kind}`;
+      intro.appendChild(headline);
+
+      inspectorRowsForSelection(selection).forEach(([key, value]) => {
+        const row = document.createElement('div');
+        row.className = 'mobile-inspector-row';
+        row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
+        rows.appendChild(row);
+      });
+      intro.appendChild(rows);
+
+      const actions = appendSection('Selection', 'Tap another badge or label to switch context.');
+      const actionGrid = document.createElement('div');
+      actionGrid.className = 'mobile-grid one';
+      appendAction(actionGrid, {
+        label: 'Clear selection',
+        meta: 'Dismiss the current inspector target',
+        tone: '#38bdf8',
+        click: () => { clearInspectorSelection(); }
+      });
+      actions.appendChild(actionGrid);
+      return;
+    }
+
+    if (state.mobileSheetTab === 'annotate') {
+      const annotateSection = appendSection(
+        'Annotation tools',
+        editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Place notes and arrows, then return to the page to position them.'
+      );
+      const actionGrid = document.createElement('div');
+      actionGrid.className = 'mobile-grid';
+      appendAction(actionGrid, {
+        label: 'Note',
+        meta: 'Tap the page once to place',
+        on: annotations.mode === 'note',
+        tone: COLOR.noteBorder,
+        click: () => {
+          state.mobileSheetOpen = false;
+          setAnnotationMode('note');
+        }
+      });
+      appendAction(actionGrid, {
+        label: 'Arrow',
+        meta: annotations.pendingArrowStart ? 'Tap the end point' : 'Tap start, then end',
+        on: annotations.mode === 'arrow',
+        tone: COLOR.annotate,
+        click: () => {
+          state.mobileSheetOpen = false;
+          setAnnotationMode('arrow');
+        }
+      });
+      appendAction(actionGrid, {
+        label: 'Deselect',
+        meta: 'Exit placement and clear selection',
+        on: annotations.mode === 'idle' && !annotations.selected,
+        tone: '#38bdf8',
+        click: () => {
+          deselectAnnotations();
+          state.mobileSheetTab = 'annotate';
+          state.mobileSheetOpen = true;
+          render();
+        }
+      });
+      appendAction(actionGrid, {
+        label: 'Delete selected',
+        meta: annotations.selected ? 'Remove current note or arrow' : 'Nothing selected',
+        tone: '#fb7185',
+        click: () => {
+          if (removeSelectedAnnotation()) {
+            state.mobileSheetTab = 'annotate';
+            state.mobileSheetOpen = true;
+            render();
+          }
+        }
+      });
+      annotateSection.appendChild(actionGrid);
+      return;
+    }
+
+    const exportSection = appendSection(
+      'Export',
+      state.exportNotice || 'Capture the current audit scope and viewport evidence.'
+    );
+    const exportGrid = document.createElement('div');
+    exportGrid.className = 'mobile-grid';
+    if (CAN_EXPORT_FROM_EXTENSION) {
+      appendAction(exportGrid, {
+        label: 'Copy PNG',
+        meta: 'Focused copy window',
+        tone: '#eab308',
+        click: () => { openCopyWindow(); }
+      });
+      appendAction(exportGrid, {
+        label: 'Save PNG',
+        meta: 'Save viewport evidence',
+        tone: '#eab308',
+        click: () => { exportPng('download'); }
+      });
+    }
+    appendAction(exportGrid, {
+      label: 'JSON',
+      meta: 'Current audit scope',
+      tone: '#60a5fa',
+      click: () => { downloadReport('json'); }
+    });
+    appendAction(exportGrid, {
+      label: 'HTML',
+      meta: 'Readable audit receipt',
+      tone: '#60a5fa',
+      click: () => { downloadReport('html'); }
+    });
+    appendAction(exportGrid, {
+      label: 'Bundle',
+      meta: 'Report + viewport evidence',
+      tone: '#a78bfa',
+      click: async () => {
+        if (state.exportBusy) return;
+        state.exportBusy = true;
+        renderHud();
+        try {
+          await downloadAuditBundle();
+        } catch (error) {
+          setExportNotice(formatExportError(error), 'error');
+        } finally {
+          state.exportBusy = false;
+          renderHud();
+        }
+      }
+    });
+    exportSection.appendChild(exportGrid);
+
+    const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`);
+    const helpRows = document.createElement('div');
+    helpRows.className = 'mobile-inspector-rows';
+    [
+      ['Tap badge', 'Open the inspector receipt for that finding.'],
+      ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
+      ['R / F / D / G', 'Review and depth-oriented slices.'],
+      ['N / W / V', 'Note, arrow, or deselect placement.'],
+      ['Del / Backspace', 'Delete the selected note or arrow.'],
+      ['X', 'Remove the overlay entirely.']
+    ].forEach(([key, value]) => {
+      const row = document.createElement('div');
+      row.className = 'mobile-inspector-row';
+      row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
+      helpRows.appendChild(row);
+    });
+    helpSection.appendChild(helpRows);
+
+    const exitSection = appendSection('Overlay', 'Mobile keeps one expanded surface at a time so the page stays readable.');
+    const exitGrid = document.createElement('div');
+    exitGrid.className = 'mobile-grid one';
+    appendAction(exitGrid, {
+      label: 'Remove overlay',
+      meta: 'Close everything and tear down',
+      tone: '#fb7185',
+      click: () => { teardown(); }
+    });
+    exitSection.appendChild(exitGrid);
   }
 
   function renderSettings() {
@@ -3695,6 +4378,111 @@
 
   function renderToolbar() {
     toolbar.innerHTML = '';
+    if (isMobileOverlayViewport()) {
+      toolbar.className = 'toolbar mobile';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock open';
+
+      const brand = document.createElement('div');
+      brand.className = 'mobile-brand';
+
+      const title = document.createElement('span');
+      title.className = 'mobile-title';
+      title.textContent = 'a11y';
+      brand.appendChild(title);
+
+      const summary = document.createElement('div');
+      summary.className = 'mobile-summary';
+
+      const eyebrow = document.createElement('div');
+      eyebrow.className = 'eyebrow';
+      eyebrow.textContent = activePresetLabel();
+      summary.appendChild(eyebrow);
+
+      const value = document.createElement('div');
+      value.className = 'value';
+      value.textContent = state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`;
+      summary.appendChild(value);
+      brand.appendChild(summary);
+      toolbar.appendChild(brand);
+
+      const actions = document.createElement('div');
+      actions.className = 'mobile-actions';
+
+      const chip = document.createElement('span');
+      chip.className = 'mobile-chip';
+      chip.textContent = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Overlay active';
+      actions.appendChild(chip);
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'mobile-close';
+      close.textContent = '×';
+      close.title = 'Remove overlay (X)';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        teardown();
+      });
+      actions.appendChild(close);
+      toolbar.appendChild(actions);
+
+      [
+        {
+          tab: 'layers',
+          label: 'Layers',
+          icon: 'LY',
+          color: '#a3e635',
+          meta: activePresetLabel()
+        },
+        {
+          tab: 'inspect',
+          label: 'Inspect',
+          icon: 'IN',
+          color: '#38bdf8',
+          meta: inspector.selection ? textSnippet(inspector.selection.label || inspector.selection.meta.kind, 18) : 'Tap badges'
+        },
+        {
+          tab: 'annotate',
+          label: 'Annotate',
+          icon: 'AN',
+          color: '#fb7185',
+          meta: annotations.mode !== 'idle' ? titleCase(annotations.mode) : (annotations.selected ? 'Selected' : 'Notes')
+        },
+        {
+          tab: 'more',
+          label: 'More',
+          icon: '··',
+          color: '#e7e5e4',
+          meta: state.exportNotice ? textSnippet(state.exportNotice, 18) : 'Help · Export'
+        }
+      ].forEach((item) => {
+        const button = document.createElement('button');
+        const isOn = state.mobileSheetOpen && state.mobileSheetTab === item.tab;
+        button.type = 'button';
+        button.className = 'dockbtn' + (isOn ? ' on' : '');
+        if (isOn) {
+          button.style.background = item.color;
+          button.style.color = '#0c0a09';
+        } else {
+          button.style.color = item.color;
+        }
+        button.innerHTML = `<span class="dock-icon">${item.icon}</span><span class="dock-label">${item.label}</span><span class="dock-meta">${item.meta}</span>`;
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const sameTab = state.mobileSheetOpen && state.mobileSheetTab === item.tab;
+          state.mobileSheetTab = item.tab;
+          state.mobileSheetOpen = !sameTab;
+          renderHud();
+        });
+        mobileDock.appendChild(button);
+      });
+      return;
+    }
+
+    toolbar.className = 'toolbar';
+    mobileDock.innerHTML = '';
+    mobileDock.className = 'mobile-dock';
+
     const title = document.createElement('span');
     title.className = 'title';
     title.textContent = 'a11y';
@@ -4027,9 +4815,19 @@
     'n': () => { setAnnotationMode('note'); },
     'w': () => { setAnnotationMode('arrow'); },
     'v': () => { deselectAnnotations(); },
-    '?': () => { state.helpOpen = !state.helpOpen; },
-    '/': () => { state.helpOpen = !state.helpOpen; }
+    '?': () => { toggleHelpSurface(); },
+    '/': () => { toggleHelpSurface(); }
   };
+
+  function toggleHelpSurface() {
+    if (isMobileOverlayViewport()) {
+      const sameTab = state.mobileSheetOpen && state.mobileSheetTab === 'more';
+      state.mobileSheetTab = 'more';
+      state.mobileSheetOpen = !sameTab;
+      return;
+    }
+    state.helpOpen = !state.helpOpen;
+  }
 
   function isEditableNode(node) {
     if (!node || typeof node !== 'object' || node.nodeType !== 1) return false;
@@ -4080,6 +4878,12 @@
     const k = e.key.toLowerCase();
     if (k === 'x') { teardown(); return; }
     if (e.key === 'Escape') {
+      if (isMobileOverlayViewport() && state.mobileSheetOpen) {
+        state.mobileSheetOpen = false;
+        renderHud();
+        e.preventDefault();
+        return;
+      }
       deselectAnnotations();
       e.preventDefault();
       return;
@@ -4210,7 +5014,7 @@
    * browser-driving agents once the overlay installs successfully.
    */
   window.__a11yOverlayInstalled = {
-    toggleHelp() { state.helpOpen = !state.helpOpen; render(); },
+    toggleHelp() { toggleHelpSurface(); render(); },
     toggle(key) {
       if (getSliceMeta(key)) {
         if (toggleSliceState(key)) render();

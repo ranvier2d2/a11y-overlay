@@ -14,6 +14,8 @@
     grid: false,
     helpOpen: true,
     settingsOpen: false,
+    mobileSheetOpen: false,
+    mobileSheetTab: 'layers',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
@@ -174,6 +176,8 @@
    * @property {boolean} grid
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
+   * @property {boolean} mobileSheetOpen
+   * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
    * @property {boolean} exportBusy
    * @property {string} exportNotice
    * @property {string} exportNoticeTone

@@ -90,6 +90,111 @@
 
   function renderToolbar() {
     toolbar.innerHTML = '';
+    if (isMobileOverlayViewport()) {
+      toolbar.className = 'toolbar mobile';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock open';
+
+      const brand = document.createElement('div');
+      brand.className = 'mobile-brand';
+
+      const title = document.createElement('span');
+      title.className = 'mobile-title';
+      title.textContent = 'a11y';
+      brand.appendChild(title);
+
+      const summary = document.createElement('div');
+      summary.className = 'mobile-summary';
+
+      const eyebrow = document.createElement('div');
+      eyebrow.className = 'eyebrow';
+      eyebrow.textContent = activePresetLabel();
+      summary.appendChild(eyebrow);
+
+      const value = document.createElement('div');
+      value.className = 'value';
+      value.textContent = state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`;
+      summary.appendChild(value);
+      brand.appendChild(summary);
+      toolbar.appendChild(brand);
+
+      const actions = document.createElement('div');
+      actions.className = 'mobile-actions';
+
+      const chip = document.createElement('span');
+      chip.className = 'mobile-chip';
+      chip.textContent = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Overlay active';
+      actions.appendChild(chip);
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'mobile-close';
+      close.textContent = '×';
+      close.title = 'Remove overlay (X)';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        teardown();
+      });
+      actions.appendChild(close);
+      toolbar.appendChild(actions);
+
+      [
+        {
+          tab: 'layers',
+          label: 'Layers',
+          icon: 'LY',
+          color: '#a3e635',
+          meta: activePresetLabel()
+        },
+        {
+          tab: 'inspect',
+          label: 'Inspect',
+          icon: 'IN',
+          color: '#38bdf8',
+          meta: inspector.selection ? textSnippet(inspector.selection.label || inspector.selection.meta.kind, 18) : 'Tap badges'
+        },
+        {
+          tab: 'annotate',
+          label: 'Annotate',
+          icon: 'AN',
+          color: '#fb7185',
+          meta: annotations.mode !== 'idle' ? titleCase(annotations.mode) : (annotations.selected ? 'Selected' : 'Notes')
+        },
+        {
+          tab: 'more',
+          label: 'More',
+          icon: '··',
+          color: '#e7e5e4',
+          meta: state.exportNotice ? textSnippet(state.exportNotice, 18) : 'Help · Export'
+        }
+      ].forEach((item) => {
+        const button = document.createElement('button');
+        const isOn = state.mobileSheetOpen && state.mobileSheetTab === item.tab;
+        button.type = 'button';
+        button.className = 'dockbtn' + (isOn ? ' on' : '');
+        if (isOn) {
+          button.style.background = item.color;
+          button.style.color = '#0c0a09';
+        } else {
+          button.style.color = item.color;
+        }
+        button.innerHTML = `<span class="dock-icon">${item.icon}</span><span class="dock-label">${item.label}</span><span class="dock-meta">${item.meta}</span>`;
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const sameTab = state.mobileSheetOpen && state.mobileSheetTab === item.tab;
+          state.mobileSheetTab = item.tab;
+          state.mobileSheetOpen = !sameTab;
+          renderHud();
+        });
+        mobileDock.appendChild(button);
+      });
+      return;
+    }
+
+    toolbar.className = 'toolbar';
+    mobileDock.innerHTML = '';
+    mobileDock.className = 'mobile-dock';
+
     const title = document.createElement('span');
     title.className = 'title';
     title.textContent = 'a11y';
