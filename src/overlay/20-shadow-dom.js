@@ -186,9 +186,9 @@
       .toolbar .status.mode { color: #22d3ee; }
       .toolbar .status.paused { color: #facc15; }
       .toolbar.mobile {
-        top: 12px;
-        left: 12px;
-        right: 12px;
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: calc(10px + env(safe-area-inset-left, 0px));
+        right: calc(10px + env(safe-area-inset-right, 0px));
         padding: 10px 12px;
         gap: 10px;
         justify-content: space-between;
@@ -267,9 +267,9 @@
       }
       .mobile-dock {
         position: fixed;
-        left: 12px;
-        right: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        left: calc(10px + env(safe-area-inset-left, 0px));
+        right: calc(10px + env(safe-area-inset-right, 0px));
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         display: none;
         gap: 8px;
         padding: 8px;
@@ -331,6 +331,71 @@
         text-overflow: ellipsis;
         max-width: 100%;
       }
+      .mobile-modebar {
+        position: fixed;
+        left: calc(10px + env(safe-area-inset-left, 0px));
+        right: calc(10px + env(safe-area-inset-right, 0px));
+        bottom: calc(88px + 16px + env(safe-area-inset-bottom, 0px));
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        pointer-events: auto;
+        background: rgba(12, 10, 9, 0.98);
+        color: #e7e5e4;
+        border: 1px solid #44403c;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.55);
+      }
+      .mobile-modebar.open { display: flex; }
+      .mobile-modebar .mode-copy {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      .mobile-modebar .mode-copy .eyebrow {
+        color: #a3e635;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .mobile-modebar .mode-copy .value {
+        margin-top: 3px;
+        color: #fafaf9;
+        font-size: 12px;
+        line-height: 1.35;
+        font-weight: 700;
+      }
+      .mobile-modebar .mode-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+      }
+      .mobile-modebar .modebtn {
+        border: 1px solid #292524;
+        background: #14110f;
+        color: #a8a29e;
+        border-radius: 12px;
+        padding: 7px 9px;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      .mobile-modebar .modebtn.on {
+        color: #0c0a09;
+        border-color: currentColor;
+      }
+      .mobile-modebar .modebtn.ghost {
+        color: #e7e5e4;
+        border-color: #57534e;
+      }
+      .mobile-modebar .modebtn.danger {
+        color: #fb7185;
+        border-color: #fb7185;
+      }
       .mobile-sheet-backdrop {
         position: fixed;
         inset: 0;
@@ -341,10 +406,9 @@
       .mobile-sheet-backdrop.open { display: block; }
       .mobile-sheet {
         position: fixed;
-        left: 12px;
-        right: 12px;
-        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-        max-height: min(58vh, 520px);
+        left: calc(10px + env(safe-area-inset-left, 0px));
+        right: calc(10px + env(safe-area-inset-right, 0px));
+        bottom: calc(88px + 14px + env(safe-area-inset-bottom, 0px));
         display: none;
         overflow: auto;
         pointer-events: auto;
@@ -356,9 +420,49 @@
         font-family: ui-monospace, monospace;
       }
       .mobile-sheet.open { display: block; }
-      .mobile-sheet-head {
+      .mobile-sheet[data-detent="peek"] {
+        max-height: min(34vh, 300px);
+      }
+      .mobile-sheet[data-detent="medium"] {
+        max-height: min(58vh, 520px);
+      }
+      .mobile-sheet[data-detent="full"] {
+        max-height: min(78vh, calc(100vh - 168px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+      }
+      .mobile-sheet-handle {
         position: sticky;
         top: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 14px 2px;
+        background: linear-gradient(180deg, rgba(12,10,9,0.98), rgba(12,10,9,0.92));
+      }
+      .mobile-sheet-detent {
+        border: 0;
+        background: transparent;
+        color: #a8a29e;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0;
+        font: inherit;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      .mobile-sheet-detent .knob {
+        width: 48px;
+        height: 5px;
+        border-radius: 999px;
+        background: #44403c;
+      }
+      .mobile-sheet-head {
+        position: sticky;
+        top: 26px;
         z-index: 1;
         display: flex;
         align-items: flex-start;
@@ -414,12 +518,20 @@
         line-height: 1.55;
         margin-bottom: 10px;
       }
+      .mobile-sheet-section.tone-primary h4 { color: #22d3ee; }
+      .mobile-sheet-section.tone-inspect h4 { color: #38bdf8; }
+      .mobile-sheet-section.tone-annotate h4 { color: #fb7185; }
+      .mobile-sheet-section.tone-secondary h4 { color: #d6d3d1; }
       .mobile-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
       }
       .mobile-grid.one { grid-template-columns: 1fr; }
+      .mobile-grid.compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
       .mobile-action {
         border: 1px solid #292524;
         background: #14110f;
@@ -440,6 +552,26 @@
         color: #0c0a09;
         border-color: currentColor;
       }
+      .mobile-action.primary {
+        min-height: 84px;
+        padding: 12px;
+        background: linear-gradient(180deg, rgba(23,21,19,0.96), rgba(12,10,9,0.98));
+      }
+      .mobile-action.compact {
+        padding: 9px 10px;
+        border-radius: 10px;
+      }
+      .mobile-action.ghost {
+        background: transparent;
+      }
+      .mobile-action .eyebrow {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.72;
+      }
       .mobile-action .label {
         display: block;
         font-size: 11px;
@@ -452,6 +584,31 @@
         margin-top: 4px;
         color: inherit;
         opacity: 0.82;
+      }
+      .mobile-receipt {
+        border: 1px solid #292524;
+        background: linear-gradient(180deg, rgba(20,17,15,0.96), rgba(12,10,9,0.98));
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .mobile-receipt .eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .mobile-receipt .title {
+        margin-top: 6px;
+        color: #fafaf9;
+        font-size: 15px;
+        line-height: 1.3;
+        font-weight: 700;
+      }
+      .mobile-receipt .subtle {
+        margin-top: 8px;
+        color: #a8a29e;
+        font-size: 11px;
+        line-height: 1.55;
       }
       .mobile-empty {
         border: 1px dashed #292524;
@@ -795,6 +952,7 @@
     <div class="annotation-capture" id="annotation-capture" aria-hidden="true"></div>
     <div class="toolbar" id="toolbar"></div>
     <div class="mobile-dock" id="mobile-dock"></div>
+    <div class="mobile-modebar" id="mobile-modebar"></div>
     <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop"></div>
     <div class="mobile-sheet" id="mobile-sheet"></div>
   `;
@@ -805,5 +963,6 @@
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
   const mobileDock = shadow.getElementById('mobile-dock');
+  const mobileModebar = shadow.getElementById('mobile-modebar');
   const mobileSheetBackdrop = shadow.getElementById('mobile-sheet-backdrop');
   const mobileSheet = shadow.getElementById('mobile-sheet');

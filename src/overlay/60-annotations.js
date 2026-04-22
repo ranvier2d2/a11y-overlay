@@ -38,6 +38,7 @@
     };
     if (isMobileOverlayViewport()) {
       state.mobileSheetTab = 'inspect';
+      state.mobileSheetDetent = 'full';
       state.mobileSheetOpen = true;
     }
     scheduleSessionPersist();
@@ -81,6 +82,57 @@
     render();
   }
 
+  function mobileSheetDefaultDetent(tab) {
+    if (tab === 'inspect') return 'full';
+    if (tab === 'more') return 'peek';
+    return 'medium';
+  }
+
+  function openMobileSheet(tab, opts = {}) {
+    state.mobileSheetTab = tab;
+    state.mobileSheetDetent = opts.detent || mobileSheetDefaultDetent(tab);
+    state.mobileSheetOpen = true;
+    if (opts.render !== false) {
+      renderHud();
+    }
+  }
+
+  function closeMobileSheet(opts = {}) {
+    if (!state.mobileSheetOpen) return false;
+    state.mobileSheetOpen = false;
+    if (opts.render !== false) {
+      renderHud();
+    }
+    return true;
+  }
+
+  function toggleMobileSheet(tab, opts = {}) {
+    const sameTab = state.mobileSheetOpen && state.mobileSheetTab === tab;
+    if (sameTab) {
+      return closeMobileSheet(opts);
+    }
+    openMobileSheet(tab, opts);
+    return true;
+  }
+
+  function cycleMobileSheetDetent() {
+    const order = ['peek', 'medium', 'full'];
+    const currentIndex = Math.max(0, order.indexOf(state.mobileSheetDetent));
+    state.mobileSheetDetent = order[(currentIndex + 1) % order.length];
+    renderHud();
+  }
+
+  function mobileAnnotationSummary() {
+    if (annotations.editingNoteId) return 'Typing note';
+    if (annotations.mode === 'note') return 'Tap page to place note';
+    if (annotations.mode === 'arrow' && annotations.pendingArrowStart) return 'Tap end point';
+    if (annotations.mode === 'arrow') return 'Tap start point';
+    if (annotations.selected) {
+      return annotations.selected.type === 'note' ? 'Note selected' : 'Arrow selected';
+    }
+    return '';
+  }
+
   function renderHud() {
     renderToolbar();
     if (isMobileOverlayViewport()) {
@@ -106,6 +158,7 @@
     mobileSheetBackdrop.classList.remove('open');
     mobileSheetBackdrop.onclick = null;
     mobileSheet.classList.remove('open');
+    mobileSheet.dataset.detent = state.mobileSheetDetent;
     mobileSheet.innerHTML = '';
     if (!state.mobileSheetOpen) return;
 
@@ -119,10 +172,24 @@
     mobileSheetBackdrop.classList.add('open');
     mobileSheetBackdrop.onclick = (e) => {
       e.stopPropagation();
-      state.mobileSheetOpen = false;
-      renderHud();
+      closeMobileSheet();
     };
     mobileSheet.classList.add('open');
+    mobileSheet.dataset.detent = state.mobileSheetDetent;
+
+    const handleWrap = document.createElement('div');
+    handleWrap.className = 'mobile-sheet-handle';
+    const handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'mobile-sheet-detent';
+    handle.title = `Sheet size: ${state.mobileSheetDetent}. Tap to cycle size.`;
+    handle.innerHTML = `<span class="knob"></span><span>${state.mobileSheetDetent}</span>`;
+    handle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cycleMobileSheetDetent();
+    });
+    handleWrap.appendChild(handle);
+    mobileSheet.appendChild(handleWrap);
 
     const head = document.createElement('div');
     head.className = 'mobile-sheet-head';
@@ -146,15 +213,14 @@
     close.title = 'Close panel';
     close.addEventListener('click', (e) => {
       e.stopPropagation();
-      state.mobileSheetOpen = false;
-      renderHud();
+      closeMobileSheet();
     });
     head.appendChild(close);
     mobileSheet.appendChild(head);
 
-    const appendSection = (sectionTitle, subtleText) => {
+    const appendSection = (sectionTitle, subtleText, tone = '') => {
       const section = document.createElement('section');
-      section.className = 'mobile-sheet-section';
+      section.className = 'mobile-sheet-section' + (tone ? ` tone-${tone}` : '');
       if (sectionTitle) {
         const h = document.createElement('h4');
         h.textContent = sectionTitle;
@@ -170,10 +236,10 @@
       return section;
     };
 
-    const appendAction = (grid, { label, meta = '', on = false, tone = '', click }) => {
+    const appendAction = (grid, { label, meta = '', eyebrow = '', on = false, tone = '', variant = '', click }) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'mobile-action' + (on ? ' on' : '');
+      button.className = 'mobile-action' + (on ? ' on' : '') + (variant ? ` ${variant}` : '');
       if (tone) {
         button.style.borderColor = tone;
         if (on) {
@@ -181,7 +247,7 @@
           button.style.color = '#0c0a09';
         }
       }
-      button.innerHTML = `<span class="label">${label}</span>${meta ? `<span class="meta">${meta}</span>` : ''}`;
+      button.innerHTML = `${eyebrow ? `<span class="eyebrow">${eyebrow}</span>` : ''}<span class="label">${label}</span>${meta ? `<span class="meta">${meta}</span>` : ''}`;
       button.addEventListener('click', (e) => {
         e.stopPropagation();
         click();
@@ -191,57 +257,43 @@
     };
 
     if (state.mobileSheetTab === 'layers') {
-      const modeSection = appendSection(
-        'Audit mode',
-        `Preset ${activePresetLabel()} · touch profile ${currentTouchProfileLabel()}.`
+      const presetSection = appendSection(
+        'Workflow presets',
+        'Start with a named workflow, then fine-tune slices only if you need a different capture.',
+        'primary'
       );
-      const modeGrid = document.createElement('div');
-      modeGrid.className = 'mobile-grid';
-      appendAction(modeGrid, {
-        label: 'Conformance',
-        meta: 'Standards and advisory slices',
-        on: state.layerMode === 'conformance',
-        tone: '#e7e5e4',
-        click: () => {
-          if (applyLayerMode('conformance', { announce: true })) render();
-        }
-      });
-      appendAction(modeGrid, {
-        label: 'Review',
-        meta: 'Enables heuristic slices',
-        on: state.layerMode === 'review',
-        tone: '#a3e635',
-        click: () => {
-          if (applyLayerMode('review', { announce: true })) render();
-        }
-      });
-      modeSection.appendChild(modeGrid);
-
-      const presetSection = appendSection('Workflow presets', 'Apply a fixed layer, slice, and target-profile mix.');
       const presetGrid = document.createElement('div');
       presetGrid.className = 'mobile-grid';
       PRESETS.forEach((preset) => {
         appendAction(presetGrid, {
           label: preset.label,
           meta: preset.description,
+          eyebrow: preset.id === 'mobile' ? 'Touch preset' : (preset.id === 'agent-capture' ? 'Dense preset' : 'Workflow'),
           on: activePresetId() === preset.id,
           tone: preset.id === 'mobile' ? '#38bdf8' : '#22d3ee',
+          variant: 'primary',
           click: () => { applyPreset(preset.id); }
         });
       });
       presetSection.appendChild(presetGrid);
 
-      const sliceSection = appendSection('Slices', 'Turn individual overlays on and off.');
+      const sliceSection = appendSection(
+        'Slices',
+        'Use these only when the preset is close but not quite right.',
+        'secondary'
+      );
       const sliceGrid = document.createElement('div');
-      sliceGrid.className = 'mobile-grid';
+      sliceGrid.className = 'mobile-grid compact';
       SLICES.forEach((slice) => {
         const visibleActive = sliceVisible(slice.key);
         const reviewOnly = slice.minLayer === 'review' && state.layerMode !== 'review';
         appendAction(sliceGrid, {
           label: slice.label,
-          meta: reviewOnly ? `${slice.kbd} · review only` : slice.kbd,
+          eyebrow: reviewOnly ? 'Heuristic' : 'Slice',
+          meta: reviewOnly ? `${slice.kbd} · review only` : `Key ${slice.kbd}`,
           on: visibleActive,
           tone: slice.color,
+          variant: 'compact',
           click: () => {
             if (toggleSliceState(slice.key)) render();
           }
@@ -249,23 +301,51 @@
       });
       sliceSection.appendChild(sliceGrid);
 
-      const targetSection = appendSection('Touch profile', 'WCAG 24×24 stays standard. Platform profiles add advisory findings.');
-      const targetGrid = document.createElement('div');
-      targetGrid.className = 'mobile-grid';
+      const tuningSection = appendSection(
+        'Workflow tuning',
+        'Audit mode and touch profile are still available, but they matter less than the preset you pick first.',
+        'secondary'
+      );
+      const tuningGrid = document.createElement('div');
+      tuningGrid.className = 'mobile-grid compact';
+      appendAction(tuningGrid, {
+        label: 'Conformance',
+        meta: 'Standards and advisory slices',
+        eyebrow: 'Mode',
+        on: state.layerMode === 'conformance',
+        tone: '#e7e5e4',
+        variant: 'compact ghost',
+        click: () => {
+          if (applyLayerMode('conformance', { announce: true })) render();
+        }
+      });
+      appendAction(tuningGrid, {
+        label: 'Review',
+        meta: 'Enables heuristic slices',
+        eyebrow: 'Mode',
+        on: state.layerMode === 'review',
+        tone: '#a3e635',
+        variant: 'compact ghost',
+        click: () => {
+          if (applyLayerMode('review', { announce: true })) render();
+        }
+      });
       [
         { key: 'web-default', label: 'Web default' },
         { key: 'apple-44pt', label: 'Apple 44pt' },
         { key: 'android-48dp', label: 'Android 48dp' },
         { key: 'both', label: 'Apple + Android' }
       ].forEach((option) => {
-        appendAction(targetGrid, {
+        appendAction(tuningGrid, {
           label: option.label,
+          eyebrow: 'Touch',
           on: state.touchProfile === option.key,
           tone: '#f59e0b',
+          variant: 'compact ghost',
           click: () => { setTouchProfile(option.key); }
         });
       });
-      targetSection.appendChild(targetGrid);
+      tuningSection.appendChild(tuningGrid);
       return;
     }
 
@@ -273,7 +353,7 @@
       const selection = inspector.selection;
       if (!selection || !selection.el || !selection.el.isConnected || !isVisible(selection.el)) {
         inspector.selection = null;
-        const empty = appendSection('', '');
+        const empty = appendSection('', '', 'inspect');
         const msg = document.createElement('div');
         msg.className = 'mobile-empty';
         msg.textContent = 'Tap any badge or label on the page to open a receipt-style inspector for that finding.';
@@ -281,71 +361,131 @@
         return;
       }
 
-      const intro = appendSection('', '');
+      const intro = appendSection('', '', 'inspect');
+      const receipt = document.createElement('div');
+      receipt.className = 'mobile-receipt';
+      receipt.style.borderColor = selection.color || '#38bdf8';
+      const subtleBits = [];
+      if (selection.meta && selection.meta.issue) subtleBits.push(selection.meta.issue);
+      if (selection.meta && selection.meta.selector) subtleBits.push(selection.meta.selector);
+      if (!subtleBits.length && selection.meta && selection.meta.text) subtleBits.push(selection.meta.text);
+      receipt.innerHTML = `
+        <div class="eyebrow" style="color:${selection.color || '#38bdf8'}">${selection.meta.kind}</div>
+        <div class="title">${selection.label || selection.meta.kind}</div>
+        ${subtleBits.length ? `<div class="subtle">${subtleBits.join(' · ')}</div>` : ''}
+      `;
+      intro.appendChild(receipt);
+
+      const actionSection = appendSection(
+        'Next action',
+        'Inspect can jump to the target or hand off directly into annotation mode.',
+        'inspect'
+      );
+      const actionGrid = document.createElement('div');
+      actionGrid.className = 'mobile-grid compact';
+      appendAction(actionGrid, {
+        label: 'Reveal target',
+        meta: 'Center the selected element',
+        eyebrow: 'Inspect',
+        tone: selection.color || '#38bdf8',
+        variant: 'compact',
+        click: () => {
+          selection.el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+          render();
+        }
+      });
+      appendAction(actionGrid, {
+        label: 'Add note',
+        meta: 'Close panel and place on page',
+        eyebrow: 'Annotate',
+        tone: COLOR.noteBorder,
+        variant: 'compact',
+        click: () => {
+          closeMobileSheet({ render: false });
+          setAnnotationMode('note');
+        }
+      });
+      appendAction(actionGrid, {
+        label: 'Add arrow',
+        meta: 'Close panel and mark a direction',
+        eyebrow: 'Annotate',
+        tone: COLOR.annotate,
+        variant: 'compact',
+        click: () => {
+          closeMobileSheet({ render: false });
+          setAnnotationMode('arrow');
+        }
+      });
+      appendAction(actionGrid, {
+        label: 'Clear selection',
+        meta: 'Dismiss this receipt',
+        eyebrow: 'Inspect',
+        tone: '#38bdf8',
+        variant: 'compact ghost',
+        click: () => { clearInspectorSelection(); }
+      });
+      actionSection.appendChild(actionGrid);
+
+      const rowsSection = appendSection(
+        'Receipt',
+        'Structured fields from the selected badge or label.',
+        'inspect'
+      );
       const rows = document.createElement('div');
       rows.className = 'mobile-inspector-rows';
-
-      const headline = document.createElement('div');
-      headline.className = 'mobile-empty';
-      headline.textContent = `${selection.label || selection.meta.kind} · ${selection.meta.kind}`;
-      intro.appendChild(headline);
-
       inspectorRowsForSelection(selection).forEach(([key, value]) => {
         const row = document.createElement('div');
         row.className = 'mobile-inspector-row';
         row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
         rows.appendChild(row);
       });
-      intro.appendChild(rows);
-
-      const actions = appendSection('Selection', 'Tap another badge or label to switch context.');
-      const actionGrid = document.createElement('div');
-      actionGrid.className = 'mobile-grid one';
-      appendAction(actionGrid, {
-        label: 'Clear selection',
-        meta: 'Dismiss the current inspector target',
-        tone: '#38bdf8',
-        click: () => { clearInspectorSelection(); }
-      });
-      actions.appendChild(actionGrid);
+      rowsSection.appendChild(rows);
       return;
     }
 
     if (state.mobileSheetTab === 'annotate') {
       const annotateSection = appendSection(
         'Annotation tools',
-        editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Place notes and arrows, then return to the page to position them.'
+        editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Place notes and arrows, then return to the page to position them.',
+        'annotate'
       );
       const actionGrid = document.createElement('div');
-      actionGrid.className = 'mobile-grid';
+      actionGrid.className = 'mobile-grid compact';
       appendAction(actionGrid, {
         label: 'Note',
         meta: 'Tap the page once to place',
+        eyebrow: 'Mode',
         on: annotations.mode === 'note',
         tone: COLOR.noteBorder,
+        variant: 'compact',
         click: () => {
-          state.mobileSheetOpen = false;
+          closeMobileSheet({ render: false });
           setAnnotationMode('note');
         }
       });
       appendAction(actionGrid, {
         label: 'Arrow',
         meta: annotations.pendingArrowStart ? 'Tap the end point' : 'Tap start, then end',
+        eyebrow: 'Mode',
         on: annotations.mode === 'arrow',
         tone: COLOR.annotate,
+        variant: 'compact',
         click: () => {
-          state.mobileSheetOpen = false;
+          closeMobileSheet({ render: false });
           setAnnotationMode('arrow');
         }
       });
       appendAction(actionGrid, {
-        label: 'Deselect',
-        meta: 'Exit placement and clear selection',
+        label: 'Done',
+        meta: 'Exit placement and return to browsing',
+        eyebrow: 'Mode',
         on: annotations.mode === 'idle' && !annotations.selected,
         tone: '#38bdf8',
+        variant: 'compact ghost',
         click: () => {
           deselectAnnotations();
           state.mobileSheetTab = 'annotate';
+          state.mobileSheetDetent = 'medium';
           state.mobileSheetOpen = true;
           render();
         }
@@ -353,10 +493,13 @@
       appendAction(actionGrid, {
         label: 'Delete selected',
         meta: annotations.selected ? 'Remove current note or arrow' : 'Nothing selected',
+        eyebrow: 'Selection',
         tone: '#fb7185',
+        variant: 'compact',
         click: () => {
           if (removeSelectedAnnotation()) {
             state.mobileSheetTab = 'annotate';
+            state.mobileSheetDetent = 'medium';
             state.mobileSheetOpen = true;
             render();
           }
@@ -368,40 +511,51 @@
 
     const exportSection = appendSection(
       'Export',
-      state.exportNotice || 'Capture the current audit scope and viewport evidence.'
+      state.exportNotice || 'Capture the current audit scope and viewport evidence.',
+      'secondary'
     );
     const exportGrid = document.createElement('div');
-    exportGrid.className = 'mobile-grid';
+    exportGrid.className = 'mobile-grid compact';
     if (CAN_EXPORT_FROM_EXTENSION) {
       appendAction(exportGrid, {
         label: 'Copy PNG',
         meta: 'Focused copy window',
+        eyebrow: 'Export',
         tone: '#eab308',
+        variant: 'compact',
         click: () => { openCopyWindow(); }
       });
       appendAction(exportGrid, {
         label: 'Save PNG',
         meta: 'Save viewport evidence',
+        eyebrow: 'Export',
         tone: '#eab308',
+        variant: 'compact',
         click: () => { exportPng('download'); }
       });
     }
     appendAction(exportGrid, {
       label: 'JSON',
       meta: 'Current audit scope',
+      eyebrow: 'Export',
       tone: '#60a5fa',
+      variant: 'compact',
       click: () => { downloadReport('json'); }
     });
     appendAction(exportGrid, {
       label: 'HTML',
       meta: 'Readable audit receipt',
+      eyebrow: 'Export',
       tone: '#60a5fa',
+      variant: 'compact',
       click: () => { downloadReport('html'); }
     });
     appendAction(exportGrid, {
       label: 'Bundle',
       meta: 'Report + viewport evidence',
+      eyebrow: 'Export',
       tone: '#a78bfa',
+      variant: 'compact',
       click: async () => {
         if (state.exportBusy) return;
         state.exportBusy = true;
@@ -418,7 +572,7 @@
     });
     exportSection.appendChild(exportGrid);
 
-    const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`);
+    const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
     const helpRows = document.createElement('div');
     helpRows.className = 'mobile-inspector-rows';
     [
@@ -436,7 +590,7 @@
     });
     helpSection.appendChild(helpRows);
 
-    const exitSection = appendSection('Overlay', 'Mobile keeps one expanded surface at a time so the page stays readable.');
+    const exitSection = appendSection('Overlay', 'Mobile keeps one expanded surface at a time so the page stays readable.', 'secondary');
     const exitGrid = document.createElement('div');
     exitGrid.className = 'mobile-grid one';
     appendAction(exitGrid, {

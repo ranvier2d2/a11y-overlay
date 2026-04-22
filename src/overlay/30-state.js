@@ -16,6 +16,7 @@
     settingsOpen: false,
     mobileSheetOpen: false,
     mobileSheetTab: 'layers',
+    mobileSheetDetent: 'medium',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
@@ -178,6 +179,7 @@
    * @property {boolean} settingsOpen
    * @property {boolean} mobileSheetOpen
    * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
+   * @property {'peek'|'medium'|'full'} mobileSheetDetent
    * @property {boolean} exportBusy
    * @property {string} exportNotice
    * @property {string} exportNoticeTone

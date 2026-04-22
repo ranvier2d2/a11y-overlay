@@ -90,6 +90,8 @@
 
   function renderToolbar() {
     toolbar.innerHTML = '';
+    mobileModebar.innerHTML = '';
+    mobileModebar.className = 'mobile-modebar';
     if (isMobileOverlayViewport()) {
       toolbar.className = 'toolbar mobile';
       mobileDock.innerHTML = '';
@@ -181,13 +183,73 @@
         button.innerHTML = `<span class="dock-icon">${item.icon}</span><span class="dock-label">${item.label}</span><span class="dock-meta">${item.meta}</span>`;
         button.addEventListener('click', (e) => {
           e.stopPropagation();
-          const sameTab = state.mobileSheetOpen && state.mobileSheetTab === item.tab;
-          state.mobileSheetTab = item.tab;
-          state.mobileSheetOpen = !sameTab;
-          renderHud();
+          toggleMobileSheet(item.tab, { detent: item.tab === 'inspect' ? 'full' : undefined });
         });
         mobileDock.appendChild(button);
       });
+
+      const modeSummary = mobileAnnotationSummary();
+      if (modeSummary) {
+        mobileModebar.className = 'mobile-modebar open';
+
+        const copy = document.createElement('div');
+        copy.className = 'mode-copy';
+        copy.innerHTML = `<div class="eyebrow">Annotation mode</div><div class="value">${modeSummary}</div>`;
+        mobileModebar.appendChild(copy);
+
+        const actions = document.createElement('div');
+        actions.className = 'mode-actions';
+
+        const noteButton = document.createElement('button');
+        noteButton.type = 'button';
+        noteButton.className = 'modebtn' + (annotations.mode === 'note' ? ' on' : '');
+        noteButton.style.color = annotations.mode === 'note' ? '#0c0a09' : COLOR.noteBorder;
+        if (annotations.mode === 'note') noteButton.style.background = COLOR.noteBorder;
+        noteButton.textContent = 'Note';
+        noteButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeMobileSheet({ render: false });
+          setAnnotationMode('note');
+        });
+        actions.appendChild(noteButton);
+
+        const arrowButton = document.createElement('button');
+        arrowButton.type = 'button';
+        arrowButton.className = 'modebtn' + (annotations.mode === 'arrow' ? ' on' : '');
+        arrowButton.style.color = annotations.mode === 'arrow' ? '#0c0a09' : COLOR.annotate;
+        if (annotations.mode === 'arrow') arrowButton.style.background = COLOR.annotate;
+        arrowButton.textContent = 'Arrow';
+        arrowButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeMobileSheet({ render: false });
+          setAnnotationMode('arrow');
+        });
+        actions.appendChild(arrowButton);
+
+        const doneButton = document.createElement('button');
+        doneButton.type = 'button';
+        doneButton.className = 'modebtn ghost';
+        doneButton.textContent = 'Done';
+        doneButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deselectAnnotations();
+        });
+        actions.appendChild(doneButton);
+
+        if (annotations.selected) {
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.className = 'modebtn danger';
+          deleteButton.textContent = 'Delete';
+          deleteButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeSelectedAnnotation();
+          });
+          actions.appendChild(deleteButton);
+        }
+
+        mobileModebar.appendChild(actions);
+      }
       return;
     }
 

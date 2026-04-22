@@ -39,9 +39,7 @@
 
   function toggleHelpSurface() {
     if (isMobileOverlayViewport()) {
-      const sameTab = state.mobileSheetOpen && state.mobileSheetTab === 'more';
-      state.mobileSheetTab = 'more';
-      state.mobileSheetOpen = !sameTab;
+      toggleMobileSheet('more', { detent: 'peek' });
       return;
     }
     state.helpOpen = !state.helpOpen;
@@ -97,8 +95,7 @@
     if (k === 'x') { teardown(); return; }
     if (e.key === 'Escape') {
       if (isMobileOverlayViewport() && state.mobileSheetOpen) {
-        state.mobileSheetOpen = false;
-        renderHud();
+        closeMobileSheet();
         e.preventDefault();
         return;
       }

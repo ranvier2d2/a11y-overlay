@@ -59,6 +59,11 @@ For Vercel:
 - use the `Other` framework preset
 - no build command is required
 
+For GitHub Pages:
+
+- the workflow uploads `site/` directly
+- no site build step is required
+
 That keeps the public deployment isolated from extension-only files such as
 `manifest.json`, `service-worker.js`, tests, and build scripts.
 
@@ -261,9 +266,6 @@ node tests/verify_overlay_client.mjs
 That script opens deterministic HTML fixtures, checks the expected findings, verifies report generation, and confirms saved session state survives a reload.
 
 It also verifies that workflow presets apply the expected layer, slices, and touch profile, and that the automation contract is exposed.
-
-`tests/verify_site.py` still targets the older static-site routes and is not the
-primary validation path for `site/`.
 
 ### Store metadata
 
