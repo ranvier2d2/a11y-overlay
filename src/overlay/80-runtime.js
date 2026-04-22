@@ -196,6 +196,8 @@
         applyPreset: { args: ['presetId', 'opts'], returns: 'boolean' },
         setAnnotationMode: { args: ['mode'], returns: 'void' },
         setLayerMode: { args: ['mode'], returns: 'void' },
+        addNote: { args: ['point', 'text'], returns: 'OverlayNoteRecord' },
+        addArrow: { args: ['start', 'end'], returns: 'OverlayArrowRecord | null' },
         saveSession: { args: [], returns: 'Promise<OverlaySessionSnapshot>' },
         clearSavedSession: { args: [], returns: 'Promise<void>' },
         getSessionSnapshot: { args: [], returns: 'OverlaySessionSnapshot' },
@@ -268,6 +270,25 @@
     setAnnotationMode,
     setLayerMode(mode) {
       if (applyLayerMode(mode)) render();
+    },
+    addNote(point, text = '') {
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        throw new Error('addNote requires finite document-space x/y coordinates.');
+      }
+      return createNoteAt({ x: point.x, y: point.y }, text);
+    },
+    addArrow(start, end) {
+      if (
+        !start || !end ||
+        !Number.isFinite(start.x) || !Number.isFinite(start.y) ||
+        !Number.isFinite(end.x) || !Number.isFinite(end.y)
+      ) {
+        throw new Error('addArrow requires finite start/end document-space coordinates.');
+      }
+      return createArrow(
+        { x: start.x, y: start.y },
+        { x: end.x, y: end.y }
+      );
     },
     saveSession() {
       return persistOverlaySessionNow();

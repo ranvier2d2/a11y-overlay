@@ -1,0 +1,20 @@
+{
+  "name": "a11y-overlay",
+  "interface": {
+    "displayName": "a11y-overlay"
+  },
+  "plugins": [
+    {
+      "name": "overlay-playwright-runtime",
+      "source": {
+        "source": "local",
+        "path": "./plugins/overlay-playwright-runtime"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

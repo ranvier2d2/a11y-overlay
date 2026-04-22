@@ -1,0 +1,39 @@
+{
+  "name": "overlay-playwright-runtime",
+  "version": "0.1.17",
+  "description": "Installable Codex skill for adopting and operating the a11y-overlay runtime in Playwright workflows.",
+  "author": {
+    "name": "Joaquin Venegas Arevalo",
+    "url": "https://github.com/ranvier2d2"
+  },
+  "homepage": "https://a11y-overlay.vercel.app",
+  "repository": "https://github.com/ranvier2d2/a11y-overlay",
+  "license": "MIT",
+  "keywords": [
+    "accessibility",
+    "playwright",
+    "codex",
+    "automation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Overlay Playwright Runtime",
+    "shortDescription": "Adopt a11y-overlay or run it in a persistent Playwright session.",
+    "longDescription": "Packages the overlay-playwright-runtime skill so Codex users can vendor a11y-overlay into other repos or operate it live in persistent Playwright desktop and mobile sessions.",
+    "developerName": "Joaquin Venegas Arevalo",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://a11y-overlay.vercel.app",
+    "privacyPolicyURL": "https://a11y-overlay.vercel.app/privacy.html",
+    "termsOfServiceURL": "https://github.com/ranvier2d2/a11y-overlay/blob/main/LICENSE",
+    "defaultPrompt": [
+      "Use $overlay-playwright-runtime to vendor a11y-overlay into this repo.",
+      "Use $overlay-playwright-runtime to inspect this site in a persistent Playwright session.",
+      "Capture an overlay failure package for this broken flow."
+    ],
+    "brandColor": "#A3E635"
+  }
+}

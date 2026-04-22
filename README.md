@@ -10,6 +10,7 @@ Accessibility overlay runtime, Chrome extension, and static marketing site.
 - `demo.js` — controller for the guided demo page
 - `a11y-overlay.js` — generated zero-dependency overlay runtime
 - `playwright/overlay-client.mjs` — Playwright-facing helper for injection, contract reads, and failure packages
+- `playwright/overlay-client-live.mjs` — js_repl-safe live-session helper without file-writing concerns
 - `src/overlay/` — modular source of truth for the overlay runtime
 - `reference.html` — deterministic product-like target used by the demo iframe
 - `landing.html` — older landing variant kept in the repo but no longer canonical
@@ -67,6 +68,57 @@ For GitHub Pages:
 That keeps the public deployment isolated from extension-only files such as
 `manifest.json`, `service-worker.js`, tests, and build scripts.
 
+## Codex distribution
+
+This repo now ships the `overlay-playwright-runtime` workflow in two Codex-facing forms:
+
+- an installable skill at `plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime`
+- a minimal plugin wrapper at `plugins/overlay-playwright-runtime`
+
+Recommended split:
+
+- use the skill form for local setup and experimentation
+- use the plugin form for reusable team distribution
+
+### Install the skill from GitHub
+
+In Codex, use [$skill-installer](/Users/joaquinvenegasarevalo/.codex/skills/.system/skill-installer/SKILL.md) and point it at:
+
+- repo: `ranvier2d2/a11y-overlay`
+- path: `plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime`
+
+That installs the skill locally so it can be invoked directly as `$overlay-playwright-runtime`.
+
+### Install the plugin from a Git-backed marketplace
+
+Add this repo as a marketplace source:
+
+```bash
+codex plugin marketplace add ranvier2d2/a11y-overlay --ref main --sparse .agents/plugins --sparse plugins/overlay-playwright-runtime
+```
+
+Then open the Codex plugin browser and install `overlay-playwright-runtime`.
+
+The plugin wraps the same skill, but gives you the official install surface for wider reuse.
+
+### Operate sandbox
+
+For live local `js_repl` testing, the skill now expects a dedicated sandbox under:
+
+```text
+~/.codex/overlay-playwright-runtime/sandbox
+```
+
+Bootstrap it with the skill-bundled script:
+
+```bash
+python3 scripts/bootstrap_operate_sandbox.py
+```
+
+That sandbox owns the local `playwright` dependency and browser install for the
+skill's `operate` flow. It is intentionally separate from any adopted target repo,
+so local visual QA does not add or mutate a target repo `package.json` or lockfiles.
+
 ## How the script works
 
 1. Inject `a11y-overlay.js` with a bookmarklet, a `<script>` tag, or browser automation.
@@ -91,6 +143,7 @@ That keeps the public deployment isolated from extension-only files such as
 - `listPresets()` / `applyPreset(id)` — named audit workflows for humans and agents
 - `setLayerMode(mode)` — switch between `conformance` and `review` layer modes
 - `setAnnotationMode(mode)` — `note`, `arrow`, or `idle`
+- `addNote(point, text)` / `addArrow(start, end)` — create annotations directly from agents or automation
 - `saveSession()` / `clearSavedSession()` / `getSessionSnapshot()`
 - `annotations` — live notes/arrows state for the current page session
 - `render()`
@@ -137,6 +190,67 @@ await client.applyPreset(page, 'agent-capture', { announce: false });
 const contract = await client.getContract(page);
 const report = await client.buildReport(page, 'json', { scope: 'all' });
 ```
+
+### Desktop and mobile presets
+
+```js
+import { OverlayClient } from './playwright/overlay-client.mjs';
+
+const client = new OverlayClient();
+
+await client.inject(page);
+await client.applyPreset(page, 'agent-capture', { announce: false });
+
+const desktopReport = await client.buildReport(page, 'json', { scope: 'all' });
+
+await client.inject(mobilePage);
+await client.applyPreset(mobilePage, 'mobile', { announce: false });
+
+const mobileReport = await client.buildReport(mobilePage, 'json', { scope: 'all' });
+```
+
+### Annotation helpers
+
+```js
+import { OverlayClient } from './playwright/overlay-client.mjs';
+
+const client = new OverlayClient();
+
+await client.inject(page);
+await client.annotateNote(page, {
+  x: 640,
+  y: 280,
+  text: 'Primary CTA needs a stronger accessible name.'
+});
+
+await client.annotateArrow(page, {
+  x1: 640,
+  y1: 280,
+  x2: 840,
+  y2: 220
+});
+
+await client.saveSession(page);
+```
+
+### Live-session helper
+
+For persistent local `js_repl` browser work, prefer:
+
+```js
+import { OverlayLiveClient } from './playwright/overlay-client-live.mjs';
+```
+
+Use `OverlayLiveClient` when you want:
+
+- injection
+- presets
+- report reads
+- annotations
+- session save or restore
+
+Use `OverlayClient` when you also need artifact writing such as
+`writeFailurePackage(...)`.
 
 ### Failure package usage
 

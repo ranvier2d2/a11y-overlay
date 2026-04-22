@@ -4,16 +4,28 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { OverlayClient, DEFAULT_SCRIPT_PATH } from '../playwright/overlay-client.mjs';
+import { OverlayLiveClient } from '../playwright/overlay-client-live.mjs';
 
 class FakeRuntime {
   constructor() {
     this.appliedPreset = '';
+    this.layerMode = 'conformance';
+    this.annotationMode = 'idle';
+    this.notes = [];
+    this.arrows = [];
     this.getAutomationContract = this.getAutomationContract.bind(this);
     this.listPresets = this.listPresets.bind(this);
     this.applyPreset = this.applyPreset.bind(this);
     this.buildReport = this.buildReport.bind(this);
     this.buildAuditBundle = this.buildAuditBundle.bind(this);
     this.collectDetections = this.collectDetections.bind(this);
+    this.setLayerMode = this.setLayerMode.bind(this);
+    this.setAnnotationMode = this.setAnnotationMode.bind(this);
+    this.addNote = this.addNote.bind(this);
+    this.addArrow = this.addArrow.bind(this);
+    this.saveSession = this.saveSession.bind(this);
+    this.clearSavedSession = this.clearSavedSession.bind(this);
+    this.getSessionSnapshot = this.getSessionSnapshot.bind(this);
   }
 
   getAutomationContract() {
@@ -24,6 +36,13 @@ class FakeRuntime {
         getAutomationContract: {},
         listPresets: {},
         applyPreset: {},
+        setLayerMode: {},
+        setAnnotationMode: {},
+        addNote: {},
+        addArrow: {},
+        saveSession: {},
+        clearSavedSession: {},
+        getSessionSnapshot: {},
         buildReport: {},
         buildAuditBundle: {},
         collectDetections: {}
@@ -43,6 +62,44 @@ class FakeRuntime {
   applyPreset(presetId) {
     this.appliedPreset = presetId;
     return true;
+  }
+
+  setLayerMode(mode) {
+    this.layerMode = mode;
+  }
+
+  setAnnotationMode(mode) {
+    this.annotationMode = mode;
+  }
+
+  addNote(point, text = '') {
+    const note = { id: `note-${this.notes.length + 1}`, x: point.x, y: point.y, text };
+    this.notes.push(note);
+    return note;
+  }
+
+  addArrow(start, end) {
+    const arrow = { id: `arrow-${this.arrows.length + 1}`, x1: start.x, y1: start.y, x2: end.x, y2: end.y };
+    this.arrows.push(arrow);
+    return arrow;
+  }
+
+  saveSession() {
+    return this.getSessionSnapshot();
+  }
+
+  clearSavedSession() {
+    this.notes = [];
+    this.arrows = [];
+  }
+
+  getSessionSnapshot() {
+    return {
+      layerMode: this.layerMode,
+      annotationMode: this.annotationMode,
+      notes: [...this.notes],
+      arrows: [...this.arrows]
+    };
   }
 
   buildReport(format, options) {
@@ -130,10 +187,10 @@ class FakeTarget {
   }
 }
 
-async function verifyInjectAndDelegation() {
+async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
   const runtime = new FakeRuntime();
   const target = new FakeTarget(runtime);
-  const client = new OverlayClient();
+  const client = new ClientClass();
 
   const contract = await client.inject(target);
   assert.equal(contract.contractVersion, 1);
@@ -152,6 +209,30 @@ async function verifyInjectAndDelegation() {
   const report = await client.buildReport(target, 'json', { scope: 'all' });
   assert.equal(report.audit.scope, 'all');
   assert.equal(report.audit.presetId, 'agent-capture');
+
+  await client.setLayerMode(target, 'review');
+  assert.equal(runtime.layerMode, 'review');
+
+  await client.setAnnotationMode(target, 'note');
+  assert.equal(runtime.annotationMode, 'note');
+
+  const note = await client.annotateNote(target, { x: 120, y: 240, text: 'Missing label' });
+  assert.equal(note.text, 'Missing label');
+
+  const arrow = await client.annotateArrow(target, { x1: 10, y1: 20, x2: 30, y2: 40 });
+  assert.equal(arrow.x2, 30);
+
+  const snapshot = await client.getSessionSnapshot(target);
+  assert.equal(snapshot.notes.length, 1);
+  assert.equal(snapshot.arrows.length, 1);
+
+  const saved = await client.saveSession(target);
+  assert.equal(saved.notes[0].text, 'Missing label');
+
+  await client.clearSavedSession(target);
+  const cleared = await client.getSessionSnapshot(target);
+  assert.equal(cleared.notes.length, 0);
+  assert.equal(cleared.arrows.length, 0);
 }
 
 async function verifyForceInjectIsIdempotent() {
@@ -162,7 +243,8 @@ async function verifyForceInjectIsIdempotent() {
 
   const contract = await client.inject(target, { force: true });
   assert.equal(contract.contractVersion, 1);
-  assert.equal(target.scriptTags.length, 0);
+  assert.equal(target.scriptTags.length, 1);
+  assert.equal(target.scriptTags[0].path, DEFAULT_SCRIPT_PATH);
 }
 
 async function verifyFailurePackageWrite() {
@@ -229,7 +311,8 @@ async function verifyUnavailableMethodError() {
 }
 
 async function main() {
-  await verifyInjectAndDelegation();
+  await verifyInjectAndDelegation(OverlayClient);
+  await verifyInjectAndDelegation(OverlayLiveClient);
   await verifyForceInjectIsIdempotent();
   await verifyFailurePackageWrite();
   await verifyUnavailableMethodError();

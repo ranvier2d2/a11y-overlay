@@ -223,6 +223,13 @@
         padding: 5px 6px;
         gap: 3px;
       }
+      .toolbar.tight {
+        width: calc(100vw - 24px);
+        max-width: none;
+        flex-wrap: wrap;
+        row-gap: 4px;
+        overflow-x: visible;
+      }
       .toolbar .title {
         color: #a3e635;
         font-weight: 700;
@@ -235,6 +242,10 @@
       .toolbar.compact .title {
         padding-right: 4px;
         margin-right: 2px;
+      }
+      .toolbar.tight .title {
+        padding-right: 6px;
+        margin-right: 4px;
       }
       .toolbar .seg {
         display: inline-flex;
@@ -296,6 +307,7 @@
       .toolbar .tbtn.on .kbd { opacity: 0.9; }
       .toolbar .sep { width: 1px; align-self: stretch; background: #292524; margin: 2px 4px; }
       .toolbar.compact .sep { margin: 2px 2px; }
+      .toolbar.tight .sep { margin: 2px 3px; }
       .toolbar .close {
         background: transparent;
         border: 1px solid #44403c;
@@ -4346,13 +4358,14 @@
     renderAnnotations();
   }
 
-  function createNoteAt(point) {
+  function createNoteAt(point, text = '') {
     const id = nextAnnotationId('note');
+    const noteText = typeof text === 'string' ? text : '';
     annotations.notes.push({
       id,
       x: point.x + 12,
       y: clampNoteY(point.y + 12),
-      text: ''
+      text: noteText
     });
     annotations.mode = 'idle';
     annotations.pendingArrowStart = null;
@@ -4364,8 +4377,12 @@
     renderAnnotations();
     requestAnimationFrame(() => {
       const field = annotationHtml.querySelector(`[data-note-id="${id}"] textarea`);
-      if (field) field.focus();
+      if (field) {
+        if (!noteText) field.focus();
+        field.value = noteText;
+      }
     });
+    return annotations.notes[annotations.notes.length - 1];
   }
 
   function createArrow(start, end) {
@@ -4376,7 +4393,7 @@
     if (distance < 8) {
       renderHud();
       renderAnnotations();
-      return;
+      return null;
     }
     const id = nextAnnotationId('arrow');
     annotations.arrows.push({
@@ -4390,6 +4407,7 @@
     scheduleSessionPersist();
     renderHud();
     renderAnnotations();
+    return annotations.arrows[annotations.arrows.length - 1];
   }
 
   function removeSelectedAnnotation() {
@@ -4948,9 +4966,11 @@
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
 
-    const renderDesktopToolbarVariant = (compact) => {
+    const renderDesktopToolbarVariant = (variant) => {
+      const compact = variant !== 'full';
+      const tight = variant === 'tight';
       toolbar.innerHTML = '';
-      toolbar.className = 'toolbar' + (compact ? ' compact' : '');
+      toolbar.className = 'toolbar' + (compact ? ' compact' : '') + (tight ? ' tight' : '');
 
       const title = document.createElement('span');
       title.className = 'title';
@@ -5174,11 +5194,14 @@
       toolbar.appendChild(close);
     };
 
-    renderDesktopToolbarVariant(false);
+    renderDesktopToolbarVariant('full');
     const availableWidth = window.innerWidth - 24;
     const needsCompact = toolbar.scrollWidth > (availableWidth - 32);
     if (needsCompact) {
-      renderDesktopToolbarVariant(true);
+      renderDesktopToolbarVariant('compact');
+      if (toolbar.scrollWidth > (toolbar.clientWidth + 1)) {
+        renderDesktopToolbarVariant('tight');
+      }
     }
   }
 
@@ -5464,6 +5487,8 @@
         applyPreset: { args: ['presetId', 'opts'], returns: 'boolean' },
         setAnnotationMode: { args: ['mode'], returns: 'void' },
         setLayerMode: { args: ['mode'], returns: 'void' },
+        addNote: { args: ['point', 'text'], returns: 'OverlayNoteRecord' },
+        addArrow: { args: ['start', 'end'], returns: 'OverlayArrowRecord | null' },
         saveSession: { args: [], returns: 'Promise<OverlaySessionSnapshot>' },
         clearSavedSession: { args: [], returns: 'Promise<void>' },
         getSessionSnapshot: { args: [], returns: 'OverlaySessionSnapshot' },
@@ -5536,6 +5561,25 @@
     setAnnotationMode,
     setLayerMode(mode) {
       if (applyLayerMode(mode)) render();
+    },
+    addNote(point, text = '') {
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+        throw new Error('addNote requires finite document-space x/y coordinates.');
+      }
+      return createNoteAt({ x: point.x, y: point.y }, text);
+    },
+    addArrow(start, end) {
+      if (
+        !start || !end ||
+        !Number.isFinite(start.x) || !Number.isFinite(start.y) ||
+        !Number.isFinite(end.x) || !Number.isFinite(end.y)
+      ) {
+        throw new Error('addArrow requires finite start/end document-space coordinates.');
+      }
+      return createArrow(
+        { x: start.x, y: start.y },
+        { x: end.x, y: end.y }
+      );
     },
     saveSession() {
       return persistOverlaySessionNow();

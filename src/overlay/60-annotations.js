@@ -852,13 +852,14 @@
     renderAnnotations();
   }
 
-  function createNoteAt(point) {
+  function createNoteAt(point, text = '') {
     const id = nextAnnotationId('note');
+    const noteText = typeof text === 'string' ? text : '';
     annotations.notes.push({
       id,
       x: point.x + 12,
       y: clampNoteY(point.y + 12),
-      text: ''
+      text: noteText
     });
     annotations.mode = 'idle';
     annotations.pendingArrowStart = null;
@@ -870,8 +871,12 @@
     renderAnnotations();
     requestAnimationFrame(() => {
       const field = annotationHtml.querySelector(`[data-note-id="${id}"] textarea`);
-      if (field) field.focus();
+      if (field) {
+        if (!noteText) field.focus();
+        field.value = noteText;
+      }
     });
+    return annotations.notes[annotations.notes.length - 1];
   }
 
   function createArrow(start, end) {
@@ -882,7 +887,7 @@
     if (distance < 8) {
       renderHud();
       renderAnnotations();
-      return;
+      return null;
     }
     const id = nextAnnotationId('arrow');
     annotations.arrows.push({
@@ -896,6 +901,7 @@
     scheduleSessionPersist();
     renderHud();
     renderAnnotations();
+    return annotations.arrows[annotations.arrows.length - 1];
   }
 
   function removeSelectedAnnotation() {
