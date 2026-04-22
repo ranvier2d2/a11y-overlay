@@ -51,6 +51,14 @@ export async function createOverlaySandboxSession(options = {}) {
     globalName,
     defaultTimeoutMs
   });
+  const agentUiConfig = options.agentUiConfig || {
+    uiMode: "agent",
+    helpOpen: false,
+    settingsOpen: false,
+    mobileSheetOpen: false,
+    mobileSheetTab: "layers",
+    mobileSheetDetent: "medium"
+  };
 
   const state = {
     browser: null,
@@ -150,10 +158,16 @@ export async function createOverlaySandboxSession(options = {}) {
     const contract = await liveClient.inject(target, {
       force,
       scriptPath: runtimeScriptPath,
+      bootstrapConfig: agentUiConfig,
       timeoutMs
     });
     if (preset) {
-      await liveClient.applyPreset(target, preset, { announce });
+      await liveClient.applyPreset(target, preset, {
+        announce,
+        ui: agentUiConfig
+      });
+    } else {
+      await liveClient.configureUi(target, agentUiConfig);
     }
     return contract;
   };

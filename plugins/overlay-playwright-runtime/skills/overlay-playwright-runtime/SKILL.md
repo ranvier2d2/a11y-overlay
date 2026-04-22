@@ -27,6 +27,11 @@ This skill carries its own vendorable runtime files under:
 - `assets/sandbox/package.json`
 - `assets/sandbox/launch-session.mjs`
 - `assets/sandbox/overlay-client-live.mjs`
+- `assets/templates/accessibility-audit-report.md`
+
+It also carries workflow doctrine under:
+
+- `references/reporting.md`
 
 That makes `adopt` deterministic:
 
@@ -114,6 +119,29 @@ This writes:
 - `audit-bundle.html`
 - `viewport.png`
 - `manifest.json`
+
+### 4.1 Use the built-in reporting doctrine and template
+
+When the task is to produce a persistent audit report, use:
+
+- `references/reporting.md` for the reporting standard and allowed claims
+- `assets/templates/accessibility-audit-report.md` for the actual Markdown scaffold
+
+Use that split intentionally:
+
+- `reporting.md` tells you what kind of report this skill should produce
+- `accessibility-audit-report.md` tells you how to structure the deliverable
+
+Default posture:
+
+- produce a **Website Accessibility Audit Report**
+- do **not** default to a formal conformance claim, VPAT, or ACR
+
+If the user asks for stronger standards backing or if the report structure is being changed materially:
+
+- re-check the primary references listed in `references/reporting.md`
+- keep the local doctrine as the default source of truth
+- do not reinvent the report structure from scratch on every run
 
 ### 5. Be explicit about current limits
 

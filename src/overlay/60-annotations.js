@@ -572,23 +572,25 @@
     });
     exportSection.appendChild(exportGrid);
 
-    const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
-    const helpRows = document.createElement('div');
-    helpRows.className = 'mobile-inspector-rows';
-    [
-      ['Tap badge', 'Open the inspector receipt for that finding.'],
-      ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
-      ['R / F / D / G', 'Review and depth-oriented slices.'],
-      ['N / W / V', 'Note, arrow, or deselect placement.'],
-      ['Del / Backspace', 'Delete the selected note or arrow.'],
-      ['X', 'Remove the overlay entirely.']
-    ].forEach(([key, value]) => {
-      const row = document.createElement('div');
-      row.className = 'mobile-inspector-row';
-      row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
-      helpRows.appendChild(row);
-    });
-    helpSection.appendChild(helpRows);
+    if (state.uiMode !== 'agent') {
+      const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
+      const helpRows = document.createElement('div');
+      helpRows.className = 'mobile-inspector-rows';
+      [
+        ['Tap badge', 'Open the inspector receipt for that finding.'],
+        ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
+        ['R / F / D / G', 'Review and depth-oriented slices.'],
+        ['N / W / V', 'Note, arrow, or deselect placement.'],
+        ['Del / Backspace', 'Delete the selected note or arrow.'],
+        ['X', 'Remove the overlay entirely.']
+      ].forEach(([key, value]) => {
+        const row = document.createElement('div');
+        row.className = 'mobile-inspector-row';
+        row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
+        helpRows.appendChild(row);
+      });
+      helpSection.appendChild(helpRows);
+    }
 
     const exitSection = appendSection('Overlay', 'Mobile keeps one expanded surface at a time so the page stays readable.', 'secondary');
     const exitGrid = document.createElement('div');

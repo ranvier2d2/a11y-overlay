@@ -93,9 +93,10 @@
     mobileModebar.innerHTML = '';
     mobileModebar.className = 'mobile-modebar';
     if (isMobileOverlayViewport()) {
-      toolbar.className = 'toolbar mobile';
+      const agentUi = state.uiMode === 'agent';
+      toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
       mobileDock.innerHTML = '';
-      mobileDock.className = 'mobile-dock open';
+      mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
 
       const brand = document.createElement('div');
       brand.className = 'mobile-brand';
@@ -115,7 +116,9 @@
 
       const value = document.createElement('div');
       value.className = 'value';
-      value.textContent = state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`;
+      value.textContent = agentUi
+        ? `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`
+        : (state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`);
       summary.appendChild(value);
       brand.appendChild(summary);
       toolbar.appendChild(brand);
@@ -123,10 +126,13 @@
       const actions = document.createElement('div');
       actions.className = 'mobile-actions';
 
-      const chip = document.createElement('span');
-      chip.className = 'mobile-chip';
-      chip.textContent = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Overlay active';
-      actions.appendChild(chip);
+      const statusLabel = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel();
+      if (!agentUi || statusLabel) {
+        const chip = document.createElement('span');
+        chip.className = 'mobile-chip';
+        chip.textContent = statusLabel || 'Overlay active';
+        actions.appendChild(chip);
+      }
 
       const close = document.createElement('button');
       close.type = 'button';

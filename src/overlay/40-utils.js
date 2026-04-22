@@ -266,14 +266,69 @@
     });
   }
 
+  function configureUi(options = {}, control = {}) {
+    const { render: shouldRender = true } = control;
+    let changed = false;
+
+    if ('uiMode' in options) {
+      const nextUiMode = options.uiMode === 'agent' ? 'agent' : 'human';
+      if (state.uiMode !== nextUiMode) {
+        state.uiMode = nextUiMode;
+        changed = true;
+      }
+    }
+
+    if (typeof options.helpOpen === 'boolean' && state.helpOpen !== options.helpOpen) {
+      state.helpOpen = options.helpOpen;
+      changed = true;
+    }
+
+    if (typeof options.settingsOpen === 'boolean' && state.settingsOpen !== options.settingsOpen) {
+      state.settingsOpen = options.settingsOpen;
+      changed = true;
+    }
+
+    if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {
+      state.mobileSheetOpen = options.mobileSheetOpen;
+      changed = true;
+    }
+
+    if (
+      (options.mobileSheetTab === 'layers' || options.mobileSheetTab === 'inspect' || options.mobileSheetTab === 'annotate' || options.mobileSheetTab === 'more') &&
+      state.mobileSheetTab !== options.mobileSheetTab
+    ) {
+      state.mobileSheetTab = options.mobileSheetTab;
+      changed = true;
+    }
+
+    if (
+      (options.mobileSheetDetent === 'peek' || options.mobileSheetDetent === 'medium' || options.mobileSheetDetent === 'full') &&
+      state.mobileSheetDetent !== options.mobileSheetDetent
+    ) {
+      state.mobileSheetDetent = options.mobileSheetDetent;
+      changed = true;
+    }
+
+    if (changed && shouldRender) {
+      render();
+    }
+    return changed;
+  }
+
   function applyPreset(presetId, opts = {}) {
     const preset = getPresetMeta(presetId);
     if (!preset) return false;
-    const { announce = true } = opts;
+    const {
+      announce = true,
+      ui = null
+    } = opts;
     state.layerMode = preset.layerMode;
     state.touchProfile = preset.touchProfile;
     persistTouchProfile(state.touchProfile).catch(() => {});
     applySliceMap(preset.enabledSlices);
+    if (ui) {
+      configureUi(ui, { render: false });
+    }
     clearIncompatibleInspectorSelection(state.layerMode);
     scheduleSessionPersist();
     if (announce) {

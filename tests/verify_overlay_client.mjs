@@ -11,10 +11,20 @@ class FakeRuntime {
     this.appliedPreset = '';
     this.layerMode = 'conformance';
     this.annotationMode = 'idle';
+    this.uiState = {
+      uiMode: 'human',
+      helpOpen: true,
+      settingsOpen: false,
+      mobileSheetOpen: false,
+      mobileSheetTab: 'layers',
+      mobileSheetDetent: 'medium'
+    };
     this.notes = [];
     this.arrows = [];
     this.getAutomationContract = this.getAutomationContract.bind(this);
+    this.getUiState = this.getUiState.bind(this);
     this.listPresets = this.listPresets.bind(this);
+    this.configureUi = this.configureUi.bind(this);
     this.applyPreset = this.applyPreset.bind(this);
     this.buildReport = this.buildReport.bind(this);
     this.buildAuditBundle = this.buildAuditBundle.bind(this);
@@ -34,7 +44,9 @@ class FakeRuntime {
       reportSchemaVersion: 1,
       methods: {
         getAutomationContract: {},
+        getUiState: {},
         listPresets: {},
+        configureUi: {},
         applyPreset: {},
         setLayerMode: {},
         setAnnotationMode: {},
@@ -59,8 +71,23 @@ class FakeRuntime {
     return [{ id: 'agent-capture', label: 'Agent' }];
   }
 
-  applyPreset(presetId) {
+  getUiState() {
+    return { ...this.uiState };
+  }
+
+  configureUi(options = {}) {
+    this.uiState = {
+      ...this.uiState,
+      ...options
+    };
+    return this.getUiState();
+  }
+
+  applyPreset(presetId, options = {}) {
     this.appliedPreset = presetId;
+    if (options.ui) {
+      this.configureUi(options.ui);
+    }
     return true;
   }
 
@@ -200,6 +227,13 @@ async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
   const presets = await client.listPresets(target);
   assert.equal(presets[0].id, 'agent-capture');
 
+  const configured = await client.configureUi(target, {
+    uiMode: 'agent',
+    helpOpen: false
+  });
+  assert.equal(configured.uiMode, 'agent');
+  assert.equal(configured.helpOpen, false);
+
   const applied = await client.applyPreset(target, 'agent-capture', { announce: false });
   assert.equal(applied, true);
 
@@ -233,6 +267,10 @@ async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
   const cleared = await client.getSessionSnapshot(target);
   assert.equal(cleared.notes.length, 0);
   assert.equal(cleared.arrows.length, 0);
+
+  const uiState = await client.getUiState(target);
+  assert.equal(uiState.uiMode, 'agent');
+  assert.equal(uiState.helpOpen, false);
 }
 
 async function verifyForceInjectIsIdempotent() {

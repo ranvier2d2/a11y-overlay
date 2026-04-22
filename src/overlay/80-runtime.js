@@ -192,7 +192,9 @@
         downloadAuditBundle: { args: ['opts'], returns: 'Promise<OverlayReportData>' },
         exportPng: { args: ['target'], returns: 'Promise<void>' },
         getAutomationContract: { args: [], returns: 'object' },
+        getUiState: { args: [], returns: 'object' },
         listPresets: { args: [], returns: 'OverlayPreset[]' },
+        configureUi: { args: ['opts'], returns: 'object' },
         applyPreset: { args: ['presetId', 'opts'], returns: 'boolean' },
         setAnnotationMode: { args: ['mode'], returns: 'void' },
         setLayerMode: { args: ['mode'], returns: 'void' },
@@ -243,6 +245,20 @@
       }
     },
     collectDetections,
+    getUiState() {
+      return {
+        uiMode: state.uiMode,
+        helpOpen: state.helpOpen,
+        settingsOpen: state.settingsOpen,
+        mobileSheetOpen: state.mobileSheetOpen,
+        mobileSheetTab: state.mobileSheetTab,
+        mobileSheetDetent: state.mobileSheetDetent
+      };
+    },
+    configureUi(opts = {}) {
+      configureUi(opts);
+      return this.getUiState();
+    },
     buildReport(format = 'json', opts = {}) {
       const normalizedFormat = format === 'html' ? 'html' : 'json';
       return normalizedFormat === 'html'

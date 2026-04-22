@@ -1,8 +1,22 @@
 const DEFAULT_GLOBAL_NAME = '__a11yOverlayInstalled';
+const DEFAULT_BOOTSTRAP_KEY = '__a11yOverlayBootstrap';
 const DEFAULT_TIMEOUT_MS = 5000;
 const DEFAULT_SCRIPT_PATH = new URL('../a11y-overlay.js', import.meta.url).pathname;
 
+/**
+ * js_repl-safe Playwright-facing wrapper over the injected overlay runtime.
+ *
+ * This file intentionally avoids Node filesystem helpers so it can be used
+ * directly in persistent local browser sessions.
+ */
 export class OverlayLiveClient {
+  /**
+   * @param {{
+   *   globalName?: string,
+   *   scriptPath?: string,
+   *   defaultTimeoutMs?: number
+   * }} [options]
+   */
   constructor(options = {}) {
     this.globalName = options.globalName || DEFAULT_GLOBAL_NAME;
     this.scriptPath = options.scriptPath || DEFAULT_SCRIPT_PATH;
@@ -11,8 +25,32 @@ export class OverlayLiveClient {
       : DEFAULT_TIMEOUT_MS;
   }
 
+  /**
+   * @param {import('playwright').Page | import('playwright').Frame} target
+   * @param {{
+   *   force?: boolean,
+   *   scriptPath?: string,
+   *   scriptUrl?: string,
+   *   scriptContent?: string,
+   *   bootstrapConfig?: object,
+   *   timeoutMs?: number
+   * }} [options]
+   * @returns {Promise<object>}
+   */
   async inject(target, options = {}) {
     const installed = await this.isInstalled(target);
+
+    if (options.bootstrapConfig && (!installed || options.force)) {
+      await target.evaluate(
+        ({ bootstrapKey, bootstrapConfig }) => {
+          window[bootstrapKey] = bootstrapConfig;
+        },
+        {
+          bootstrapKey: DEFAULT_BOOTSTRAP_KEY,
+          bootstrapConfig: options.bootstrapConfig
+        }
+      );
+    }
 
     if (!installed || options.force) {
       if (options.force && installed) {
@@ -28,6 +66,11 @@ export class OverlayLiveClient {
     }
 
     await this.waitForRuntime(target, { timeoutMs: options.timeoutMs });
+    if (options.bootstrapConfig) {
+      await target.evaluate(({ bootstrapKey }) => {
+        delete window[bootstrapKey];
+      }, { bootstrapKey: DEFAULT_BOOTSTRAP_KEY });
+    }
     return this.getContract(target);
   }
 
@@ -73,12 +116,20 @@ export class OverlayLiveClient {
     return this._evaluateRuntimeMethod(target, 'buildAuditBundle', [options]);
   }
 
+  async getUiState(target) {
+    return this._evaluateRuntimeMethod(target, 'getUiState', []);
+  }
+
   async listPresets(target) {
     return this._evaluateRuntimeMethod(target, 'listPresets', []);
   }
 
   async applyPreset(target, presetId, options = {}) {
     return this._evaluateRuntimeMethod(target, 'applyPreset', [presetId, options]);
+  }
+
+  async configureUi(target, options = {}) {
+    return this._evaluateRuntimeMethod(target, 'configureUi', [options]);
   }
 
   async setLayerMode(target, mode) {
@@ -184,5 +235,6 @@ export function createOverlayLiveClient(options) {
 export {
   DEFAULT_SCRIPT_PATH,
   DEFAULT_GLOBAL_NAME,
+  DEFAULT_BOOTSTRAP_KEY,
   DEFAULT_TIMEOUT_MS
 };

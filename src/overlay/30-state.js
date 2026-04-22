@@ -1,4 +1,10 @@
   // ---------- state ----------
+  const bootstrapConfig = (() => {
+    if (typeof window === 'undefined') return {};
+    const value = window.__a11yOverlayBootstrap;
+    return value && typeof value === 'object' ? value : {};
+  })();
+  const bootstrapUiMode = bootstrapConfig.uiMode === 'agent' ? 'agent' : 'human';
   /** @type {OverlayState} */
   const state = {
     layerMode: 'conformance',
@@ -12,11 +18,16 @@
     focus: false,
     depth: false,
     grid: false,
-    helpOpen: true,
-    settingsOpen: false,
-    mobileSheetOpen: false,
-    mobileSheetTab: 'layers',
-    mobileSheetDetent: 'medium',
+    uiMode: bootstrapUiMode,
+    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
+    settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
+    mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
+    mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
+      ? bootstrapConfig.mobileSheetTab
+      : 'layers',
+    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'full'
+      ? bootstrapConfig.mobileSheetDetent
+      : 'medium',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
@@ -175,6 +186,7 @@
    * @property {boolean} focus
    * @property {boolean} depth
    * @property {boolean} grid
+   * @property {'human'|'agent'} uiMode
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
    * @property {boolean} mobileSheetOpen

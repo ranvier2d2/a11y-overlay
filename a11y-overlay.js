@@ -340,12 +340,19 @@
         gap: 10px;
         justify-content: space-between;
       }
+      .toolbar.mobile.agent {
+        padding: 8px 10px;
+        gap: 8px;
+      }
       .toolbar.mobile .mobile-brand {
         display: flex;
         align-items: center;
         gap: 8px;
         min-width: 0;
         flex: 1 1 auto;
+      }
+      .toolbar.mobile.agent .mobile-brand {
+        gap: 6px;
       }
       .toolbar.mobile .mobile-title {
         color: #a3e635;
@@ -372,6 +379,12 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .toolbar.mobile.agent .mobile-summary .eyebrow {
+        font-size: 9px;
+      }
+      .toolbar.mobile.agent .mobile-summary .value {
+        font-size: 11px;
       }
       .toolbar.mobile .mobile-actions {
         display: inline-flex;
@@ -408,6 +421,10 @@
         border-radius: 10px;
         cursor: pointer;
       }
+      .toolbar.mobile.agent .mobile-close {
+        width: 32px;
+        height: 32px;
+      }
       .toolbar.mobile .mobile-close:hover {
         background: #fb7185;
         color: #0c0a09;
@@ -428,6 +445,10 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.55);
       }
       .mobile-dock.open { display: flex; }
+      .mobile-dock.agent {
+        gap: 6px;
+        padding: 6px;
+      }
       .mobile-dock .dockbtn {
         flex: 1 1 0;
         min-width: 0;
@@ -443,6 +464,10 @@
         justify-content: center;
         font: inherit;
         cursor: pointer;
+      }
+      .mobile-dock.agent .dockbtn {
+        padding: 8px 4px;
+        gap: 3px;
       }
       .mobile-dock .dockbtn:hover {
         border-color: #57534e;
@@ -464,6 +489,11 @@
         font-weight: 700;
         letter-spacing: 0.05em;
       }
+      .mobile-dock.agent .dockbtn .dock-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+      }
       .mobile-dock .dockbtn .dock-label {
         font-size: 10px;
         font-weight: 700;
@@ -477,6 +507,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
+      }
+      .mobile-dock.agent .dockbtn .dock-meta {
+        display: none;
       }
       .mobile-modebar {
         position: fixed;
@@ -1114,6 +1147,12 @@
   const mobileSheetBackdrop = shadow.getElementById('mobile-sheet-backdrop');
   const mobileSheet = shadow.getElementById('mobile-sheet');
   // ---------- state ----------
+  const bootstrapConfig = (() => {
+    if (typeof window === 'undefined') return {};
+    const value = window.__a11yOverlayBootstrap;
+    return value && typeof value === 'object' ? value : {};
+  })();
+  const bootstrapUiMode = bootstrapConfig.uiMode === 'agent' ? 'agent' : 'human';
   /** @type {OverlayState} */
   const state = {
     layerMode: 'conformance',
@@ -1127,11 +1166,16 @@
     focus: false,
     depth: false,
     grid: false,
-    helpOpen: true,
-    settingsOpen: false,
-    mobileSheetOpen: false,
-    mobileSheetTab: 'layers',
-    mobileSheetDetent: 'medium',
+    uiMode: bootstrapUiMode,
+    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
+    settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
+    mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
+    mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
+      ? bootstrapConfig.mobileSheetTab
+      : 'layers',
+    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'full'
+      ? bootstrapConfig.mobileSheetDetent
+      : 'medium',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
@@ -1290,6 +1334,7 @@
    * @property {boolean} focus
    * @property {boolean} depth
    * @property {boolean} grid
+   * @property {'human'|'agent'} uiMode
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
    * @property {boolean} mobileSheetOpen
@@ -1597,14 +1642,69 @@
     });
   }
 
+  function configureUi(options = {}, control = {}) {
+    const { render: shouldRender = true } = control;
+    let changed = false;
+
+    if ('uiMode' in options) {
+      const nextUiMode = options.uiMode === 'agent' ? 'agent' : 'human';
+      if (state.uiMode !== nextUiMode) {
+        state.uiMode = nextUiMode;
+        changed = true;
+      }
+    }
+
+    if (typeof options.helpOpen === 'boolean' && state.helpOpen !== options.helpOpen) {
+      state.helpOpen = options.helpOpen;
+      changed = true;
+    }
+
+    if (typeof options.settingsOpen === 'boolean' && state.settingsOpen !== options.settingsOpen) {
+      state.settingsOpen = options.settingsOpen;
+      changed = true;
+    }
+
+    if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {
+      state.mobileSheetOpen = options.mobileSheetOpen;
+      changed = true;
+    }
+
+    if (
+      (options.mobileSheetTab === 'layers' || options.mobileSheetTab === 'inspect' || options.mobileSheetTab === 'annotate' || options.mobileSheetTab === 'more') &&
+      state.mobileSheetTab !== options.mobileSheetTab
+    ) {
+      state.mobileSheetTab = options.mobileSheetTab;
+      changed = true;
+    }
+
+    if (
+      (options.mobileSheetDetent === 'peek' || options.mobileSheetDetent === 'medium' || options.mobileSheetDetent === 'full') &&
+      state.mobileSheetDetent !== options.mobileSheetDetent
+    ) {
+      state.mobileSheetDetent = options.mobileSheetDetent;
+      changed = true;
+    }
+
+    if (changed && shouldRender) {
+      render();
+    }
+    return changed;
+  }
+
   function applyPreset(presetId, opts = {}) {
     const preset = getPresetMeta(presetId);
     if (!preset) return false;
-    const { announce = true } = opts;
+    const {
+      announce = true,
+      ui = null
+    } = opts;
     state.layerMode = preset.layerMode;
     state.touchProfile = preset.touchProfile;
     persistTouchProfile(state.touchProfile).catch(() => {});
     applySliceMap(preset.enabledSlices);
+    if (ui) {
+      configureUi(ui, { render: false });
+    }
     clearIncompatibleInspectorSelection(state.layerMode);
     scheduleSessionPersist();
     if (announce) {
@@ -4078,23 +4178,25 @@
     });
     exportSection.appendChild(exportGrid);
 
-    const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
-    const helpRows = document.createElement('div');
-    helpRows.className = 'mobile-inspector-rows';
-    [
-      ['Tap badge', 'Open the inspector receipt for that finding.'],
-      ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
-      ['R / F / D / G', 'Review and depth-oriented slices.'],
-      ['N / W / V', 'Note, arrow, or deselect placement.'],
-      ['Del / Backspace', 'Delete the selected note or arrow.'],
-      ['X', 'Remove the overlay entirely.']
-    ].forEach(([key, value]) => {
-      const row = document.createElement('div');
-      row.className = 'mobile-inspector-row';
-      row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
-      helpRows.appendChild(row);
-    });
-    helpSection.appendChild(helpRows);
+    if (state.uiMode !== 'agent') {
+      const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
+      const helpRows = document.createElement('div');
+      helpRows.className = 'mobile-inspector-rows';
+      [
+        ['Tap badge', 'Open the inspector receipt for that finding.'],
+        ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
+        ['R / F / D / G', 'Review and depth-oriented slices.'],
+        ['N / W / V', 'Note, arrow, or deselect placement.'],
+        ['Del / Backspace', 'Delete the selected note or arrow.'],
+        ['X', 'Remove the overlay entirely.']
+      ].forEach(([key, value]) => {
+        const row = document.createElement('div');
+        row.className = 'mobile-inspector-row';
+        row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
+        helpRows.appendChild(row);
+      });
+      helpSection.appendChild(helpRows);
+    }
 
     const exitSection = appendSection('Overlay', 'Mobile keeps one expanded surface at a time so the page stays readable.', 'secondary');
     const exitGrid = document.createElement('div');
@@ -4803,9 +4905,10 @@
     mobileModebar.innerHTML = '';
     mobileModebar.className = 'mobile-modebar';
     if (isMobileOverlayViewport()) {
-      toolbar.className = 'toolbar mobile';
+      const agentUi = state.uiMode === 'agent';
+      toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
       mobileDock.innerHTML = '';
-      mobileDock.className = 'mobile-dock open';
+      mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
 
       const brand = document.createElement('div');
       brand.className = 'mobile-brand';
@@ -4825,7 +4928,9 @@
 
       const value = document.createElement('div');
       value.className = 'value';
-      value.textContent = state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`;
+      value.textContent = agentUi
+        ? `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`
+        : (state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`);
       summary.appendChild(value);
       brand.appendChild(summary);
       toolbar.appendChild(brand);
@@ -4833,10 +4938,13 @@
       const actions = document.createElement('div');
       actions.className = 'mobile-actions';
 
-      const chip = document.createElement('span');
-      chip.className = 'mobile-chip';
-      chip.textContent = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Overlay active';
-      actions.appendChild(chip);
+      const statusLabel = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel();
+      if (!agentUi || statusLabel) {
+        const chip = document.createElement('span');
+        chip.className = 'mobile-chip';
+        chip.textContent = statusLabel || 'Overlay active';
+        actions.appendChild(chip);
+      }
 
       const close = document.createElement('button');
       close.type = 'button';
@@ -5483,7 +5591,9 @@
         downloadAuditBundle: { args: ['opts'], returns: 'Promise<OverlayReportData>' },
         exportPng: { args: ['target'], returns: 'Promise<void>' },
         getAutomationContract: { args: [], returns: 'object' },
+        getUiState: { args: [], returns: 'object' },
         listPresets: { args: [], returns: 'OverlayPreset[]' },
+        configureUi: { args: ['opts'], returns: 'object' },
         applyPreset: { args: ['presetId', 'opts'], returns: 'boolean' },
         setAnnotationMode: { args: ['mode'], returns: 'void' },
         setLayerMode: { args: ['mode'], returns: 'void' },
@@ -5534,6 +5644,20 @@
       }
     },
     collectDetections,
+    getUiState() {
+      return {
+        uiMode: state.uiMode,
+        helpOpen: state.helpOpen,
+        settingsOpen: state.settingsOpen,
+        mobileSheetOpen: state.mobileSheetOpen,
+        mobileSheetTab: state.mobileSheetTab,
+        mobileSheetDetent: state.mobileSheetDetent
+      };
+    },
+    configureUi(opts = {}) {
+      configureUi(opts);
+      return this.getUiState();
+    },
     buildReport(format = 'json', opts = {}) {
       const normalizedFormat = format === 'html' ? 'html' : 'json';
       return normalizedFormat === 'html'

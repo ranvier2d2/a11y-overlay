@@ -54,6 +54,11 @@ async function main() {
     });
     assert.equal(contract.contractVersion, 1);
 
+    const uiState = await session.liveClient.getUiState(page);
+    assert.equal(uiState.uiMode, 'agent');
+    assert.equal(uiState.helpOpen, false);
+    assert.equal(uiState.mobileSheetOpen, false);
+
     const report = await session.buildJsonReport(page, { scope: 'all' });
     assert.equal(report.document.title, 'Sandbox Fixture');
 

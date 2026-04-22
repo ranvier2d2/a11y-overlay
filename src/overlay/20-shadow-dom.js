@@ -219,12 +219,19 @@
         gap: 10px;
         justify-content: space-between;
       }
+      .toolbar.mobile.agent {
+        padding: 8px 10px;
+        gap: 8px;
+      }
       .toolbar.mobile .mobile-brand {
         display: flex;
         align-items: center;
         gap: 8px;
         min-width: 0;
         flex: 1 1 auto;
+      }
+      .toolbar.mobile.agent .mobile-brand {
+        gap: 6px;
       }
       .toolbar.mobile .mobile-title {
         color: #a3e635;
@@ -251,6 +258,12 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .toolbar.mobile.agent .mobile-summary .eyebrow {
+        font-size: 9px;
+      }
+      .toolbar.mobile.agent .mobile-summary .value {
+        font-size: 11px;
       }
       .toolbar.mobile .mobile-actions {
         display: inline-flex;
@@ -287,6 +300,10 @@
         border-radius: 10px;
         cursor: pointer;
       }
+      .toolbar.mobile.agent .mobile-close {
+        width: 32px;
+        height: 32px;
+      }
       .toolbar.mobile .mobile-close:hover {
         background: #fb7185;
         color: #0c0a09;
@@ -307,6 +324,10 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.55);
       }
       .mobile-dock.open { display: flex; }
+      .mobile-dock.agent {
+        gap: 6px;
+        padding: 6px;
+      }
       .mobile-dock .dockbtn {
         flex: 1 1 0;
         min-width: 0;
@@ -322,6 +343,10 @@
         justify-content: center;
         font: inherit;
         cursor: pointer;
+      }
+      .mobile-dock.agent .dockbtn {
+        padding: 8px 4px;
+        gap: 3px;
       }
       .mobile-dock .dockbtn:hover {
         border-color: #57534e;
@@ -343,6 +368,11 @@
         font-weight: 700;
         letter-spacing: 0.05em;
       }
+      .mobile-dock.agent .dockbtn .dock-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+      }
       .mobile-dock .dockbtn .dock-label {
         font-size: 10px;
         font-weight: 700;
@@ -356,6 +386,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
+      }
+      .mobile-dock.agent .dockbtn .dock-meta {
+        display: none;
       }
       .mobile-modebar {
         position: fixed;
