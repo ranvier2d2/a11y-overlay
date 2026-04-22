@@ -223,12 +223,15 @@
     border: 1px solid var(--border-2);
     border-radius: 10px;
     padding: 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     box-shadow:
       0 40px 90px -30px rgba(0,0,0,0.8),
       0 2px 0 rgba(255,255,255,0.04) inset;
     overflow: hidden;
     aspect-ratio: 16 / 9;
-    min-height: clamp(280px, 38vw, 620px);
+    min-height: 0;
   }
   .demo iframe {
     position: absolute;
@@ -975,6 +978,10 @@
     background: var(--interact); margin-right: 8px; vertical-align: 1px;
   }
 
+  @media (min-width: 981px) {
+    .hero > .wrap { max-width: 1520px; }
+  }
+
   @media (max-width: 980px) {
     .hero .grid { grid-template-columns: 1fr; gap: 40px; }
     .demo { min-height: 0; }
@@ -1054,7 +1061,7 @@
 
     <div class="demo">
       <iframe
-        src="promo-video/a11y-overlay-Promo-standalone.html"
+        src="promo-video/a11y-overlay-Promo-standalone.html?v=20260421-rightpad"
         title="a11y-overlay promo animation"
         loading="eager"
         allow="autoplay; fullscreen"
