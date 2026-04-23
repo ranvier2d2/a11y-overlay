@@ -14,6 +14,13 @@ const ASSET_ROOT = path.resolve(
   './plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/assets/runtime'
 );
 
+/**
+ * Invoke the vendor overlay Python script with the provided command-line arguments.
+ *
+ * @param {string[]} args - Command-line arguments forwarded to the Python script.
+ * @param {Object} [options] - Additional options passed to the underlying exec call; `cwd` is set to the repository root by default and can be overridden here.
+ * @returns {{stdout: string, stderr: string}} The subprocess result containing `stdout` and `stderr`.
+ */
 async function runVendor(args, options = {}) {
   return execFileAsync('python3', [SCRIPT_PATH, ...args], {
     cwd: path.resolve('.'),
@@ -21,10 +28,21 @@ async function runVendor(args, options = {}) {
   });
 }
 
+/**
+ * Verifies that the given filesystem path exists and is accessible.
+ *
+ * @param {string} filePath - Path to the file or directory to check.
+ * @throws {Error} If the path does not exist or is not accessible.
+ */
 async function assertExists(filePath) {
   await access(filePath);
 }
 
+/**
+ * Verifies the vendor overlay runtime by exercising three end-to-end scenarios against isolated temporary targets.
+ *
+ * Runs a compatibility reuse check (identical assets are accepted), a conflict check (divergent target files cause the vendor script to fail with exit code 4), and a temporary mode check (writes a vendor manifest, verifies copied files, then performs cleanup to remove copied files and the manifest). Creates and removes temporary directories for the tests and asserts expected stdout/stderr and filesystem state changes.
+ */
 async function main() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'overlay-vendor-'));
   const compatibleRoot = path.join(root, 'compatible');

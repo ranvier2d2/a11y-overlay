@@ -65,6 +65,24 @@ async function resolveSandboxPaths(baseImportUrl, outputDirOverride) {
   };
 }
 
+/**
+ * Create a managed Playwright sandbox session that injects and controls an accessibility overlay,
+ * performs local or authenticated audits, captures visual evidence, and writes audit artifacts.
+ *
+ * @param {Object} [options] - Optional configuration for the sandbox session.
+ * @param {string} [options.globalName="__a11yOverlayInstalled"] - Global variable name used by the injected overlay runtime.
+ * @param {number} [options.defaultTimeoutMs=5000] - Default timeout (milliseconds) used for wait operations.
+ * @param {string} [options.browserType="chromium"] - Playwright browser launcher name to use (`"chromium"`, `"firefox"`, or `"webkit"`).
+ * @param {boolean} [options.headless=false] - Whether to launch the browser in headless mode.
+ * @param {{width:number,height:number}} [options.desktopViewport] - Default desktop viewport size.
+ * @param {{width:number,height:number}} [options.mobileViewport] - Default mobile viewport size.
+ * @param {string} [options.outputDir] - Override output directory for written artifacts.
+ * @param {Object} [options.agentUiConfig] - Configuration object used to bootstrap the injected overlay UI.
+ *
+ * @returns {Object} A session manager exposing sandbox metadata, overlay clients, current state, lifecycle methods,
+ *                   page/context helpers, overlay injection helpers, report builders, artifact writers, capture utilities,
+ *                   high-level audit entrypoints (auditLocalWeb, auditAuthenticatedWeb, auditDesktopShell), and close().
+ */
 export async function createOverlaySandboxSession(options = {}) {
   const globalName = options.globalName || "__a11yOverlayInstalled";
   const defaultTimeoutMs = Number.isFinite(options.defaultTimeoutMs) ? options.defaultTimeoutMs : 5000;
