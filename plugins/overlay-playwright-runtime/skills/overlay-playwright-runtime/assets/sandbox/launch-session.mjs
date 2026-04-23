@@ -365,7 +365,7 @@ export async function createOverlaySandboxSession(options = {}) {
     path,
     type = "jpeg",
     quality = 85,
-    captureMode = "scroll-slices",
+    captureMode,
     fullPage = false,
     maxSlices,
     overlapPx,
@@ -373,13 +373,14 @@ export async function createOverlaySandboxSession(options = {}) {
     scrollSettlingMs,
     startAt
   } = {}) => {
-    const { resolve } = await import("node:path");
+    const { dirname, resolve } = await import("node:path");
     const filePath = path || resolve(paths.outputDir, `overlay-shot-${Date.now()}.${type === "png" ? "png" : "jpg"}`);
-    await ensureDirectory(paths.outputDir);
+    const resolvedCaptureMode = captureMode || (fullPage ? "full-page" : "viewport");
+    await ensureDirectory(dirname(filePath));
     return fullClient.captureVisualEvidence(target, {
       filePath,
       screenshotType: type,
-      captureMode: captureMode || (fullPage ? "full-page" : "viewport"),
+      captureMode: resolvedCaptureMode,
       fullPage,
       includeScreenshotBytes: false,
       maxSlices,

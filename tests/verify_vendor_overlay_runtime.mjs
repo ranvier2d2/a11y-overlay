@@ -112,7 +112,13 @@ async function main() {
     await assertExists(path.join(tempRoot, 'a11y-overlay.js'));
     await assertExists(path.join(tempRoot, 'playwright', 'overlay-client.mjs'));
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-    assert.equal(manifest.copied.length, 2);
+    assert.deepEqual(
+      manifest.copied.map((entry) => entry.path).sort(),
+      ['a11y-overlay.js', 'playwright/overlay-client.mjs']
+    );
+    for (const entry of manifest.copied) {
+      assert.match(entry.sha256, /^[a-f0-9]{64}$/);
+    }
 
     const cleanupRun = await runVendor(['--target-root', tempRoot, '--cleanup']);
     assert.match(cleanupRun.stdout, /cleanup complete/);

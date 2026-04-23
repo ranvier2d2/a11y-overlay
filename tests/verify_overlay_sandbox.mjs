@@ -167,6 +167,16 @@ async function main() {
     assert.ok(visualEvidence.captures.length > 1);
     assert.match(path.basename(visualEvidence.captures[1].path), /^overlay-shot-\d+-02\.jpg$/);
 
+    const nestedFullPageEvidence = await session.captureVisualEvidence(page, {
+      path: path.join(outputDir, 'nested', 'shots', 'fullpage.jpg'),
+      type: 'jpeg',
+      fullPage: true
+    });
+    assert.equal(nestedFullPageEvidence.mode, 'full-page');
+    assert.equal(nestedFullPageEvidence.captures.length, 1);
+    assert.equal(path.basename(nestedFullPageEvidence.primaryPath), 'fullpage.jpg');
+    await access(nestedFullPageEvidence.primaryPath);
+
     const audit = await session.auditLocalWeb({
       url,
       runtimeScriptPath: RUNTIME_SCRIPT_PATH,
