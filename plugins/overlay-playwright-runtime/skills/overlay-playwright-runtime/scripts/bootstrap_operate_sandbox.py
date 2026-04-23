@@ -10,6 +10,7 @@ from pathlib import Path
 
 DEFAULT_SANDBOX_ROOT = Path.home() / ".codex" / "overlay-playwright-runtime" / "sandbox"
 DEFAULT_ASSET_ROOT = Path(__file__).resolve().parent.parent / "assets" / "sandbox"
+DEFAULT_RUNTIME_ROOT = Path(__file__).resolve().parent.parent / "assets" / "runtime" / "playwright"
 
 
 def parse_args() -> argparse.Namespace:
@@ -57,8 +58,23 @@ def iter_asset_files(asset_root: Path) -> list[tuple[Path, Path]]:
     return pairs
 
 
-def copy_assets(asset_root: Path, sandbox_root: Path, dry_run: bool) -> int:
+def iter_runtime_client_files(runtime_root: Path) -> list[tuple[Path, Path]]:
+    expected = [
+        "overlay-client.mjs",
+        "overlay-client-live.mjs",
+    ]
+    pairs: list[tuple[Path, Path]] = []
+    for name in expected:
+        source_path = runtime_root / name
+        if not source_path.exists():
+            raise FileNotFoundError(f"missing runtime client asset: {source_path}")
+        pairs.append((source_path, Path(name)))
+    return pairs
+
+
+def copy_assets(asset_root: Path, runtime_root: Path, sandbox_root: Path, dry_run: bool) -> int:
     pairs = iter_asset_files(asset_root)
+    pairs.extend(iter_runtime_client_files(runtime_root))
 
     for source_path, relative_path in pairs:
         target_path = sandbox_root / relative_path
@@ -81,12 +97,13 @@ def run_command(args: list[str], cwd: Path, dry_run: bool) -> None:
 def main() -> int:
     args = parse_args()
     asset_root = DEFAULT_ASSET_ROOT.resolve()
+    runtime_root = DEFAULT_RUNTIME_ROOT.resolve()
     sandbox_root = Path(args.sandbox_root).expanduser().resolve()
 
     try:
         if not args.dry_run:
             sandbox_root.mkdir(parents=True, exist_ok=True)
-        copy_status = copy_assets(asset_root, sandbox_root, args.dry_run)
+        copy_status = copy_assets(asset_root, runtime_root, sandbox_root, args.dry_run)
         if copy_status:
             return copy_status
     except FileNotFoundError as error:

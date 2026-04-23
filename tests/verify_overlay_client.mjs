@@ -336,6 +336,120 @@ async function verifyFailurePackageWrite() {
   }
 }
 
+async function verifyBuildReportAndBundleToFile() {
+  const runtime = new FakeRuntime();
+  runtime.applyPreset('agent-capture');
+  const target = new FakeTarget(runtime);
+  target.installed = true;
+
+  const client = new OverlayClient();
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'overlay-client-files-'));
+
+  try {
+    const jsonResult = await client.buildReportToFile(target, {
+      dir,
+      fileName: 'custom-report.json',
+      format: 'json',
+      scope: 'all'
+    });
+    const htmlResult = await client.buildReportToFile(target, {
+      dir,
+      fileName: 'custom-report.html',
+      format: 'html',
+      scope: 'all'
+    });
+    const bundleResult = await client.buildAuditBundleToFile(target, {
+      dir,
+      fileName: 'custom-bundle.html',
+      scope: 'all'
+    });
+
+    assert.equal(path.basename(jsonResult.filePath), 'custom-report.json');
+    assert.equal(path.basename(htmlResult.filePath), 'custom-report.html');
+    assert.equal(path.basename(bundleResult.filePath), 'custom-bundle.html');
+
+    const jsonContents = JSON.parse(await readFile(jsonResult.filePath, 'utf8'));
+    assert.equal(jsonContents.audit.scope, 'all');
+
+    const htmlContents = await readFile(htmlResult.filePath, 'utf8');
+    assert.match(htmlContents, /scope:all/);
+
+    const bundleContents = await readFile(bundleResult.filePath, 'utf8');
+    assert.match(bundleContents, /bundle:all/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+async function verifyWriteAuditArtifactSet() {
+  const desktopRuntime = new FakeRuntime();
+  desktopRuntime.applyPreset('agent-capture');
+  desktopRuntime.addNote({ x: 12, y: 34 }, 'Desktop note');
+  desktopRuntime.addArrow({ x: 1, y: 2 }, { x: 3, y: 4 });
+
+  const mobileRuntime = new FakeRuntime();
+  mobileRuntime.applyPreset('mobile');
+
+  const desktopTarget = new FakeTarget(desktopRuntime);
+  const mobileTarget = new FakeTarget(mobileRuntime);
+  desktopTarget.installed = true;
+  mobileTarget.installed = true;
+
+  const client = new OverlayClient();
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'overlay-client-audit-'));
+
+  try {
+    const result = await client.writeAuditArtifactSet(desktopTarget, {
+      dir,
+      scope: 'all',
+      mobileTarget,
+      screenshotType: 'jpeg',
+      fullPage: true,
+      mobileFullPage: false,
+      reportContext: {
+        target_name: 'Fixture App',
+        audit_mode: 'audit-local-web',
+        browser_and_os: 'Playwright + fake target'
+      }
+    });
+
+    assert.equal(path.dirname(result.artifactIndexPath), dir);
+    assert.equal(path.dirname(result.reportMarkdownPath), dir);
+    assert.equal(path.basename(result.desktop.htmlBundlePath), 'desktop.html');
+    assert.equal(path.basename(result.desktop.jsonReportPath), 'desktop.json');
+    assert.equal(path.basename(result.desktop.screenshotPath), 'desktop.jpg');
+    assert.equal(path.basename(result.mobile.htmlBundlePath), 'mobile.html');
+    assert.equal(path.basename(result.mobile.jsonReportPath), 'mobile.json');
+    assert.equal(path.basename(result.mobile.screenshotPath), 'mobile.jpg');
+
+    const artifactIndex = JSON.parse(await readFile(result.artifactIndexPath, 'utf8'));
+    assert.equal(artifactIndex.desktop.htmlBundle, 'desktop.html');
+    assert.equal(artifactIndex.desktop.reportJson, 'desktop.json');
+    assert.equal(artifactIndex.desktop.screenshot, 'desktop.jpg');
+    assert.equal(artifactIndex.mobile.htmlBundle, 'mobile.html');
+    assert.equal(artifactIndex.mobile.reportJson, 'mobile.json');
+    assert.equal(artifactIndex.mobile.screenshot, 'mobile.jpg');
+    assert.equal(artifactIndex.contract, 'contract.json');
+
+    const reportMarkdown = await readFile(result.reportMarkdownPath, 'utf8');
+    assert.match(reportMarkdown, /# Accessibility Audit Report/);
+    assert.match(reportMarkdown, /\*\*Target:\*\* Fixture App/);
+    assert.match(reportMarkdown, /\*\*Artifact index:\*\* artifact-index\.json/);
+    assert.match(reportMarkdown, /desktop\.html/);
+    assert.match(reportMarkdown, /mobile\.html/);
+
+    assert.equal(desktopTarget.screenshots.length, 1);
+    assert.equal(desktopTarget.screenshots[0].path, result.desktop.screenshotPath);
+    assert.equal(desktopTarget.screenshots[0].type, 'jpeg');
+
+    assert.equal(mobileTarget.screenshots.length, 1);
+    assert.equal(mobileTarget.screenshots[0].path, result.mobile.screenshotPath);
+    assert.equal(mobileTarget.screenshots[0].fullPage, false);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 async function verifyUnavailableMethodError() {
   const runtime = new FakeRuntime();
   const target = new FakeTarget(runtime);
@@ -353,6 +467,8 @@ async function main() {
   await verifyInjectAndDelegation(OverlayLiveClient);
   await verifyForceInjectIsIdempotent();
   await verifyFailurePackageWrite();
+  await verifyBuildReportAndBundleToFile();
+  await verifyWriteAuditArtifactSet();
   await verifyUnavailableMethodError();
   console.log('overlay client verification passed');
 }
