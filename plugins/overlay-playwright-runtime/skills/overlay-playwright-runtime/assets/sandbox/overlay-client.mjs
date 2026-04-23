@@ -730,6 +730,9 @@ export class OverlayClient extends OverlayLiveClient {
     }
 
     const maxSlices = Number.isFinite(options.maxSlices) ? Math.max(1, options.maxSlices) : 12;
+    if (maxSlices === 1) {
+      return [startY];
+    }
     if (positions.length <= maxSlices) {
       return positions;
     }

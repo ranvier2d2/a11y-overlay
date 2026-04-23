@@ -582,6 +582,22 @@ async function verifyScrollAwareVisualEvidence() {
  *
  * Asserts the call rejects with an error matching `/waitForStableState/`.
  */
+function verifySingleSliceScrollPositionReduction() {
+  const client = new OverlayClient();
+  const positions = client._buildScrollPositions(
+    {
+      viewportHeight: 600,
+      scrollHeight: 1900,
+      initialScrollY: 240
+    },
+    {
+      maxSlices: 1,
+      startAt: 'current'
+    }
+  );
+
+  assert.deepEqual(positions, [240]);
+}
 async function verifyUnavailableMethodError() {
   const runtime = new FakeRuntime();
   const target = new FakeTarget(runtime);
@@ -641,6 +657,7 @@ async function main() {
   await verifyBuildReportAndBundleToFile();
   await verifyWriteAuditArtifactSet();
   await verifyScrollAwareVisualEvidence();
+  verifySingleSliceScrollPositionReduction();
   await verifyUnavailableMethodError();
   await verifyAdditionalFindingsFormatting();
   await verifyAsyncFrameScreenshotResolution();

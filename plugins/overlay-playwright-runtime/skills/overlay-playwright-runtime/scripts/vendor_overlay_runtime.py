@@ -325,6 +325,7 @@ def main() -> int:
         return 3
 
     conflicts: list[Path] = []
+    planned_copies: list[tuple[SourceFile, Path]] = []
     copied_records: list[dict] = []
     reused: list[Path] = []
 
@@ -339,16 +340,7 @@ def main() -> int:
             if not args.force:
                 conflicts.append(target_path)
                 continue
-
-        print(f"{'would copy' if args.dry_run else 'copy'} {source.source_path} -> {target_path}")
-        copied_records.append({
-            "path": source.target_relative_path.as_posix(),
-            "sha256": source.source_sha256,
-        })
-        if args.dry_run:
-            continue
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source.source_path, target_path)
+        planned_copies.append((source, target_path))
 
     if conflicts:
         joined = "\n".join(str(path) for path in conflicts)
@@ -358,6 +350,17 @@ def main() -> int:
             file=sys.stderr,
         )
         return 4
+
+    for source, target_path in planned_copies:
+        print(f"{'would copy' if args.dry_run else 'copy'} {source.source_path} -> {target_path}")
+        copied_records.append({
+            "path": source.target_relative_path.as_posix(),
+            "sha256": source.source_sha256,
+        })
+        if args.dry_run:
+            continue
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source.source_path, target_path)
 
     if args.temporary:
         payload = {

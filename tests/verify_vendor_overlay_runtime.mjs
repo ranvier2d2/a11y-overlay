@@ -47,6 +47,7 @@ async function main() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'overlay-vendor-'));
   const compatibleRoot = path.join(root, 'compatible');
   const conflictRoot = path.join(root, 'conflict');
+  const mixedRoot = path.join(root, 'mixed');
   const tempRoot = path.join(root, 'temporary');
 
   try {
@@ -75,6 +76,21 @@ async function main() {
         return true;
       }
     );
+
+    // mixed state should not partially copy files before reporting conflicts
+    await rm(mixedRoot, { recursive: true, force: true });
+    await mkdir(path.join(mixedRoot, 'playwright'), { recursive: true });
+    await writeFile(path.join(mixedRoot, 'playwright', 'overlay-client.mjs'), 'stale client\n', 'utf8');
+
+    await assert.rejects(
+      () => runVendor(['--target-root', mixedRoot]),
+      (error) => {
+        assert.equal(error.code, 4);
+        assert.match(error.stderr, /target files differ/);
+        return true;
+      }
+    );
+    await assert.rejects(() => access(path.join(mixedRoot, 'a11y-overlay.js')));
 
     // temporary mode should write a manifest and cleanup should remove copied files
     const manifestPath = path.join(tempRoot, '.codex', 'overlay-playwright-runtime', 'vendor-manifest.json');
