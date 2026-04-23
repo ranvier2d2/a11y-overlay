@@ -67,6 +67,46 @@ Preferred packaging model:
 2. vendor from the installed bundled assets
 3. commit the vendored files into the target repo when that repo should own them
 
+## Compatibility-aware vendoring
+
+The bundled vendor script now treats identical files as compatible:
+
+- if the target repo already has the same `a11y-overlay.js`, it is reused
+- if the target repo already has the same `playwright/overlay-client.mjs`, it is reused
+- only divergent files are treated as conflicts that require `--force`
+
+This makes repeat adoption and cross-repo maintenance less noisy.
+
+## Temporary audit-only adopt mode
+
+For audit runs that should not leave vendored files behind, use:
+
+```bash
+python3 scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --temporary
+```
+
+That writes a vendoring manifest under:
+
+```text
+.codex/overlay-playwright-runtime/vendor-manifest.json
+```
+
+After the audit run, clean up the copied files with:
+
+```bash
+python3 scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --cleanup
+```
+
+Cleanup is conservative:
+
+- files copied by the temporary run are removed
+- files changed after vendoring are preserved
+- the manifest is removed only when cleanup completes fully
+
 Do not use this as the only guidance for local iterative QA in Codex. In that case, prefer the persistent browser/session path from `references/interactive.md`.
 
 ## Recommended Agent Flow

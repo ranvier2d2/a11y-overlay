@@ -129,9 +129,33 @@ This is the preferred first operator workflow because it:
 
 - runs a desktop pass
 - runs a mobile pass
-- captures screenshots
+- captures scroll-aware visual evidence by default
 - writes a stable artifact set
 - uses the canonical report scaffold automatically
+
+When the page is longer than one viewport, the audit helpers default to
+`scroll-slices` capture mode so the artifact set includes multiple reviewable
+screens instead of only the initial scroll position.
+
+## Scroll-aware visual evidence
+
+For live agent work outside the standard audit flows, prefer:
+
+```javascript
+const evidence = await overlaySession.captureVisualEvidence(page, {
+  type: "jpeg",
+  captureMode: "scroll-slices"
+});
+
+console.log(evidence.primaryPath);
+console.log(evidence.captures.map((capture) => capture.path));
+```
+
+Use:
+
+- `captureMode: "viewport"` for one current-viewport screenshot
+- `captureMode: "full-page"` for one stitched page capture
+- `captureMode: "scroll-slices"` for multiple viewport-sized captures down the page
 
 ## Standard authenticated audit flow
 
@@ -177,6 +201,29 @@ Supported auth modes:
 - `custom`
 
 Keep the first version narrow. Prefer explicit route and selector validation after auth instead of trying to abstract every login system.
+
+## Standard desktop-shell audit flow
+
+When you already have a page handle from an attached desktop shell or embedded browser, use:
+
+```javascript
+const audit = await overlaySession.auditDesktopShell({
+  desktopPage: SHELL_PAGE,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  readiness: {
+    strategy: "selector-visible",
+    selector: "main"
+  },
+  reportContext: {
+    target_name: "Desktop shell app"
+  }
+});
+
+console.log(audit.artifacts.reportMarkdownPath);
+```
+
+This first pass stays intentionally thin: you provide the attached page handle,
+and the helper injects the overlay and writes the standard artifact set.
 
 ## Readiness strategies
 

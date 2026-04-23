@@ -334,16 +334,43 @@ export async function createOverlaySandboxSession(options = {}) {
     quality = 85,
     fullPage = false
   } = {}) => {
-    const { resolve } = await import("node:path");
-    const screenshotPath = path || resolve(paths.outputDir, `overlay-shot-${Date.now()}.${type === "png" ? "png" : "jpg"}`);
-    await ensureDirectory(paths.outputDir);
-    await target.screenshot({
-      path: screenshotPath,
+    const visualEvidence = await captureVisualEvidence(target, {
+      path,
       type,
-      quality: type === "jpeg" ? quality : undefined,
-      fullPage
+      quality,
+      captureMode: fullPage ? "full-page" : "viewport"
     });
-    return screenshotPath;
+    return visualEvidence.primaryPath;
+  };
+
+  const captureVisualEvidence = async (target, {
+    path,
+    type = "jpeg",
+    quality = 85,
+    captureMode = "scroll-slices",
+    fullPage = false,
+    maxSlices,
+    overlapPx,
+    stepPx,
+    scrollSettlingMs,
+    startAt
+  } = {}) => {
+    const { resolve } = await import("node:path");
+    const filePath = path || resolve(paths.outputDir, `overlay-shot-${Date.now()}.${type === "png" ? "png" : "jpg"}`);
+    await ensureDirectory(paths.outputDir);
+    return fullClient.captureVisualEvidence(target, {
+      filePath,
+      screenshotType: type,
+      captureMode: captureMode || (fullPage ? "full-page" : "viewport"),
+      fullPage,
+      includeScreenshotBytes: false,
+      maxSlices,
+      overlapPx,
+      stepPx,
+      scrollSettlingMs,
+      startAt,
+      quality
+    });
   };
 
   const waitForReady = async (target, readiness = {}) => {
@@ -549,6 +576,8 @@ export async function createOverlaySandboxSession(options = {}) {
       screenshotPage: desktopPage,
       mobileScreenshotPage: includeMobile ? mobilePage || undefined : undefined,
       screenshotType: desktop.screenshotType || mobile?.screenshotType || "jpeg",
+      captureMode: desktop.captureMode || (desktop.fullPage === true ? "full-page" : "scroll-slices"),
+      mobileCaptureMode: mobile.captureMode || (mobile.fullPage === true ? "full-page" : "scroll-slices"),
       fullPage: desktop.fullPage,
       mobileFullPage: mobile.fullPage,
       reportContext: {
@@ -768,6 +797,78 @@ export async function createOverlaySandboxSession(options = {}) {
     };
   };
 
+  const auditDesktopShell = async ({
+    desktopPage,
+    mobilePage,
+    runtimeScriptPath,
+    scope = "all",
+    artifactDir,
+    artifactName,
+    desktop = {},
+    mobile = {},
+    preset = "agent-capture",
+    mobilePreset = "mobile",
+    includeMobile = mobilePage != null && mobile !== false && mobile?.enabled !== false,
+    readiness = { strategy: "none" },
+    mobileReadiness,
+    reportContext = {},
+    url
+  } = {}) => {
+    if (!desktopPage) {
+      throw new Error("auditDesktopShell requires a desktopPage.");
+    }
+    if (!runtimeScriptPath) {
+      throw new Error("auditDesktopShell requires runtimeScriptPath.");
+    }
+
+    const primaryUrl = url || desktopPage.url?.() || "desktop-shell";
+
+    await waitForReady(desktopPage, readiness);
+    await ensureOverlay(desktopPage, {
+      runtimeScriptPath,
+      preset,
+      announce: false,
+      timeoutMs: desktop.timeoutMs ?? defaultTimeoutMs,
+      force: desktop.force === true
+    });
+
+    if (includeMobile && mobilePage) {
+      await waitForReady(mobilePage, mobileReadiness || readiness);
+      await ensureOverlay(mobilePage, {
+        runtimeScriptPath,
+        preset: mobilePreset,
+        announce: false,
+        timeoutMs: mobile.timeoutMs ?? defaultTimeoutMs,
+        force: mobile.force === true
+      });
+    }
+
+    const { dir, artifacts } = await writeAuditArtifacts({
+      desktopPage,
+      mobilePage,
+      scope,
+      artifactDir,
+      artifactName,
+      url: primaryUrl,
+      includeMobile: Boolean(includeMobile && mobilePage),
+      desktop,
+      mobile,
+      reportContext: {
+        audit_mode: reportContext.audit_mode || "audit-desktop-shell",
+        browser_and_os: reportContext.browser_and_os || "Playwright-attached desktop shell session",
+        sample_strategy: reportContext.sample_strategy || "Flow-based sampled audit of the attached desktop shell surface.",
+        ...reportContext
+      }
+    });
+
+    return {
+      dir,
+      desktopPage,
+      ...(mobilePage ? { mobilePage } : {}),
+      artifacts
+    };
+  };
+
   const close = async () => {
     if (state.browser) {
       await state.browser.close();
@@ -803,8 +904,10 @@ export async function createOverlaySandboxSession(options = {}) {
     clearSavedSession,
     getSessionSnapshot,
     writeScreenshot,
+    captureVisualEvidence,
     auditLocalWeb,
     auditAuthenticatedWeb,
+    auditDesktopShell,
     close
   };
 }

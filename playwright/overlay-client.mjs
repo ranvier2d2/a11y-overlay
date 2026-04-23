@@ -218,6 +218,52 @@ export class OverlayClient extends OverlayLiveClient {
   }
 
   /**
+   * Capture one or more screenshots for reviewable visual evidence.
+   *
+   * @param {import('playwright').Page | import('playwright').Frame} target
+   * @param {{
+   *   filePath?: string,
+   *   dir?: string,
+   *   fileName?: string,
+   *   screenshotPage?: import('playwright').Page,
+   *   screenshotType?: 'png' | 'jpeg',
+   *   captureMode?: 'viewport' | 'full-page' | 'scroll-slices',
+   *   fullPage?: boolean,
+   *   includeScreenshotBytes?: boolean,
+   *   maxSlices?: number,
+   *   overlapPx?: number,
+   *   stepPx?: number,
+   *   scrollSettlingMs?: number,
+   *   startAt?: 'top' | 'current'
+   * }} [options]
+   * @returns {Promise<{
+   *   mode: 'viewport' | 'full-page' | 'scroll-slices',
+   *   captures: Array<{
+   *     type: 'png' | 'jpeg',
+   *     fullPage: boolean,
+   *     path?: string,
+   *     bytes?: Buffer,
+   *     index: number,
+   *     scrollY?: number
+   *   }>,
+   *   primaryPath?: string
+   * }>}
+   */
+  async captureVisualEvidence(target, options = {}) {
+    const type = options.screenshotType === 'jpeg' ? 'jpeg' : 'png';
+    const extension = type === 'jpeg' ? '.jpg' : '.png';
+    const filePath = this._resolveOutputPath(options, {
+      defaultBaseName: 'visual-evidence',
+      extension
+    });
+    return this._captureVisualEvidence(target, {
+      ...options,
+      screenshotType: type,
+      screenshotPath: filePath
+    });
+  }
+
+  /**
    * Write a stable audit artifact set for desktop and optional mobile runs.
    *
    * @param {import('playwright').Page | import('playwright').Frame} desktopTarget
@@ -260,7 +306,7 @@ export class OverlayClient extends OverlayLiveClient {
     const desktopJsonPath = path.join(dir, 'desktop.json');
     const desktopScreenshotPath = path.join(dir, `desktop.${screenshotExt}`);
 
-    const [, , desktopScreenshot] = await Promise.all([
+    const [, , desktopVisualEvidence] = await Promise.all([
       this.buildAuditBundleToFile(desktopTarget, {
         filePath: desktopBundlePath,
         scope
@@ -268,19 +314,27 @@ export class OverlayClient extends OverlayLiveClient {
       options.includeJsonReports !== false
         ? writeFile(desktopJsonPath, `${JSON.stringify(desktopReport, null, 2)}\n`, 'utf8')
         : Promise.resolve(),
-      this._captureScreenshot(desktopTarget, {
+      this._captureVisualEvidence(desktopTarget, {
         screenshotPage: options.screenshotPage,
         screenshotPath: desktopScreenshotPath,
         screenshotType,
+        captureMode: options.captureMode,
         fullPage: options.fullPage,
-        includeScreenshotBytes: false
+        includeScreenshotBytes: false,
+        maxSlices: options.maxSlices,
+        overlapPx: options.overlapPx,
+        stepPx: options.stepPx,
+        scrollSettlingMs: options.scrollSettlingMs,
+        startAt: options.startAt
       })
     ]);
 
     const desktop = {
       jsonReportPath: options.includeJsonReports === false ? undefined : desktopJsonPath,
       htmlBundlePath: desktopBundlePath,
-      screenshotPath: desktopScreenshot ? desktopScreenshotPath : undefined
+      screenshotPath: desktopVisualEvidence.primaryPath,
+      screenshotPaths: desktopVisualEvidence.captures.map((capture) => capture.path).filter(Boolean),
+      screenshotMode: desktopVisualEvidence.mode
     };
 
     let mobile;
@@ -291,7 +345,7 @@ export class OverlayClient extends OverlayLiveClient {
       const mobileJsonPath = path.join(dir, 'mobile.json');
       const mobileScreenshotPath = path.join(dir, `mobile.${screenshotExt}`);
 
-      const [, , mobileScreenshot] = await Promise.all([
+      const [, , mobileVisualEvidence] = await Promise.all([
         this.buildAuditBundleToFile(options.mobileTarget, {
           filePath: mobileBundlePath,
           scope
@@ -299,19 +353,27 @@ export class OverlayClient extends OverlayLiveClient {
         options.includeJsonReports !== false
           ? writeFile(mobileJsonPath, `${JSON.stringify(mobileReport, null, 2)}\n`, 'utf8')
           : Promise.resolve(),
-        this._captureScreenshot(options.mobileTarget, {
+        this._captureVisualEvidence(options.mobileTarget, {
           screenshotPage: options.mobileScreenshotPage,
           screenshotPath: mobileScreenshotPath,
           screenshotType,
+          captureMode: options.mobileCaptureMode || options.captureMode,
           fullPage: options.mobileFullPage,
-          includeScreenshotBytes: false
+          includeScreenshotBytes: false,
+          maxSlices: options.mobileMaxSlices ?? options.maxSlices,
+          overlapPx: options.mobileOverlapPx ?? options.overlapPx,
+          stepPx: options.mobileStepPx ?? options.stepPx,
+          scrollSettlingMs: options.mobileScrollSettlingMs ?? options.scrollSettlingMs,
+          startAt: options.mobileStartAt ?? options.startAt
         })
       ]);
 
       mobile = {
         jsonReportPath: options.includeJsonReports === false ? undefined : mobileJsonPath,
         htmlBundlePath: mobileBundlePath,
-        screenshotPath: mobileScreenshot ? mobileScreenshotPath : undefined
+        screenshotPath: mobileVisualEvidence.primaryPath,
+        screenshotPaths: mobileVisualEvidence.captures.map((capture) => capture.path).filter(Boolean),
+        screenshotMode: mobileVisualEvidence.mode
       };
     }
 
@@ -331,13 +393,17 @@ export class OverlayClient extends OverlayLiveClient {
       desktop: {
         htmlBundle: path.basename(desktop.htmlBundlePath),
         ...(desktop.jsonReportPath ? { reportJson: path.basename(desktop.jsonReportPath) } : {}),
-        ...(desktop.screenshotPath ? { screenshot: path.basename(desktop.screenshotPath) } : {})
+        ...(desktop.screenshotPath ? { screenshot: path.basename(desktop.screenshotPath) } : {}),
+        ...(desktop.screenshotPaths?.length > 1 ? { screenshots: desktop.screenshotPaths.map((value) => path.basename(value)) } : {}),
+        ...(desktop.screenshotMode ? { screenshotMode: desktop.screenshotMode } : {})
       },
       ...(mobile ? {
         mobile: {
           htmlBundle: path.basename(mobile.htmlBundlePath),
           ...(mobile.jsonReportPath ? { reportJson: path.basename(mobile.jsonReportPath) } : {}),
-          ...(mobile.screenshotPath ? { screenshot: path.basename(mobile.screenshotPath) } : {})
+          ...(mobile.screenshotPath ? { screenshot: path.basename(mobile.screenshotPath) } : {}),
+          ...(mobile.screenshotPaths?.length > 1 ? { screenshots: mobile.screenshotPaths.map((value) => path.basename(value)) } : {}),
+          ...(mobile.screenshotMode ? { screenshotMode: mobile.screenshotMode } : {})
         }
       } : {}),
       ...(contractPath ? { contract: path.basename(contractPath) } : {})
@@ -509,25 +575,11 @@ export class OverlayClient extends OverlayLiveClient {
   }
 
   async _captureScreenshot(target, options = {}) {
-    const screenshotTarget = await this._resolveScreenshotPage(target, options.screenshotPage);
-    if (!screenshotTarget || typeof screenshotTarget.screenshot !== 'function') {
-      return undefined;
-    }
-
-    const type = options.screenshotType === 'jpeg' ? 'jpeg' : 'png';
-    const fullPage = options.fullPage !== false;
-    const bytes = await screenshotTarget.screenshot({
-      type,
-      fullPage,
-      ...(options.screenshotPath ? { path: options.screenshotPath } : {})
+    const visualEvidence = await this._captureVisualEvidence(target, {
+      ...options,
+      captureMode: options.captureMode || (options.fullPage === false ? 'viewport' : 'full-page')
     });
-
-    return {
-      type,
-      fullPage,
-      ...(options.screenshotPath ? { path: options.screenshotPath } : {}),
-      ...(options.includeScreenshotBytes === false ? {} : { bytes })
-    };
+    return visualEvidence.captures[0];
   }
 
   async _resolveScreenshotPage(target, explicitPage) {
@@ -535,6 +587,173 @@ export class OverlayClient extends OverlayLiveClient {
     if (target && typeof target.screenshot === 'function') return target;
     if (target && typeof target.page === 'function') return await target.page();
     return undefined;
+  }
+
+  async _captureVisualEvidence(target, options = {}) {
+    const screenshotTarget = await this._resolveScreenshotPage(target, options.screenshotPage);
+    if (!screenshotTarget || typeof screenshotTarget.screenshot !== 'function') {
+      return { mode: this._resolveCaptureMode(options), captures: [], primaryPath: undefined };
+    }
+
+    const type = options.screenshotType === 'jpeg' ? 'jpeg' : 'png';
+    const mode = this._resolveCaptureMode(options);
+    if (mode === 'scroll-slices') {
+      return this._captureScrollSlices(screenshotTarget, {
+        ...options,
+        screenshotType: type
+      });
+    }
+
+    const fullPage = mode === 'full-page';
+    const bytes = await screenshotTarget.screenshot({
+      type,
+      fullPage,
+      ...(type === 'jpeg' && Number.isFinite(options.quality) ? { quality: options.quality } : {}),
+      ...(options.screenshotPath ? { path: options.screenshotPath } : {})
+    });
+
+    const capture = {
+      type,
+      fullPage,
+      index: 1,
+      ...(options.screenshotPath ? { path: options.screenshotPath } : {}),
+      ...(options.includeScreenshotBytes === false ? {} : { bytes })
+    };
+
+    return {
+      mode,
+      captures: [capture],
+      primaryPath: capture.path
+    };
+  }
+
+  async _captureScrollSlices(page, options = {}) {
+    const metrics = await this._readScrollMetrics(page);
+    if (!metrics || !Number.isFinite(metrics.viewportHeight) || metrics.viewportHeight <= 0) {
+      return this._captureVisualEvidence(page, {
+        ...options,
+        captureMode: 'viewport'
+      });
+    }
+
+    const positions = this._buildScrollPositions(metrics, options);
+    if (positions.length <= 1) {
+      return this._captureVisualEvidence(page, {
+        ...options,
+        captureMode: 'viewport'
+      });
+    }
+
+    const captures = [];
+    const settleMs = Number.isFinite(options.scrollSettlingMs) ? Math.max(0, options.scrollSettlingMs) : 75;
+    const initialScrollY = metrics.initialScrollY;
+    const type = options.screenshotType === 'jpeg' ? 'jpeg' : 'png';
+
+    try {
+      for (const [index, scrollY] of positions.entries()) {
+        await page.evaluate((nextScrollY) => {
+          window.scrollTo(0, nextScrollY);
+        }, scrollY);
+        if (settleMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, settleMs));
+        }
+        const screenshotPath = this._deriveSequencePath(options.screenshotPath, index);
+        const bytes = await page.screenshot({
+          type,
+          fullPage: false,
+          ...(type === 'jpeg' && Number.isFinite(options.quality) ? { quality: options.quality } : {}),
+          ...(screenshotPath ? { path: screenshotPath } : {})
+        });
+        captures.push({
+          type,
+          fullPage: false,
+          index: index + 1,
+          scrollY,
+          ...(screenshotPath ? { path: screenshotPath } : {}),
+          ...(options.includeScreenshotBytes === false ? {} : { bytes })
+        });
+      }
+    } finally {
+      await page.evaluate((nextScrollY) => {
+        window.scrollTo(0, nextScrollY);
+      }, initialScrollY);
+    }
+
+    return {
+      mode: 'scroll-slices',
+      captures,
+      primaryPath: captures[0]?.path
+    };
+  }
+
+  async _readScrollMetrics(page) {
+    return page.evaluate(() => {
+      const root = document.scrollingElement || document.documentElement || document.body;
+      const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0;
+      const viewportWidth = window.innerWidth || document.documentElement?.clientWidth || 0;
+      const rootScrollHeight = root?.scrollHeight || 0;
+      const docScrollHeight = document.documentElement?.scrollHeight || 0;
+      const bodyScrollHeight = document.body?.scrollHeight || 0;
+      const scrollHeight = Math.max(rootScrollHeight, docScrollHeight, bodyScrollHeight, viewportHeight);
+      return {
+        viewportHeight,
+        viewportWidth,
+        scrollHeight,
+        initialScrollY: window.scrollY || root?.scrollTop || 0
+      };
+    });
+  }
+
+  _buildScrollPositions(metrics, options = {}) {
+    const maxScrollY = Math.max(0, metrics.scrollHeight - metrics.viewportHeight);
+    if (maxScrollY <= 0) {
+      return [0];
+    }
+
+    const overlapPx = Number.isFinite(options.overlapPx)
+      ? Math.max(0, options.overlapPx)
+      : Math.max(0, Math.floor(metrics.viewportHeight * 0.15));
+    const stepPx = Number.isFinite(options.stepPx)
+      ? Math.max(1, options.stepPx)
+      : Math.max(1, metrics.viewportHeight - overlapPx);
+    const startAtCurrent = options.startAt === 'current';
+    const startY = startAtCurrent
+      ? Math.min(maxScrollY, Math.max(0, metrics.initialScrollY || 0))
+      : 0;
+
+    const positions = [];
+    for (let current = startY; current < maxScrollY; current += stepPx) {
+      positions.push(current);
+    }
+    if (positions[positions.length - 1] !== maxScrollY) {
+      positions.push(maxScrollY);
+    }
+
+    const maxSlices = Number.isFinite(options.maxSlices) ? Math.max(1, options.maxSlices) : 12;
+    if (positions.length <= maxSlices) {
+      return positions;
+    }
+
+    const reduced = [];
+    const step = (positions.length - 1) / (maxSlices - 1);
+    for (let index = 0; index < maxSlices; index += 1) {
+      reduced.push(positions[Math.round(index * step)]);
+    }
+    return [...new Set(reduced)].sort((first, second) => first - second);
+  }
+
+  _deriveSequencePath(basePath, index) {
+    if (!basePath || index === 0) return basePath;
+    const extension = path.extname(basePath);
+    const withoutExtension = extension ? basePath.slice(0, -extension.length) : basePath;
+    return `${withoutExtension}-${String(index + 1).padStart(2, '0')}${extension}`;
+  }
+
+  _resolveCaptureMode(options = {}) {
+    if (options.captureMode === 'scroll-slices') return 'scroll-slices';
+    if (options.captureMode === 'viewport') return 'viewport';
+    if (options.captureMode === 'full-page') return 'full-page';
+    return options.fullPage === false ? 'viewport' : 'full-page';
   }
 
   _resolveOutputPath(options, defaults) {
@@ -700,11 +919,19 @@ export class OverlayClient extends OverlayLiveClient {
 
   _formatArtifactSetList(desktop, mobile, artifactIndexPath) {
     const items = [path.basename(artifactIndexPath), path.basename(desktop.htmlBundlePath)];
-    if (desktop.screenshotPath) items.push(path.basename(desktop.screenshotPath));
+    if (desktop.screenshotPaths?.length) {
+      items.push(...desktop.screenshotPaths.map((value) => path.basename(value)));
+    } else if (desktop.screenshotPath) {
+      items.push(path.basename(desktop.screenshotPath));
+    }
     if (desktop.jsonReportPath) items.push(path.basename(desktop.jsonReportPath));
     if (mobile) {
       items.push(path.basename(mobile.htmlBundlePath));
-      if (mobile.screenshotPath) items.push(path.basename(mobile.screenshotPath));
+      if (mobile.screenshotPaths?.length) {
+        items.push(...mobile.screenshotPaths.map((value) => path.basename(value)));
+      } else if (mobile.screenshotPath) {
+        items.push(path.basename(mobile.screenshotPath));
+      }
       if (mobile.jsonReportPath) items.push(path.basename(mobile.jsonReportPath));
     }
     return items.join(', ');

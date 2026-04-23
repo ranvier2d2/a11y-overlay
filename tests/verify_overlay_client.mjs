@@ -165,13 +165,17 @@ class FakeRuntime {
 }
 
 class FakeTarget {
-  constructor(runtime) {
+  constructor(runtime, options = {}) {
     this.runtime = runtime;
     this.installed = false;
     this.scriptTags = [];
     this.screenshots = [];
     this.url = 'https://example.test/demo';
     this.title = 'Fixture Page';
+    this.viewportWidth = options.viewportWidth || 1280;
+    this.viewportHeight = options.viewportHeight || 720;
+    this.scrollHeight = Math.max(options.scrollHeight || this.viewportHeight, this.viewportHeight);
+    this.scrollY = Math.max(0, options.scrollY || 0);
   }
 
   async addScriptTag(options) {
@@ -188,15 +192,57 @@ class FakeTarget {
   }
 
   async screenshot(options) {
-    this.screenshots.push(options);
+    this.screenshots.push({
+      ...options,
+      scrollY: this.scrollY
+    });
     return Buffer.from('fake-image');
   }
 
   #withWindow(fn) {
     const previousWindow = global.window;
     const previousDocument = global.document;
-    global.window = this.installed ? { __a11yOverlayInstalled: this.runtime, location: { href: this.url } } : { location: { href: this.url } };
-    global.document = { title: this.title };
+    const documentElement = {
+      clientWidth: this.viewportWidth,
+      clientHeight: this.viewportHeight,
+      scrollHeight: this.scrollHeight,
+      scrollTop: this.scrollY
+    };
+    const body = {
+      clientWidth: this.viewportWidth,
+      clientHeight: this.viewportHeight,
+      scrollHeight: this.scrollHeight,
+      scrollTop: this.scrollY
+    };
+    const scrollingElement = {
+      clientWidth: this.viewportWidth,
+      clientHeight: this.viewportHeight,
+      scrollHeight: this.scrollHeight,
+      scrollTop: this.scrollY
+    };
+    const windowObject = {
+      location: { href: this.url },
+      innerWidth: this.viewportWidth,
+      innerHeight: this.viewportHeight,
+      scrollY: this.scrollY,
+      scrollTo: (_x, y) => {
+        this.scrollY = Math.max(0, Number(y) || 0);
+        scrollingElement.scrollTop = this.scrollY;
+        documentElement.scrollTop = this.scrollY;
+        body.scrollTop = this.scrollY;
+        windowObject.scrollY = this.scrollY;
+      }
+    };
+    if (this.installed) {
+      windowObject.__a11yOverlayInstalled = this.runtime;
+    }
+    global.window = windowObject;
+    global.document = {
+      title: this.title,
+      body,
+      documentElement,
+      scrollingElement
+    };
     try {
       return fn();
     } finally {
@@ -450,6 +496,71 @@ async function verifyWriteAuditArtifactSet() {
   }
 }
 
+async function verifyScrollAwareVisualEvidence() {
+  const runtime = new FakeRuntime();
+  runtime.applyPreset('agent-capture');
+  const desktopTarget = new FakeTarget(runtime, {
+    viewportHeight: 600,
+    scrollHeight: 1900
+  });
+  const mobileTarget = new FakeTarget(runtime, {
+    viewportHeight: 640,
+    scrollHeight: 2200
+  });
+  desktopTarget.installed = true;
+  mobileTarget.installed = true;
+
+  const client = new OverlayClient();
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'overlay-client-scroll-'));
+
+  try {
+    const visualEvidence = await client.captureVisualEvidence(desktopTarget, {
+      dir,
+      fileName: 'desktop-review.jpg',
+      screenshotType: 'jpeg',
+      captureMode: 'scroll-slices',
+      scrollSettlingMs: 0
+    });
+
+    assert.equal(visualEvidence.mode, 'scroll-slices');
+    assert.ok(visualEvidence.captures.length > 1);
+    assert.equal(path.basename(visualEvidence.primaryPath), 'desktop-review.jpg');
+    assert.equal(path.basename(visualEvidence.captures[1].path), 'desktop-review-02.jpg');
+    assert.equal(desktopTarget.screenshots[0].scrollY, 0);
+    assert.ok(desktopTarget.screenshots.at(-1).scrollY > 0);
+
+    const result = await client.writeAuditArtifactSet(desktopTarget, {
+      dir,
+      scope: 'all',
+      mobileTarget,
+      screenshotType: 'jpeg',
+      captureMode: 'scroll-slices',
+      mobileCaptureMode: 'scroll-slices',
+      scrollSettlingMs: 0
+    });
+
+    assert.ok(result.desktop.screenshotPaths.length > 1);
+    assert.ok(result.mobile.screenshotPaths.length > 1);
+    assert.equal(path.basename(result.desktop.screenshotPath), 'desktop.jpg');
+    assert.equal(path.basename(result.desktop.screenshotPaths[1]), 'desktop-02.jpg');
+    assert.equal(path.basename(result.mobile.screenshotPaths[1]), 'mobile-02.jpg');
+
+    const artifactIndex = JSON.parse(await readFile(result.artifactIndexPath, 'utf8'));
+    assert.equal(artifactIndex.desktop.screenshotMode, 'scroll-slices');
+    assert.ok(Array.isArray(artifactIndex.desktop.screenshots));
+    assert.ok(artifactIndex.desktop.screenshots.length > 1);
+    assert.equal(artifactIndex.desktop.screenshots[1], 'desktop-02.jpg');
+    assert.equal(artifactIndex.mobile.screenshotMode, 'scroll-slices');
+    assert.ok(artifactIndex.mobile.screenshots.length > 1);
+
+    const reportMarkdown = await readFile(result.reportMarkdownPath, 'utf8');
+    assert.match(reportMarkdown, /desktop-02\.jpg/);
+    assert.match(reportMarkdown, /mobile-02\.jpg/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 async function verifyUnavailableMethodError() {
   const runtime = new FakeRuntime();
   const target = new FakeTarget(runtime);
@@ -503,6 +614,7 @@ async function main() {
   await verifyFailurePackageWrite();
   await verifyBuildReportAndBundleToFile();
   await verifyWriteAuditArtifactSet();
+  await verifyScrollAwareVisualEvidence();
   await verifyUnavailableMethodError();
   await verifyAdditionalFindingsFormatting();
   await verifyAsyncFrameScreenshotResolution();

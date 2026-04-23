@@ -80,6 +80,38 @@ Recommended split:
 - use the skill form for local setup and experimentation
 - use the plugin form for reusable team distribution
 
+### Install with skills.sh
+
+For a public installer path outside Codex-local plugin setup, `skills.sh` can install the skill directly from this repo.
+
+List the skill first:
+
+```bash
+npx skills add https://github.com/ranvier2d2/a11y-overlay -l --full-depth
+```
+
+Install it into Codex globally:
+
+```bash
+npx skills add https://github.com/ranvier2d2/a11y-overlay \
+  --full-depth \
+  --skill overlay-playwright-runtime \
+  --agent codex \
+  --global \
+  --yes
+```
+
+Direct skill-path install also works if you prefer a narrower source URL:
+
+```bash
+npx skills add https://github.com/ranvier2d2/a11y-overlay/tree/main/plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime \
+  --agent codex \
+  --global \
+  --yes
+```
+
+Use `skills.sh` when you want the skill installed directly into a Codex environment without first wiring a plugin marketplace.
+
 ### Install the skill from GitHub
 
 In Codex, use [$skill-installer](/Users/joaquinvenegasarevalo/.codex/skills/.system/skill-installer/SKILL.md) and point it at:
@@ -118,6 +150,40 @@ python3 scripts/bootstrap_operate_sandbox.py
 That sandbox owns the local `playwright` dependency and browser install for the
 skill's `operate` flow. It is intentionally separate from any adopted target repo,
 so local visual QA does not add or mutate a target repo `package.json` or lockfiles.
+
+The sandbox now supports three audit entrypoints:
+
+- `auditLocalWeb(...)`
+- `auditAuthenticatedWeb(...)`
+- `auditDesktopShell(...)`
+
+The first two default to scroll-aware visual evidence for long pages, so the
+artifact set is not limited to a single initial viewport screenshot.
+
+### Temporary audit-only vendoring
+
+The bundled vendor script now supports a temporary adopt/cleanup cycle for audit-only runs.
+
+Vendor temporarily:
+
+```bash
+python3 plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --temporary
+```
+
+Clean up after the audit:
+
+```bash
+python3 plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --cleanup
+```
+
+The vendoring flow is compatibility-aware by default:
+
+- identical existing files are reused without error
+- only divergent files require `--force`
 
 ## How the script works
 
