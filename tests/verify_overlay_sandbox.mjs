@@ -19,6 +19,14 @@ async function ensureSandboxExists() {
   }
 }
 
+/**
+ * Runs an end-to-end verification of the overlay sandbox runtime.
+ *
+ * Starts a temporary HTTP fixture server, launches an overlay sandbox session, performs UI and accessibility
+ * verifications (including overlay initialization, annotations, session snapshots, scroll-sliced visual captures,
+ * local and authenticated web audits, and a desktop-shell audit), validates generated artifacts, and then
+ * tears down the session, server, and temporary output directory.
+ */
 async function main() {
   await ensureSandboxExists();
 

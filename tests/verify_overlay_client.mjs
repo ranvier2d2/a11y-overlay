@@ -427,6 +427,13 @@ async function verifyBuildReportAndBundleToFile() {
   }
 }
 
+/**
+ * Verifies that writing a set of audit artifacts produces the expected files and screenshots.
+ *
+ * Creates desktop and mobile fake runtimes/targets, invokes the client's audit artifact writer
+ * to emit bundle/report/screenshot files into a temporary directory, asserts the generated
+ * artifact index, report markdown, and screenshot metadata, and removes the temporary directory.
+ */
 async function verifyWriteAuditArtifactSet() {
   const desktopRuntime = new FakeRuntime();
   desktopRuntime.applyPreset('agent-capture');
@@ -496,6 +503,15 @@ async function verifyWriteAuditArtifactSet() {
   }
 }
 
+/**
+ * Verifies that scroll-slice visual evidence is captured and written to artifacts for desktop and mobile targets.
+ *
+ * Creates desktop and mobile FakeTarget instances, invokes captureVisualEvidence with captureMode 'scroll-slices',
+ * and then writes an audit artifact set. Asserts that multiple capture slices are produced, that the desktop target's
+ * scroll position advances during capture, that artifact index entries indicate 'scroll-slices' and include second-slice
+ * filenames (e.g. `*-02.jpg`), and that the generated report markdown references those filenames. Uses a temporary
+ * directory for output and removes it on completion.
+ */
 async function verifyScrollAwareVisualEvidence() {
   const runtime = new FakeRuntime();
   runtime.applyPreset('agent-capture');
@@ -561,6 +577,11 @@ async function verifyScrollAwareVisualEvidence() {
   }
 }
 
+/**
+ * Verifies that OverlayClient.waitForStableState rejects when the method is unavailable.
+ *
+ * Asserts the call rejects with an error matching `/waitForStableState/`.
+ */
 async function verifyUnavailableMethodError() {
   const runtime = new FakeRuntime();
   const target = new FakeTarget(runtime);
@@ -607,6 +628,11 @@ async function verifyAsyncFrameScreenshotResolution() {
   assert.equal(target.screenshots[0].fullPage, false);
 }
 
+/**
+ * Runs the full suite of overlay client verification functions.
+ *
+ * Executes each verification in sequence and logs "overlay client verification passed" on success.
+ */
 async function main() {
   await verifyInjectAndDelegation(OverlayClient);
   await verifyInjectAndDelegation(OverlayLiveClient);
