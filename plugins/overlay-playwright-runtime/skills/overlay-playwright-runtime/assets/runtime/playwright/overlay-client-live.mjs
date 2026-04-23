@@ -1,4 +1,5 @@
 const DEFAULT_GLOBAL_NAME = '__a11yOverlayInstalled';
+const DEFAULT_BOOTSTRAP_KEY = '__a11yOverlayBootstrap';
 const DEFAULT_TIMEOUT_MS = 5000;
 const DEFAULT_SCRIPT_PATH = new URL('../a11y-overlay.js', import.meta.url).pathname;
 
@@ -31,12 +32,25 @@ export class OverlayLiveClient {
    *   scriptPath?: string,
    *   scriptUrl?: string,
    *   scriptContent?: string,
+   *   bootstrapConfig?: object,
    *   timeoutMs?: number
    * }} [options]
    * @returns {Promise<object>}
    */
   async inject(target, options = {}) {
     const installed = await this.isInstalled(target);
+
+    if (options.bootstrapConfig && (!installed || options.force)) {
+      await target.evaluate(
+        ({ bootstrapKey, bootstrapConfig }) => {
+          window[bootstrapKey] = bootstrapConfig;
+        },
+        {
+          bootstrapKey: DEFAULT_BOOTSTRAP_KEY,
+          bootstrapConfig: options.bootstrapConfig
+        }
+      );
+    }
 
     if (!installed || options.force) {
       if (options.force && installed) {
@@ -52,6 +66,11 @@ export class OverlayLiveClient {
     }
 
     await this.waitForRuntime(target, { timeoutMs: options.timeoutMs });
+    if (options.bootstrapConfig && (!installed || options.force)) {
+      await target.evaluate(({ bootstrapKey }) => {
+        delete window[bootstrapKey];
+      }, { bootstrapKey: DEFAULT_BOOTSTRAP_KEY });
+    }
     return this.getContract(target);
   }
 
@@ -97,12 +116,20 @@ export class OverlayLiveClient {
     return this._evaluateRuntimeMethod(target, 'buildAuditBundle', [options]);
   }
 
+  async getUiState(target) {
+    return this._evaluateRuntimeMethod(target, 'getUiState', []);
+  }
+
   async listPresets(target) {
     return this._evaluateRuntimeMethod(target, 'listPresets', []);
   }
 
   async applyPreset(target, presetId, options = {}) {
     return this._evaluateRuntimeMethod(target, 'applyPreset', [presetId, options]);
+  }
+
+  async configureUi(target, options = {}) {
+    return this._evaluateRuntimeMethod(target, 'configureUi', [options]);
   }
 
   async setLayerMode(target, mode) {
@@ -208,5 +235,6 @@ export function createOverlayLiveClient(options) {
 export {
   DEFAULT_SCRIPT_PATH,
   DEFAULT_GLOBAL_NAME,
+  DEFAULT_BOOTSTRAP_KEY,
   DEFAULT_TIMEOUT_MS
 };

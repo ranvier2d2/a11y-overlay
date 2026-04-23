@@ -15,6 +15,11 @@ This skill has two modes:
 1. `adopt` — vendor the reusable runtime files into another repo.
 2. `operate` — keep a persistent browser session alive in a dedicated local sandbox and use the live helper for semantic context, reports, screenshots, and annotations.
 
+Within `operate`, prefer these opinionated workflows:
+
+- `auditLocalWeb(...)` for ordinary local or public web surfaces
+- `auditAuthenticatedWeb(...)` for sign-in, token, or paired flows that must authenticate before the audit pass
+
 Prefer `operate` when you are iterating locally inside Codex and `js_repl` is available. Do not relaunch the browser on every turn unless the app ownership changed or the session is stale.
 
 ## Bundled Assets
@@ -254,6 +259,77 @@ const report = await overlaySession.buildJsonReport(mobilePage, { scope: "all" }
 console.log(report.audit);
 ```
 
+### Standard local audit flow
+
+When you want a stable desktop/mobile artifact set instead of ad hoc report calls, prefer:
+
+```javascript
+const audit = await overlaySession.auditLocalWeb({
+  url: TARGET_URL,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  reportContext: {
+    target_name: "Example app",
+    audit_mode: "audit-local-web"
+  }
+});
+
+console.log(audit.artifacts.reportMarkdownPath);
+console.log(audit.artifacts.artifactIndexPath);
+```
+
+This is the preferred first audit workflow because it:
+
+- runs a desktop pass
+- runs a mobile pass
+- captures screenshots
+- writes a stable artifact set
+- uses the canonical report scaffold automatically
+
+### Standard authenticated audit flow
+
+When the app must authenticate before the audit, prefer:
+
+```javascript
+const audit = await overlaySession.auditAuthenticatedWeb({
+  url: TARGET_URL,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  auth: {
+    mode: "form-fill",
+    url: LOGIN_URL,
+    fields: [
+      { label: "Email", value: EMAIL },
+      { label: "Password", value: PASSWORD }
+    ],
+    submit: { role: "button", name: "Sign in" },
+    includeIndexedDB: true
+  },
+  authValidation: {
+    postAuthUrl: "/dashboard",
+    readySelector: "[data-test='account-menu']"
+  },
+  readiness: {
+    strategy: "selector-visible",
+    selector: "main"
+  },
+  reportContext: {
+    target_name: "Authenticated app",
+    audit_mode: "audit-authenticated-web"
+  }
+});
+
+console.log(audit.auth.authStatePath);
+console.log(audit.artifacts.reportMarkdownPath);
+```
+
+Supported authentication modes in the first version:
+
+- `reuse-existing-session`
+- `url-token`
+- `form-fill`
+- `custom`
+
+Keep this workflow intentionally narrow. Do not try to treat it as a universal OAuth, MFA, or popup-login framework.
+
 ### Annotation pass in the persistent session
 
 ```javascript
@@ -295,6 +371,7 @@ await overlaySession.saveSession(page);
 
 - Adoption notes and examples: `references/adoption.md`
 - Persistent session examples: `references/interactive.md`
+- Reporting doctrine: `references/reporting.md`
 
 ## Validation
 

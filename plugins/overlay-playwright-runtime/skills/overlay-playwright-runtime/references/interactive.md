@@ -107,6 +107,110 @@ const report = await overlaySession.buildJsonReport(mobilePage, { scope: "all" }
 console.log(report.audit);
 ```
 
+## Standard local audit flow
+
+When you want a stable desktop/mobile artifact set instead of ad hoc report calls, use:
+
+```javascript
+const audit = await overlaySession.auditLocalWeb({
+  url: TARGET_URL,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  reportContext: {
+    target_name: "Example app",
+    audit_mode: "audit-local-web"
+  }
+});
+
+console.log(audit.artifacts.reportMarkdownPath);
+console.log(audit.artifacts.artifactIndexPath);
+```
+
+This is the preferred first operator workflow because it:
+
+- runs a desktop pass
+- runs a mobile pass
+- captures screenshots
+- writes a stable artifact set
+- uses the canonical report scaffold automatically
+
+## Standard authenticated audit flow
+
+When the app must authenticate before the audit, use:
+
+```javascript
+const audit = await overlaySession.auditAuthenticatedWeb({
+  url: TARGET_URL,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  auth: {
+    mode: "form-fill",
+    url: LOGIN_URL,
+    fields: [
+      { label: "Email", value: EMAIL },
+      { label: "Password", value: PASSWORD }
+    ],
+    submit: { role: "button", name: "Sign in" },
+    includeIndexedDB: true
+  },
+  authValidation: {
+    postAuthUrl: "/dashboard",
+    readySelector: "[data-test='account-menu']"
+  },
+  readiness: {
+    strategy: "selector-visible",
+    selector: "main"
+  },
+  reportContext: {
+    target_name: "Authenticated app",
+    audit_mode: "audit-authenticated-web"
+  }
+});
+
+console.log(audit.auth.authStatePath);
+console.log(audit.artifacts.reportMarkdownPath);
+```
+
+Supported auth modes:
+
+- `reuse-existing-session`
+- `url-token`
+- `form-fill`
+- `custom`
+
+Keep the first version narrow. Prefer explicit route and selector validation after auth instead of trying to abstract every login system.
+
+## Readiness strategies
+
+Prefer explicit readiness checks over blind `networkidle`.
+
+The sandbox helper now supports:
+
+- `dom-marker`
+- `selector-visible`
+- `route-match`
+- `custom-wait`
+
+Example:
+
+```javascript
+await overlaySession.waitForReady(page, {
+  strategy: "selector-visible",
+  selector: "main"
+});
+```
+
+Or inside the standard audit flow:
+
+```javascript
+const audit = await overlaySession.auditLocalWeb({
+  url: TARGET_URL,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  readiness: {
+    strategy: "selector-visible",
+    selector: "main"
+  }
+});
+```
+
 ## Annotation flow
 
 ```javascript
@@ -150,6 +254,12 @@ console.log(await overlaySession.saveSession(page));
 - Browser does not open:
   - rerun `python3 scripts/bootstrap_operate_sandbox.py`
   - confirm the sandbox exists at `~/.codex/overlay-playwright-runtime/sandbox`
+- Blank page or wrong shell:
+  - use `waitForReady(...)` with `route-match`, `dom-marker`, or `selector-visible`
+  - do not rely on `networkidle` as the default truth signal
+- Backend unavailable or error boundary:
+  - confirm the target URL manually
+  - inspect visible error text before assuming overlay failure
 - Runtime is not injected:
   - check `runtimeScriptPath`
   - make sure it points at a real `a11y-overlay.js`

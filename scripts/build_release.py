@@ -31,6 +31,7 @@ ICON_FILES = [
 
 def load_manifest() -> dict:
     subprocess.run([sys.executable, str(ROOT / "scripts" / "build_overlay.py")], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "sync_overlay_playwright_assets.py")], check=True)
     return json.loads((ROOT / "manifest.json").read_text())
 
 
