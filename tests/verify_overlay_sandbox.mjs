@@ -19,6 +19,14 @@ async function ensureSandboxExists() {
   }
 }
 
+/**
+ * Runs an end-to-end verification of the overlay sandbox runtime.
+ *
+ * Starts a temporary HTTP fixture server, launches an overlay sandbox session, performs UI and accessibility
+ * verifications (including overlay initialization, annotations, session snapshots, scroll-sliced visual captures,
+ * local and authenticated web audits, and a desktop-shell audit), validates generated artifacts, and then
+ * tears down the session, server, and temporary output directory.
+ */
 async function main() {
   await ensureSandboxExists();
 
@@ -37,7 +45,7 @@ async function main() {
         <html>
           <head><title>Login Fixture</title></head>
           <body>
-            <main>
+            <main style="min-height: 1800px;">
               <h1>Sign in</h1>
               <form method="POST" action="/login">
                 <label>Email <input name="email" type="email" /></label>
@@ -76,10 +84,14 @@ async function main() {
         <html>
           <head><title>Sandbox Fixture</title></head>
           <body>
-            <main>
+            <main style="min-height: 2600px;">
               <h1 data-test="app-ready">Sandbox fixture</h1>
               <button type="button">Checkout</button>
               <div data-test="account-chip">Signed in</div>
+              <section style="margin-top: 1800px;">
+                <h2>Lower content</h2>
+                <button type="button">Continue</button>
+              </section>
             </main>
           </body>
         </html>
@@ -93,9 +105,13 @@ async function main() {
       <html>
         <head><title>Sandbox Fixture</title></head>
         <body>
-          <main>
+          <main style="min-height: 2600px;">
             <h1>Sandbox fixture</h1>
             <button type="button">Checkout</button>
+            <section style="margin-top: 1800px;">
+              <h2>Lower content</h2>
+              <button type="button">Continue</button>
+            </section>
           </main>
         </body>
       </html>
@@ -142,6 +158,25 @@ async function main() {
     const snapshot = await session.saveSession(page);
     assert.ok(snapshot.annotations?.notes?.length >= 1);
 
+    const visualEvidence = await session.captureVisualEvidence(page, {
+      type: 'jpeg',
+      captureMode: 'scroll-slices',
+      scrollSettlingMs: 0
+    });
+    assert.equal(visualEvidence.mode, 'scroll-slices');
+    assert.ok(visualEvidence.captures.length > 1);
+    assert.match(path.basename(visualEvidence.captures[1].path), /^overlay-shot-\d+-02\.jpg$/);
+
+    const nestedFullPageEvidence = await session.captureVisualEvidence(page, {
+      path: path.join(outputDir, 'nested', 'shots', 'fullpage.jpg'),
+      type: 'jpeg',
+      fullPage: true
+    });
+    assert.equal(nestedFullPageEvidence.mode, 'full-page');
+    assert.equal(nestedFullPageEvidence.captures.length, 1);
+    assert.equal(path.basename(nestedFullPageEvidence.primaryPath), 'fullpage.jpg');
+    await access(nestedFullPageEvidence.primaryPath);
+
     const audit = await session.auditLocalWeb({
       url,
       runtimeScriptPath: RUNTIME_SCRIPT_PATH,
@@ -159,13 +194,19 @@ async function main() {
     assert.equal(path.basename(audit.artifacts.desktop.htmlBundlePath), 'desktop.html');
     assert.equal(path.basename(audit.artifacts.desktop.jsonReportPath), 'desktop.json');
     assert.equal(path.basename(audit.artifacts.desktop.screenshotPath), 'desktop.jpg');
+    assert.ok(audit.artifacts.desktop.screenshotPaths.length > 1);
+    assert.equal(path.basename(audit.artifacts.desktop.screenshotPaths[1]), 'desktop-02.jpg');
     assert.equal(path.basename(audit.artifacts.mobile.htmlBundlePath), 'mobile.html');
     assert.equal(path.basename(audit.artifacts.mobile.jsonReportPath), 'mobile.json');
     assert.equal(path.basename(audit.artifacts.mobile.screenshotPath), 'mobile.jpg');
+    assert.ok(audit.artifacts.mobile.screenshotPaths.length > 1);
+    assert.equal(path.basename(audit.artifacts.mobile.screenshotPaths[1]), 'mobile-02.jpg');
 
     const reportMarkdown = await readFile(audit.artifacts.reportMarkdownPath, 'utf8');
     assert.match(reportMarkdown, /# Accessibility Audit Report/);
     assert.match(reportMarkdown, /\*\*Target:\*\* Sandbox Fixture/);
+    assert.match(reportMarkdown, /desktop-02\.jpg/);
+    assert.match(reportMarkdown, /mobile-02\.jpg/);
 
     const authedAudit = await session.auditAuthenticatedWeb({
       url: appUrl,
@@ -204,6 +245,22 @@ async function main() {
     const authReportMarkdown = await readFile(authedAudit.artifacts.reportMarkdownPath, 'utf8');
     assert.match(authReportMarkdown, /\*\*Target:\*\* Sandbox Auth Fixture/);
     assert.match(authReportMarkdown, /\*\*Audit mode:\*\* audit-authenticated-web/);
+
+    const desktopShellAudit = await session.auditDesktopShell({
+      desktopPage: authedAudit.desktopPage,
+      runtimeScriptPath: RUNTIME_SCRIPT_PATH,
+      readiness: {
+        strategy: 'selector-visible',
+        selector: '[data-test="app-ready"]'
+      },
+      reportContext: {
+        target_name: 'Sandbox Shell Fixture'
+      }
+    });
+
+    const desktopShellReportMarkdown = await readFile(desktopShellAudit.artifacts.reportMarkdownPath, 'utf8');
+    assert.match(desktopShellReportMarkdown, /\*\*Target:\*\* Sandbox Shell Fixture/);
+    assert.match(desktopShellReportMarkdown, /\*\*Audit mode:\*\* audit-desktop-shell/);
 
     const reusedAudit = await session.auditAuthenticatedWeb({
       url: appUrl,

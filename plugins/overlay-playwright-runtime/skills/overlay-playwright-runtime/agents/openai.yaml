@@ -1,4 +1,4 @@
 interface:
   display_name: "Overlay Playwright Runtime"
-  short_description: "Adopt a11y-overlay or operate it from a dedicated sandboxed Playwright session"
-  default_prompt: "Use $overlay-playwright-runtime to vendor the a11y-overlay runtime or run it from the dedicated operate sandbox in a persistent Playwright session for semantic context, screenshots, annotations, and failure packages."
+  short_description: "Adopt a11y-overlay or run local, authenticated, and desktop-shell audits from a dedicated sandboxed Playwright session"
+  default_prompt: "Use $overlay-playwright-runtime to vendor the a11y-overlay runtime or run it from the dedicated operate sandbox in a persistent Playwright session. Prefer the named audit helpers for local web, authenticated web, or attached desktop-shell surfaces so the run produces semantic context, scroll-aware visual evidence, standard artifacts, annotations, and failure packages."

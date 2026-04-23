@@ -86,6 +86,29 @@ python3 scripts/vendor_overlay_runtime.py \
 
 Use `--force` only when the user explicitly wants to overwrite existing files.
 
+The vendor script is compatibility-aware by default:
+
+- identical existing files are reused without error
+- only differing files require `--force`
+
+For audit-only runs that should clean up after themselves, use:
+
+```bash
+python3 scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --temporary
+```
+
+After the audit, remove only the files that this temporary run copied:
+
+```bash
+python3 scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --cleanup
+```
+
+This preserves any vendored files that were modified after the temporary run.
+
 ### 3. Use the Playwright client instead of raw `page.evaluate(...)` sprawl
 
 Canonical usage:
@@ -281,9 +304,31 @@ This is the preferred first audit workflow because it:
 
 - runs a desktop pass
 - runs a mobile pass
-- captures screenshots
+- captures scroll-aware visual evidence by default
 - writes a stable artifact set
 - uses the canonical report scaffold automatically
+
+When the page is longer than one viewport, `auditLocalWeb(...)` and `auditAuthenticatedWeb(...)`
+now default to `scroll-slices` capture mode for screenshots, so the artifact set is not limited
+to the initial viewport position. The primary screenshot remains `desktop.jpg` / `mobile.jpg`,
+and additional slices are written as `desktop-02.jpg`, `desktop-03.jpg`, and so on.
+
+### Scroll-aware visual evidence in live sessions
+
+For agent-led review steps outside the standard audit workflows, prefer:
+
+```javascript
+const evidence = await overlaySession.captureVisualEvidence(page, {
+  type: "jpeg",
+  captureMode: "scroll-slices"
+});
+
+console.log(evidence.primaryPath);
+console.log(evidence.captures.map((capture) => capture.path));
+```
+
+Use `captureMode: "viewport"` for a single current viewport screenshot, or
+`captureMode: "full-page"` when a single long stitched capture is explicitly preferred.
 
 ### Standard authenticated audit flow
 
@@ -329,6 +374,33 @@ Supported authentication modes in the first version:
 - `custom`
 
 Keep this workflow intentionally narrow. Do not try to treat it as a universal OAuth, MFA, or popup-login framework.
+
+### Standard desktop-shell audit flow
+
+When you already have a page handle from an attached desktop shell or embedded browser, prefer:
+
+```javascript
+const audit = await overlaySession.auditDesktopShell({
+  desktopPage: SHELL_PAGE,
+  runtimeScriptPath: RUNTIME_SCRIPT,
+  readiness: {
+    strategy: "selector-visible",
+    selector: "main"
+  },
+  reportContext: {
+    target_name: "Desktop shell app"
+  }
+});
+
+console.log(audit.artifacts.reportMarkdownPath);
+```
+
+This first pass is intentionally thin:
+
+- you bring the already-attached page handle
+- the helper injects the overlay
+- it writes the same standard artifact set
+- it stamps the run as `audit-desktop-shell`
 
 ### Annotation pass in the persistent session
 
