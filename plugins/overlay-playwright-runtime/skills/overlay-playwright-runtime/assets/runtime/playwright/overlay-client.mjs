@@ -142,7 +142,7 @@ This document is a **Website Accessibility Audit Report** based on the tested ro
 
 const DEFAULT_REPORT_TEMPLATE_CANDIDATES = [
   new URL('../plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/assets/templates/accessibility-audit-report.md', import.meta.url),
-  new URL('./assets/templates/accessibility-audit-report.md', import.meta.url)
+  new URL('../../templates/accessibility-audit-report.md', import.meta.url)
 ];
 
 /**
@@ -612,7 +612,7 @@ export class OverlayClient extends OverlayLiveClient {
       finding_evidence_2: topFindings[1] ? this._formatFindingEvidence(topFindings[1]) : 'n/a',
       finding_sources_2: topFindings[1] ? this._formatFindingSources(topFindings[1]) : 'n/a',
       finding_fix_2: topFindings[1]?.meta?.suggestedFix || 'n/a',
-      additional_findings: this._formatAdditionalFindings((desktopReport?.findings || []).slice(2)),
+      additional_findings: this._formatAdditionalFindings((desktopReport?.findings || []).slice(3), 3),
       artifact_index: path.basename(artifactIndexPath),
       desktop_html_bundle: path.basename(desktop.htmlBundlePath),
       mobile_html_bundle: mobile ? path.basename(mobile.htmlBundlePath) : 'No mobile HTML bundle.',
@@ -754,11 +754,11 @@ export class OverlayClient extends OverlayLiveClient {
     return sourceRow ? String(sourceRow.value) : 'No explicit source links recorded.';
   }
 
-  _formatAdditionalFindings(findings) {
+  _formatAdditionalFindings(findings, startIndex = 0) {
     if (!findings || !findings.length) return 'No additional findings summarized.';
     return findings
       .slice(0, 10)
-      .map((finding, index) => `${index + 3}. ${this._formatFindingSummary(finding)}`)
+      .map((finding, index) => `${startIndex + index + 1}. ${this._formatFindingSummary(finding)}`)
       .join('\n');
   }
 

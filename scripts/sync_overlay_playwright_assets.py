@@ -21,6 +21,10 @@ SYNC_PAIRS = [
         PLUGIN_ROOT / "assets" / "runtime" / "playwright" / "overlay-client.mjs",
     ),
     (
+        PLAYWRIGHT_ROOT / "overlay-client.mjs",
+        PLUGIN_ROOT / "assets" / "sandbox" / "overlay-client.mjs",
+    ),
+    (
         PLAYWRIGHT_ROOT / "overlay-client-live.mjs",
         PLUGIN_ROOT / "assets" / "runtime" / "playwright" / "overlay-client-live.mjs",
     ),

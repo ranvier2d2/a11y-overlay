@@ -674,7 +674,10 @@ export async function createOverlaySandboxSession(options = {}) {
       throw new Error("auditAuthenticatedWeb requires runtimeScriptPath.");
     }
 
-    if (auth.resetContext !== false) {
+    const shouldResetDesktopContext = auth.mode === "reuse-existing-session"
+      ? auth.resetContext === true
+      : auth.resetContext !== false;
+    if (shouldResetDesktopContext) {
       await resetDesktopContext();
     }
     const desktopPage = await ensureDesktopPage({

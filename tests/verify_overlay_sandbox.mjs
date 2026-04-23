@@ -204,6 +204,28 @@ async function main() {
     const authReportMarkdown = await readFile(authedAudit.artifacts.reportMarkdownPath, 'utf8');
     assert.match(authReportMarkdown, /\*\*Target:\*\* Sandbox Auth Fixture/);
     assert.match(authReportMarkdown, /\*\*Audit mode:\*\* audit-authenticated-web/);
+
+    const reusedAudit = await session.auditAuthenticatedWeb({
+      url: appUrl,
+      runtimeScriptPath: RUNTIME_SCRIPT_PATH,
+      auth: {
+        mode: 'reuse-existing-session'
+      },
+      authValidation: {
+        postAuthUrl: '/app',
+        readySelector: '[data-test="account-chip"]'
+      },
+      readiness: {
+        strategy: 'selector-visible',
+        selector: '[data-test="app-ready"]'
+      },
+      reportContext: {
+        target_name: 'Sandbox Reuse Fixture'
+      }
+    });
+
+    const reuseReportMarkdown = await readFile(reusedAudit.artifacts.reportMarkdownPath, 'utf8');
+    assert.match(reuseReportMarkdown, /\*\*Target:\*\* Sandbox Reuse Fixture/);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     if (session) {

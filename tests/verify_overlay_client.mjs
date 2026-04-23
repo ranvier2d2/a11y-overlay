@@ -462,6 +462,19 @@ async function verifyUnavailableMethodError() {
   );
 }
 
+async function verifyAdditionalFindingsFormatting() {
+  const client = new OverlayClient();
+  const findings = [
+    { label: 'Fourth finding', meta: { severity: 'warning' } },
+    { label: 'Fifth finding', meta: { severity: 'error' } }
+  ];
+
+  assert.equal(
+    client._formatAdditionalFindings(findings, 3),
+    '4. [warning] Fourth finding\n5. [error] Fifth finding'
+  );
+}
+
 async function main() {
   await verifyInjectAndDelegation(OverlayClient);
   await verifyInjectAndDelegation(OverlayLiveClient);
@@ -470,6 +483,7 @@ async function main() {
   await verifyBuildReportAndBundleToFile();
   await verifyWriteAuditArtifactSet();
   await verifyUnavailableMethodError();
+  await verifyAdditionalFindingsFormatting();
   console.log('overlay client verification passed');
 }
 
