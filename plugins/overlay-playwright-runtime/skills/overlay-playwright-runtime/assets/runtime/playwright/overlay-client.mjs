@@ -243,7 +243,7 @@ export class OverlayClient extends OverlayLiveClient {
 
     const dir = options.dir;
     const scope = options.scope === 'active' ? 'active' : 'all';
-    const screenshotType = options.screenshotType === 'png' ? 'png' : 'jpeg';
+    const screenshotType = options.screenshotType === 'jpeg' ? 'jpeg' : 'png';
     const screenshotExt = screenshotType === 'png' ? 'png' : 'jpg';
     await mkdir(dir, { recursive: true });
 

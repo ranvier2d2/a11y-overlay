@@ -202,8 +202,7 @@ export async function createOverlaySandboxSession(options = {}) {
   };
 
   const createSessionStorageInstaller = (snapshot = {}) => {
-    const entries = Object.entries(snapshot || {}).filter(([, values]) => values && typeof values === "object");
-    if (!entries.length) return undefined;
+    if (!snapshot || Object.keys(snapshot).length === 0) return undefined;
     return (storageMap) => {
       const values = storageMap[window.location.origin];
       if (!values || typeof values !== "object") return;
