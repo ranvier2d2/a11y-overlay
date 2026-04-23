@@ -140,11 +140,18 @@ const DEFAULT_REPORT_TEMPLATE = `# Accessibility Audit Report
 This document is a **Website Accessibility Audit Report** based on the tested routes, states, and artifacts above. Unless explicitly stated otherwise, it is **not** a formal accessibility conformance claim, VPAT, or ACR.
 `;
 
-const DEFAULT_REPORT_TEMPLATE_CANDIDATES = [
-  new URL('../plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/assets/templates/accessibility-audit-report.md', import.meta.url),
-  new URL('../../templates/accessibility-audit-report.md', import.meta.url),
-  new URL('../templates/accessibility-audit-report.md', import.meta.url)
-];
+function buildDefaultReportTemplateCandidates() {
+  const moduleHref = import.meta.url;
+  if (moduleHref.includes('/assets/runtime/playwright/')) {
+    return [new URL('../../templates/accessibility-audit-report.md', import.meta.url)];
+  }
+  if (moduleHref.includes('/assets/sandbox/')) {
+    return [new URL('../templates/accessibility-audit-report.md', import.meta.url)];
+  }
+  return [new URL('../plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/assets/templates/accessibility-audit-report.md', import.meta.url)];
+}
+
+const DEFAULT_REPORT_TEMPLATE_CANDIDATES = buildDefaultReportTemplateCandidates();
 
 /**
  * Thin Playwright-facing wrapper over the injected overlay runtime.
@@ -502,7 +509,7 @@ export class OverlayClient extends OverlayLiveClient {
   }
 
   async _captureScreenshot(target, options = {}) {
-    const screenshotTarget = this._resolveScreenshotPage(target, options.screenshotPage);
+    const screenshotTarget = await this._resolveScreenshotPage(target, options.screenshotPage);
     if (!screenshotTarget || typeof screenshotTarget.screenshot !== 'function') {
       return undefined;
     }
@@ -523,10 +530,10 @@ export class OverlayClient extends OverlayLiveClient {
     };
   }
 
-  _resolveScreenshotPage(target, explicitPage) {
+  async _resolveScreenshotPage(target, explicitPage) {
     if (explicitPage) return explicitPage;
     if (target && typeof target.screenshot === 'function') return target;
-    if (target && typeof target.page === 'function') return target.page();
+    if (target && typeof target.page === 'function') return await target.page();
     return undefined;
   }
 

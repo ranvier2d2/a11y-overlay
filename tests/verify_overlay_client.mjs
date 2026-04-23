@@ -475,6 +475,27 @@ async function verifyAdditionalFindingsFormatting() {
   );
 }
 
+async function verifyAsyncFrameScreenshotResolution() {
+  const runtime = new FakeRuntime();
+  const target = new FakeTarget(runtime);
+  target.installed = true;
+  const frameLike = {
+    async page() {
+      return target;
+    }
+  };
+  const client = new OverlayClient();
+
+  const screenshot = await client._captureScreenshot(frameLike, {
+    screenshotType: 'png',
+    fullPage: false
+  });
+
+  assert.equal(screenshot.type, 'png');
+  assert.equal(target.screenshots.length, 1);
+  assert.equal(target.screenshots[0].fullPage, false);
+}
+
 async function main() {
   await verifyInjectAndDelegation(OverlayClient);
   await verifyInjectAndDelegation(OverlayLiveClient);
@@ -484,6 +505,7 @@ async function main() {
   await verifyWriteAuditArtifactSet();
   await verifyUnavailableMethodError();
   await verifyAdditionalFindingsFormatting();
+  await verifyAsyncFrameScreenshotResolution();
   console.log('overlay client verification passed');
 }
 
