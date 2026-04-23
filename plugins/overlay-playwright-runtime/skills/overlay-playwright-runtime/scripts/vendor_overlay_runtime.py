@@ -303,6 +303,9 @@ def main() -> int:
     if args.cleanup and args.temporary:
       print("error: choose either --temporary or --cleanup, not both", file=sys.stderr)
       return 2
+    if args.temporary and args.force:
+      print("error: --temporary cannot be combined with --force", file=sys.stderr)
+      return 2
 
     asset_root = DEFAULT_ASSET_ROOT.resolve()
     target_root = Path(args.target_root).expanduser().resolve()

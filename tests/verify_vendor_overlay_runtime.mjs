@@ -92,6 +92,16 @@ async function main() {
     );
     await assert.rejects(() => access(path.join(mixedRoot, 'a11y-overlay.js')));
 
+    // temporary vendoring cannot be combined with force
+    await assert.rejects(
+      () => runVendor(['--target-root', tempRoot, '--temporary', '--force']),
+      (error) => {
+        assert.equal(error.code, 2);
+        assert.match(error.stderr, /--temporary cannot be combined with --force/);
+        return true;
+      }
+    );
+
     // temporary mode should write a manifest and cleanup should remove copied files
     const manifestPath = path.join(tempRoot, '.codex', 'overlay-playwright-runtime', 'vendor-manifest.json');
     await rm(tempRoot, { recursive: true, force: true });
