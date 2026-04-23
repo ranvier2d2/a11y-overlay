@@ -142,7 +142,8 @@ This document is a **Website Accessibility Audit Report** based on the tested ro
 
 const DEFAULT_REPORT_TEMPLATE_CANDIDATES = [
   new URL('../plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/assets/templates/accessibility-audit-report.md', import.meta.url),
-  new URL('../../templates/accessibility-audit-report.md', import.meta.url)
+  new URL('../../templates/accessibility-audit-report.md', import.meta.url),
+  new URL('../templates/accessibility-audit-report.md', import.meta.url)
 ];
 
 /**
@@ -252,22 +253,22 @@ export class OverlayClient extends OverlayLiveClient {
     const desktopJsonPath = path.join(dir, 'desktop.json');
     const desktopScreenshotPath = path.join(dir, `desktop.${screenshotExt}`);
 
-    await this.buildAuditBundleToFile(desktopTarget, {
-      filePath: desktopBundlePath,
-      scope
-    });
-
-    if (options.includeJsonReports !== false) {
-      await writeFile(desktopJsonPath, `${JSON.stringify(desktopReport, null, 2)}\n`, 'utf8');
-    }
-
-    const desktopScreenshot = await this._captureScreenshot(desktopTarget, {
-      screenshotPage: options.screenshotPage,
-      screenshotPath: desktopScreenshotPath,
-      screenshotType,
-      fullPage: options.fullPage,
-      includeScreenshotBytes: false
-    });
+    const [, , desktopScreenshot] = await Promise.all([
+      this.buildAuditBundleToFile(desktopTarget, {
+        filePath: desktopBundlePath,
+        scope
+      }),
+      options.includeJsonReports !== false
+        ? writeFile(desktopJsonPath, `${JSON.stringify(desktopReport, null, 2)}\n`, 'utf8')
+        : Promise.resolve(),
+      this._captureScreenshot(desktopTarget, {
+        screenshotPage: options.screenshotPage,
+        screenshotPath: desktopScreenshotPath,
+        screenshotType,
+        fullPage: options.fullPage,
+        includeScreenshotBytes: false
+      })
+    ]);
 
     const desktop = {
       jsonReportPath: options.includeJsonReports === false ? undefined : desktopJsonPath,
@@ -283,22 +284,22 @@ export class OverlayClient extends OverlayLiveClient {
       const mobileJsonPath = path.join(dir, 'mobile.json');
       const mobileScreenshotPath = path.join(dir, `mobile.${screenshotExt}`);
 
-      await this.buildAuditBundleToFile(options.mobileTarget, {
-        filePath: mobileBundlePath,
-        scope
-      });
-
-      if (options.includeJsonReports !== false) {
-        await writeFile(mobileJsonPath, `${JSON.stringify(mobileReport, null, 2)}\n`, 'utf8');
-      }
-
-      const mobileScreenshot = await this._captureScreenshot(options.mobileTarget, {
-        screenshotPage: options.mobileScreenshotPage,
-        screenshotPath: mobileScreenshotPath,
-        screenshotType,
-        fullPage: options.mobileFullPage,
-        includeScreenshotBytes: false
-      });
+      const [, , mobileScreenshot] = await Promise.all([
+        this.buildAuditBundleToFile(options.mobileTarget, {
+          filePath: mobileBundlePath,
+          scope
+        }),
+        options.includeJsonReports !== false
+          ? writeFile(mobileJsonPath, `${JSON.stringify(mobileReport, null, 2)}\n`, 'utf8')
+          : Promise.resolve(),
+        this._captureScreenshot(options.mobileTarget, {
+          screenshotPage: options.mobileScreenshotPage,
+          screenshotPath: mobileScreenshotPath,
+          screenshotType,
+          fullPage: options.mobileFullPage,
+          includeScreenshotBytes: false
+        })
+      ]);
 
       mobile = {
         jsonReportPath: options.includeJsonReports === false ? undefined : mobileJsonPath,
