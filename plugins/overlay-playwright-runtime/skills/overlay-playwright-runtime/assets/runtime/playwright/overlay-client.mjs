@@ -169,7 +169,7 @@ export class OverlayClient extends OverlayLiveClient {
     const format = options.format === 'html' ? 'html' : 'json';
     const report = await this.buildReport(target, format, { scope: options.scope === 'active' ? 'active' : 'all' });
     const filePath = this._resolveOutputPath(options, {
-      defaultBaseName: format === 'html' ? 'report' : 'report',
+      defaultBaseName: 'report',
       extension: format === 'html' ? '.html' : '.json'
     });
 
@@ -636,7 +636,11 @@ export class OverlayClient extends OverlayLiveClient {
     for (const candidate of DEFAULT_REPORT_TEMPLATE_CANDIDATES) {
       try {
         return await readFile(candidate, 'utf8');
-      } catch {}
+      } catch (error) {
+        if (error?.code !== 'ENOENT') {
+          throw error;
+        }
+      }
     }
     return DEFAULT_REPORT_TEMPLATE;
   }

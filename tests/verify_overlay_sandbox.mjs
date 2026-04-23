@@ -25,7 +25,6 @@ async function main() {
   const { createOverlaySandboxSession } = await import(pathToFileURL(LAUNCH_SESSION_PATH).href);
   const outputDir = await mkdtemp(path.join(os.tmpdir(), 'overlay-sandbox-'));
   let session;
-  session = await createOverlaySandboxSession({ headless: true, outputDir });
   const server = http.createServer((req, res) => {
     const requestUrl = new URL(req.url, 'http://127.0.0.1');
     const cookieHeader = req.headers.cookie || '';
@@ -104,6 +103,7 @@ async function main() {
   });
 
   try {
+    session = await createOverlaySandboxSession({ headless: true, outputDir });
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     const baseUrl = `http://127.0.0.1:${address.port}`;

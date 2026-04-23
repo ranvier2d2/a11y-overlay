@@ -33,6 +33,16 @@ function matchesUrlPattern(pattern, href) {
   return href.includes(String(pattern));
 }
 
+function normalizeComparableUrl(value) {
+  try {
+    const parsed = new URL(String(value));
+    const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+    return `${parsed.origin}${pathname}${parsed.search}`;
+  } catch {
+    return String(value || "").replace(/\/+$/, "");
+  }
+}
+
 async function resolvePageLike(target) {
   if (target && typeof target.waitForURL === "function") return target;
   if (target && typeof target.page === "function") return target.page();
@@ -679,7 +689,10 @@ export async function createOverlaySandboxSession(options = {}) {
     await validateAuthenticatedState(desktopPage, authValidation, readiness);
     const authState = await captureAuthenticatedState(desktopPage, auth);
 
-    if (auth.navigateToUrlAfterAuth !== false && desktopPage.url() !== url) {
+    if (
+      auth.navigateToUrlAfterAuth !== false &&
+      normalizeComparableUrl(desktopPage.url()) !== normalizeComparableUrl(url)
+    ) {
       await desktopPage.goto(url, { waitUntil });
     }
     await waitForReady(desktopPage, readiness);

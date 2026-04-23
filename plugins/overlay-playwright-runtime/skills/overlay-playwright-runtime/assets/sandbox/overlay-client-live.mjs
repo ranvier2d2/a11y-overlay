@@ -66,7 +66,7 @@ export class OverlayLiveClient {
     }
 
     await this.waitForRuntime(target, { timeoutMs: options.timeoutMs });
-    if (options.bootstrapConfig) {
+    if (options.bootstrapConfig && (!installed || options.force)) {
       await target.evaluate(({ bootstrapKey }) => {
         delete window[bootstrapKey];
       }, { bootstrapKey: DEFAULT_BOOTSTRAP_KEY });
