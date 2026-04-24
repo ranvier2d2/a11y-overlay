@@ -35,11 +35,13 @@ Default sandbox root:
 ```javascript
 var overlaySandboxFactory;
 var overlaySession;
+var overlaySandboxRoot = `${nodeRepl.homeDir}/.codex/overlay-playwright-runtime/sandbox`;
+var { pathToFileURL } = await import("node:url");
 
-({ createOverlaySandboxSession: overlaySandboxFactory } = await import("file:///Users/joaquinvenegasarevalo/.codex/overlay-playwright-runtime/sandbox/launch-session.mjs"));
+({ createOverlaySandboxSession: overlaySandboxFactory } = await import(pathToFileURL(`${overlaySandboxRoot}/launch-session.mjs`).href));
 
 overlaySession ??= await overlaySandboxFactory({
-  outputDir: "/Users/joaquinvenegasarevalo/.codex/overlay-playwright-runtime/sandbox/output"
+  outputDir: `${overlaySandboxRoot}/output`
 });
 ```
 

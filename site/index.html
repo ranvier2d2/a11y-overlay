@@ -671,7 +671,9 @@
   .repo-banner-cta .repo-cta-arrow { font-size: 14px; }
   .repo-banner:hover .repo-banner-cta { background: var(--interact); color: var(--bg); }
   .install .steps {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: 20px;
   }
   .install .step {
     padding: 28px 26px;
@@ -999,6 +1001,10 @@
     background: var(--interact); margin-right: 8px; vertical-align: 1px;
   }
 
+  @media (max-width: 1280px) and (min-width: 981px) {
+    .install .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
   @media (min-width: 981px) {
     .hero > .wrap { max-width: 1520px; }
   }
@@ -1061,7 +1067,7 @@
     }
     .keys .layout { grid-template-columns: 1fr; gap: 32px; }
     .mode-tabs { max-width: 100%; }
-    .install .steps { grid-template-columns: 1fr; }
+    .install .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .palette .strip { grid-template-columns: repeat(3, 1fr); }
     .idea .cols { grid-template-columns: 1fr; }
     .key-list { grid-template-columns: 1fr; }
@@ -1076,6 +1082,10 @@
       flex-wrap: wrap;
       gap: 12px 18px;
     }
+  }
+
+  @media (max-width: 640px) {
+    .install .steps { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1121,7 +1131,7 @@
       <p class="lede">
         A keyboard-driven overlay that draws <b>landmarks</b>, <b>headings</b>, <b>focus order</b>,
         <b>form labels</b>, <b>small targets</b> and <b>repeating components</b> on any webpage.
-        Ships as a Chrome extension, a script tag, or a one-line inject into Playwright/Puppeteer.
+        Ships as a Chrome extension, a script tag, a Playwright/Puppeteer inject, or a Codex/Claude skill.
       </p>
       <div class="meta">
         <span class="chip dot">Runs on any site</span>
@@ -1420,7 +1430,7 @@
       <button class="mode-tab" role="tab" aria-selected="false" data-mode="agents">
         <span class="mode-tab-dot" style="background: var(--interact)"></span>
         <span class="mode-tab-label">For agents</span>
-        <span class="mode-tab-sub">Playwright · Puppeteer · LLM agents</span>
+        <span class="mode-tab-sub">Playwright · Puppeteer · Codex · Claude</span>
       </button>
     </div>
 
@@ -1443,10 +1453,11 @@
       <div class="track agents" data-panel="agents" role="tabpanel">
         <h3>A stable proof surface the model can read.</h3>
         <p class="intro">
-          Inject once at context-load; every page the agent navigates to comes pre-annotated. Read the public API at <span class="m">window.__a11yOverlayInstalled</span>.
+          Inject once at context-load; every page the agent navigates to comes pre-annotated. Or install the bundled skill for local audits, visual evidence, and report bundles.
         </p>
         <ul>
           <li><b>One-line install</b> into Playwright / Puppeteer via <span class="m">addInitScript</span>.</li>
+          <li><b>Codex / Claude skill install</b> via <span class="m">npx skills add --agent ...</span>.</li>
           <li><b>Deterministic layer toggles.</b> One screenshot per structural concern, no flake.</li>
           <li><b>Numbered focus order</b> as targets for keyboard-only navigation.</li>
           <li><b>Repeating clusters &amp; landmarks surfaced</b> so the agent can skip fragile selectors.</li>
@@ -1522,6 +1533,20 @@
   () =&gt; window.__a11yOverlayInstalled
 );</pre>
         <span class="tag">PROOF SURFACE · DETERMINISTIC</span>
+      </div>
+
+      <div class="step">
+        <div class="idx">04 — SKILL</div>
+        <h3>Codex / Claude skill</h3>
+        <p>Install <span class="kbd-light">overlay-playwright-runtime</span> as an agent skill for local audits, authenticated browser sessions, visual evidence, and report bundles.</p>
+<pre><span class="c"># swap codex for claude-code when needed</span>
+<span class="k">npx</span> skills add https://github.com/ranvier2d2/a11y-overlay \
+  --full-depth \
+  --skill <span class="s">overlay-playwright-runtime</span> \
+  --agent <span class="s">codex</span> \
+  --global \
+  --yes</pre>
+        <span class="tag">SKILLS.SH · CODEX · CLAUDE</span>
       </div>
     </div>
   </div>

@@ -23,12 +23,12 @@
 
 ## Validate
 
-- Fast check: `python3 /Users/joaquinvenegasarevalo/coding/frontend-gadget/plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/scripts/bootstrap_operate_sandbox.py --dry-run`
-- Full check: `node /Users/joaquinvenegasarevalo/coding/frontend-gadget/tests/verify_overlay_sandbox.mjs`
+- Fast check from repo root: `python3 plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime/scripts/bootstrap_operate_sandbox.py --dry-run`
+- Full check from repo root: `node tests/verify_overlay_sandbox.mjs`
 
 ## ONGOING IMPLEMENTATION
 
-- Roadmap source: [docs/overlay-playwright-runtime-roadmap.md](/Users/joaquinvenegasarevalo/coding/frontend-gadget/docs/overlay-playwright-runtime-roadmap.md)
+- Roadmap source: `docs/overlay-playwright-runtime-roadmap.md`
 - Priority work owned here:
   1. keep case-routed skill docs and metadata aligned with the real helper surface
   2. keep canonical report template assets and bundled clients in sync

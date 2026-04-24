@@ -105,6 +105,6 @@ stay deterministic:
 ## Validate
 
 - skill sanity:
-  - `python3 /Users/joaquinvenegasarevalo/.codex/skills/.system/skill-creator/scripts/quick_validate.py /absolute/path/to/overlay-playwright-runtime`
+  - `python3 /path/to/skill-creator/scripts/quick_validate.py /absolute/path/to/overlay-playwright-runtime`
 - sandbox verification:
-  - `node /Users/joaquinvenegasarevalo/coding/frontend-gadget/tests/verify_overlay_sandbox.mjs`
+  - from repo root: `node tests/verify_overlay_sandbox.mjs`

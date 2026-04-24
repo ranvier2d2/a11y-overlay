@@ -114,7 +114,7 @@ Use `skills.sh` when you want the skill installed directly into a Codex environm
 
 ### Install the skill from GitHub
 
-In Codex, use [$skill-installer](/Users/joaquinvenegasarevalo/.codex/skills/.system/skill-installer/SKILL.md) and point it at:
+In Codex, use the built-in `$skill-installer` skill and point it at:
 
 - repo: `ranvier2d2/a11y-overlay`
 - path: `plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime`
