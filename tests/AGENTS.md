@@ -17,6 +17,7 @@
 
 - Prefer extending `verify_overlay_client.mjs` for client API changes.
 - Prefer extending `verify_overlay_sandbox.mjs` for sandbox/operator changes.
+- Prefer deterministic geometry fixtures when changing annotation placement, quiet capture, or report replay behavior.
 - Avoid making tests depend on third-party sites for core verification.
 
 ## Validate
@@ -28,7 +29,7 @@
 
 - Roadmap source: [docs/overlay-playwright-runtime-roadmap.md](/Users/joaquinvenegasarevalo/coding/frontend-gadget/docs/overlay-playwright-runtime-roadmap.md)
 - Priority work owned here:
-  1. cover file-oriented audit helpers
-  2. cover standardized artifact set generation
-  3. cover readiness strategy wiring
-  4. cover audit-mode happy paths without depending on external apps
+  1. cover file-oriented audit helpers and quiet-capture state restoration
+  2. cover standardized artifact set generation and report replay fidelity
+  3. cover readiness and route-audit wiring with deterministic fixtures
+  4. add targeted checks for annotation placement/reflow behavior without depending on external apps

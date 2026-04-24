@@ -135,6 +135,19 @@
 
   function renderHud() {
     renderToolbar();
+    if (state.captureUiHidden) {
+      const help = shadow.querySelector('.help');
+      if (help) help.remove();
+      const settings = shadow.querySelector('.settings');
+      if (settings) settings.remove();
+      const inspectorPanel = shadow.querySelector('.inspector');
+      if (inspectorPanel) inspectorPanel.remove();
+      mobileSheetBackdrop.classList.remove('open');
+      mobileSheetBackdrop.onclick = null;
+      mobileSheet.classList.remove('open');
+      mobileSheet.innerHTML = '';
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const help = shadow.querySelector('.help');
       if (help) help.remove();

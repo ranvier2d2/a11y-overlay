@@ -275,6 +275,18 @@
       if (state.uiMode !== nextUiMode) {
         state.uiMode = nextUiMode;
         changed = true;
+        if (!('toolbarOpen' in options) && nextUiMode === 'agent' && state.toolbarOpen) {
+          state.toolbarOpen = false;
+        }
+      }
+    }
+
+    if (typeof options.toolbarOpen === 'boolean' && state.toolbarOpen !== options.toolbarOpen) {
+      state.toolbarOpen = options.toolbarOpen;
+      changed = true;
+      if (!state.toolbarOpen) {
+        state.helpOpen = false;
+        state.settingsOpen = false;
       }
     }
 
@@ -286,6 +298,16 @@
     if (typeof options.settingsOpen === 'boolean' && state.settingsOpen !== options.settingsOpen) {
       state.settingsOpen = options.settingsOpen;
       changed = true;
+    }
+
+    if (typeof options.captureUiHidden === 'boolean' && state.captureUiHidden !== options.captureUiHidden) {
+      state.captureUiHidden = options.captureUiHidden;
+      changed = true;
+      if (state.captureUiHidden) {
+        state.helpOpen = false;
+        state.settingsOpen = false;
+        state.mobileSheetOpen = false;
+      }
     }
 
     if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {

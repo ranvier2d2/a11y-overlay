@@ -218,6 +218,15 @@
         scrollbar-width: none;
         box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       }
+      .toolbar.hidden {
+        display: none;
+      }
+      .toolbar.agent-desktop {
+        top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        right: 12px;
+        max-width: min(calc(100vw - 24px), 1280px);
+      }
       .toolbar::-webkit-scrollbar { display: none; }
       .toolbar.compact {
         padding: 5px 6px;
@@ -319,6 +328,18 @@
         cursor: pointer;
       }
       .toolbar .close:hover { background: #fb7185; color: #0c0a09; }
+      .toolbar .collapse {
+        background: transparent;
+        border: 1px solid #44403c;
+        color: #22d3ee;
+        padding: 3px 7px;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+      .toolbar .collapse:hover { background: #22d3ee; color: #0c0a09; }
       .toolbar .status {
         max-width: 200px;
         overflow: hidden;
@@ -510,6 +531,51 @@
       }
       .mobile-dock.agent .dockbtn .dock-meta {
         display: none;
+      }
+      .agent-launcher {
+        position: fixed;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        display: none;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+        z-index: 2147483647;
+      }
+      .agent-launcher.open {
+        display: flex;
+      }
+      .agent-launcher .agent-chip,
+      .agent-launcher .agent-close {
+        appearance: none;
+        border: 1px solid #44403c;
+        background: rgba(12, 10, 9, 0.92);
+        color: #e7e5e4;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 11px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        backdrop-filter: blur(10px);
+      }
+      .agent-launcher .agent-chip {
+        color: #a3e635;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .agent-launcher .agent-close {
+        color: #fb7185;
+        font-weight: 700;
+      }
+      .agent-launcher .agent-chip:hover {
+        border-color: #a3e635;
+      }
+      .agent-launcher .agent-close:hover {
+        border-color: #fb7185;
+        background: rgba(64, 12, 20, 0.92);
       }
       .mobile-modebar {
         position: fixed;
@@ -1131,6 +1197,7 @@
     <div class="annotation-html" id="annotation-html"></div>
     <div class="annotation-capture" id="annotation-capture" aria-hidden="true"></div>
     <div class="toolbar" id="toolbar"></div>
+    <div class="agent-launcher" id="agent-launcher"></div>
     <div class="mobile-dock" id="mobile-dock"></div>
     <div class="mobile-modebar" id="mobile-modebar"></div>
     <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop"></div>
@@ -1142,6 +1209,7 @@
   const annotationHtml = shadow.getElementById('annotation-html');
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
+  const agentLauncher = shadow.getElementById('agent-launcher');
   const mobileDock = shadow.getElementById('mobile-dock');
   const mobileModebar = shadow.getElementById('mobile-modebar');
   const mobileSheetBackdrop = shadow.getElementById('mobile-sheet-backdrop');
@@ -1167,8 +1235,12 @@
     depth: false,
     grid: false,
     uiMode: bootstrapUiMode,
+    toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
+      ? bootstrapConfig.toolbarOpen
+      : bootstrapUiMode !== 'agent',
     helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
     settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
+    captureUiHidden: typeof bootstrapConfig.captureUiHidden === 'boolean' ? bootstrapConfig.captureUiHidden : false,
     mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
     mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
       ? bootstrapConfig.mobileSheetTab
@@ -1335,8 +1407,10 @@
    * @property {boolean} depth
    * @property {boolean} grid
    * @property {'human'|'agent'} uiMode
+   * @property {boolean} toolbarOpen
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
+   * @property {boolean} captureUiHidden
    * @property {boolean} mobileSheetOpen
    * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
    * @property {'peek'|'medium'|'full'} mobileSheetDetent
@@ -1651,6 +1725,18 @@
       if (state.uiMode !== nextUiMode) {
         state.uiMode = nextUiMode;
         changed = true;
+        if (!('toolbarOpen' in options) && nextUiMode === 'agent' && state.toolbarOpen) {
+          state.toolbarOpen = false;
+        }
+      }
+    }
+
+    if (typeof options.toolbarOpen === 'boolean' && state.toolbarOpen !== options.toolbarOpen) {
+      state.toolbarOpen = options.toolbarOpen;
+      changed = true;
+      if (!state.toolbarOpen) {
+        state.helpOpen = false;
+        state.settingsOpen = false;
       }
     }
 
@@ -1662,6 +1748,16 @@
     if (typeof options.settingsOpen === 'boolean' && state.settingsOpen !== options.settingsOpen) {
       state.settingsOpen = options.settingsOpen;
       changed = true;
+    }
+
+    if (typeof options.captureUiHidden === 'boolean' && state.captureUiHidden !== options.captureUiHidden) {
+      state.captureUiHidden = options.captureUiHidden;
+      changed = true;
+      if (state.captureUiHidden) {
+        state.helpOpen = false;
+        state.settingsOpen = false;
+        state.mobileSheetOpen = false;
+      }
     }
 
     if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {
@@ -3741,6 +3837,19 @@
 
   function renderHud() {
     renderToolbar();
+    if (state.captureUiHidden) {
+      const help = shadow.querySelector('.help');
+      if (help) help.remove();
+      const settings = shadow.querySelector('.settings');
+      if (settings) settings.remove();
+      const inspectorPanel = shadow.querySelector('.inspector');
+      if (inspectorPanel) inspectorPanel.remove();
+      mobileSheetBackdrop.classList.remove('open');
+      mobileSheetBackdrop.onclick = null;
+      mobileSheet.classList.remove('open');
+      mobileSheet.innerHTML = '';
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const help = shadow.querySelector('.help');
       if (help) help.remove();
@@ -4902,8 +5011,16 @@
 
   function renderToolbar() {
     toolbar.innerHTML = '';
+    agentLauncher.innerHTML = '';
+    agentLauncher.className = 'agent-launcher';
     mobileModebar.innerHTML = '';
     mobileModebar.className = 'mobile-modebar';
+    if (state.captureUiHidden) {
+      toolbar.className = 'toolbar hidden';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock';
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const agentUi = state.uiMode === 'agent';
       toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
@@ -5073,12 +5190,45 @@
 
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
+    const agentDesktop = state.uiMode === 'agent';
+
+    if (agentDesktop && !state.toolbarOpen) {
+      toolbar.className = 'toolbar hidden';
+
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'agent-chip';
+      open.textContent = 'A11Y';
+      open.title = 'Open overlay controls';
+      open.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.toolbarOpen = true;
+        render();
+      });
+      agentLauncher.appendChild(open);
+
+      const closeLauncher = document.createElement('button');
+      closeLauncher.type = 'button';
+      closeLauncher.className = 'agent-close';
+      closeLauncher.textContent = '×';
+      closeLauncher.title = 'Remove overlay (X)';
+      closeLauncher.addEventListener('click', (e) => {
+        e.stopPropagation();
+        teardown();
+      });
+      agentLauncher.appendChild(closeLauncher);
+      agentLauncher.className = 'agent-launcher open';
+      return;
+    }
 
     const renderDesktopToolbarVariant = (variant) => {
       const compact = variant !== 'full';
       const tight = variant === 'tight';
       toolbar.innerHTML = '';
-      toolbar.className = 'toolbar' + (compact ? ' compact' : '') + (tight ? ' tight' : '');
+      toolbar.className = 'toolbar'
+        + (compact ? ' compact' : '')
+        + (tight ? ' tight' : '')
+        + (agentDesktop ? ' agent-desktop' : '');
 
       const title = document.createElement('span');
       title.className = 'title';
@@ -5128,19 +5278,21 @@
         toolbar.appendChild(b);
       });
 
-      const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
-      const help = document.createElement('button');
-      help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
-      help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
-      help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
-      help.innerHTML = '<span>?</span>';
-      help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
-      help.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.helpOpen = !state.helpOpen;
-        render();
-      });
-      toolbar.appendChild(help);
+      if (!agentDesktop) {
+        const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
+        const help = document.createElement('button');
+        help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
+        help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
+        help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
+        help.innerHTML = '<span>?</span>';
+        help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
+        help.addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.helpOpen = !state.helpOpen;
+          render();
+        });
+        toolbar.appendChild(help);
+      }
 
       const settings = document.createElement('button');
       settings.className = 'tbtn' + (state.settingsOpen ? ' on' : '');
@@ -5289,6 +5441,21 @@
           status.textContent = state.exportNotice;
           toolbar.appendChild(status);
         }
+      }
+
+      if (agentDesktop) {
+        const collapse = document.createElement('button');
+        collapse.className = 'collapse';
+        collapse.textContent = 'Hide';
+        collapse.title = 'Hide overlay controls';
+        collapse.addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.toolbarOpen = false;
+          state.helpOpen = false;
+          state.settingsOpen = false;
+          render();
+        });
+        toolbar.appendChild(collapse);
       }
 
       const close = document.createElement('button');
@@ -5647,8 +5814,10 @@
     getUiState() {
       return {
         uiMode: state.uiMode,
+        toolbarOpen: state.toolbarOpen,
         helpOpen: state.helpOpen,
         settingsOpen: state.settingsOpen,
+        captureUiHidden: state.captureUiHidden,
         mobileSheetOpen: state.mobileSheetOpen,
         mobileSheetTab: state.mobileSheetTab,
         mobileSheetDetent: state.mobileSheetDetent

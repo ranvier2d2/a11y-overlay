@@ -19,8 +19,12 @@
     depth: false,
     grid: false,
     uiMode: bootstrapUiMode,
+    toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
+      ? bootstrapConfig.toolbarOpen
+      : bootstrapUiMode !== 'agent',
     helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
     settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
+    captureUiHidden: typeof bootstrapConfig.captureUiHidden === 'boolean' ? bootstrapConfig.captureUiHidden : false,
     mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
     mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
       ? bootstrapConfig.mobileSheetTab
@@ -187,8 +191,10 @@
    * @property {boolean} depth
    * @property {boolean} grid
    * @property {'human'|'agent'} uiMode
+   * @property {boolean} toolbarOpen
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
+   * @property {boolean} captureUiHidden
    * @property {boolean} mobileSheetOpen
    * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
    * @property {'peek'|'medium'|'full'} mobileSheetDetent

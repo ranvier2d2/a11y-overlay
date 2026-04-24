@@ -60,15 +60,15 @@ def iter_asset_files(asset_root: Path) -> list[tuple[Path, Path]]:
 
 def iter_runtime_client_files(runtime_root: Path) -> list[tuple[Path, Path]]:
     expected = [
-        "overlay-client.mjs",
-        "overlay-client-live.mjs",
+        "../a11y-overlay.js",
     ]
     pairs: list[tuple[Path, Path]] = []
     for name in expected:
-        source_path = runtime_root / name
+        source_path = (runtime_root / name).resolve()
         if not source_path.exists():
             raise FileNotFoundError(f"missing runtime client asset: {source_path}")
-        pairs.append((source_path, Path(name)))
+        relative_path = Path(name).name
+        pairs.append((source_path, Path(relative_path)))
     return pairs
 
 

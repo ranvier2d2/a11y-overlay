@@ -248,8 +248,10 @@
     getUiState() {
       return {
         uiMode: state.uiMode,
+        toolbarOpen: state.toolbarOpen,
         helpOpen: state.helpOpen,
         settingsOpen: state.settingsOpen,
+        captureUiHidden: state.captureUiHidden,
         mobileSheetOpen: state.mobileSheetOpen,
         mobileSheetTab: state.mobileSheetTab,
         mobileSheetDetent: state.mobileSheetDetent

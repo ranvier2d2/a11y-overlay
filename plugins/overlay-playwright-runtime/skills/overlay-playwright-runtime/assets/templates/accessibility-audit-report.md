@@ -7,6 +7,7 @@
 - **Audit date:** {{audit_date}}
 - **Audit mode:** {{audit_mode}}
 - **Overall summary:** {{overall_summary}}
+- **Surface highlights:** {{surface_highlights}}
 
 ### Top findings
 
@@ -52,6 +53,10 @@
 - **Errors:** {{error_count}}
 - **Warnings:** {{warning_count}}
 - **Pass / informational counts if relevant:** {{pass_or_info_counts}}
+
+### Counts by tested surface
+
+- {{surface_count_summary}}
 
 ### Counts by slice
 

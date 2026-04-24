@@ -47,14 +47,17 @@
 - Do not add filesystem-writing behavior to `playwright/overlay-client-live.mjs`; keep it `js_repl` safe.
 - Do not mutate a target repo `package.json` or lockfile from the skill adopt flow unless the user explicitly asks.
 - Keep most operator UX logic in the client, sandbox, or skill layers; do not push workflow policy into the runtime without a concrete need.
+- Keep annotation placement, evidence reflow, and capture-hygiene policy out of the runtime unless the client or sandbox layer cannot own it cleanly.
+- Keep the sandbox bootstrap path from overwriting sandbox-specific files with runtime-oriented copies.
 - Treat `a11y-overlay.js` and `site/a11y-overlay.js` as generated artifacts.
 
 ## ONGOING IMPLEMENTATION
 
 - Source roadmap: [docs/overlay-playwright-runtime-roadmap.md](/Users/joaquinvenegasarevalo/coding/frontend-gadget/docs/overlay-playwright-runtime-roadmap.md)
 - Current program of work:
-  1. add first-class audit modalities
-  2. standardize artifact outputs and report templates
-  3. add readiness and auth/pairing strategies in the sandbox/skill layer
-  4. add temporary audit-only adopt mode
+  1. keep first-class audit modalities stable across public, responsive, authenticated, and desktop-shell flows
+  2. improve annotation evidence quality: quiet capture, viewport-safe placement, and retry/reflow behavior
+  3. standardize artifact outputs, report templates, and cross-surface summaries
+  4. keep readiness, auth, and pairing strategies in the sandbox/skill layer
+  5. keep adopt/bootstrap paths deterministic and safe for local installs
 - Before changing a subdirectory with its own `AGENTS.md`, read that file and follow its narrower rules.
