@@ -130,19 +130,31 @@
       }
       return;
     }
-    if (isMobileOverlayViewport()) {
-      const agentUi = state.uiMode === 'agent';
-      toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
-      mobileDock.innerHTML = '';
-      mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
+      if (isMobileOverlayViewport()) {
+        const agentUi = state.uiMode === 'agent';
+        toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
+        mobileDock.innerHTML = '';
+        mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
 
       const brand = document.createElement('div');
       brand.className = 'mobile-brand';
 
-      const title = document.createElement('span');
-      title.className = 'mobile-title';
-      title.textContent = 'a11y';
-      brand.appendChild(title);
+        const title = document.createElement('span');
+        title.className = 'mobile-title';
+        title.textContent = 'a11y';
+        brand.appendChild(title);
+        if (agentUi) {
+          const hide = document.createElement('button');
+          hide.type = 'button';
+          hide.className = 'mobile-hide';
+          hide.textContent = 'Hide';
+          hide.title = 'Hide overlay controls';
+          hide.addEventListener('click', (e) => {
+            e.stopPropagation();
+            configureUi({ toolbarOpen: false });
+          });
+          brand.appendChild(hide);
+        }
 
       const summary = document.createElement('div');
       summary.className = 'mobile-summary';

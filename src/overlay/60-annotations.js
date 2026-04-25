@@ -73,7 +73,7 @@
     return true;
   }
 
-  function deselectAnnotations() {
+  function deselectAnnotations(opts = {}) {
     annotations.mode = 'idle';
     annotations.pendingArrowStart = null;
     annotations.pendingArrowPreview = null;
@@ -81,7 +81,7 @@
     annotations.editingNoteId = null;
     inspector.selection = null;
     scheduleSessionPersist();
-    render();
+    if (opts.render !== false) render();
   }
 
   function mobileSheetDefaultDetent(tab) {
@@ -503,7 +503,7 @@
         tone: '#38bdf8',
         variant: 'compact ghost',
         click: () => {
-          deselectAnnotations();
+          deselectAnnotations({ render: false });
           configureUi({
             mobileSheetTab: 'annotate',
             mobileSheetDetent: 'medium',
@@ -519,7 +519,7 @@
         tone: '#fb7185',
         variant: 'compact',
         click: () => {
-          if (removeSelectedAnnotation()) {
+          if (removeSelectedAnnotation({ render: false })) {
             configureUi({
               mobileSheetTab: 'annotate',
               mobileSheetDetent: 'medium',
@@ -930,7 +930,7 @@
     return annotations.arrows[annotations.arrows.length - 1];
   }
 
-  function removeSelectedAnnotation() {
+  function removeSelectedAnnotation(opts = {}) {
     if (!annotations.selected) return false;
     if (annotations.selected.type === 'note') {
       annotations.notes = annotations.notes.filter((note) => note.id !== annotations.selected.id);
@@ -940,8 +940,10 @@
     annotations.selected = null;
     annotations.editingNoteId = null;
     scheduleSessionPersist();
-    renderHud();
-    renderAnnotations();
+    if (opts.render !== false) {
+      renderHud();
+      renderAnnotations();
+    }
     return true;
   }
 

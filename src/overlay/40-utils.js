@@ -269,6 +269,13 @@
   function configureUi(options = {}, control = {}) {
     const { render: shouldRender = true } = control;
     let changed = false;
+    const closePanelsWhenToolbarHidden = () => {
+      if (state.toolbarOpen || (!state.helpOpen && !state.settingsOpen && !state.mobileSheetOpen)) return;
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
+      changed = true;
+    };
 
     if ('uiMode' in options) {
       const nextUiMode = options.uiMode === 'agent' ? 'agent' : 'human';
@@ -287,9 +294,7 @@
       state.toolbarOpen = options.toolbarOpen;
       changed = true;
       if (!state.toolbarOpen) {
-        state.helpOpen = false;
-        state.settingsOpen = false;
-        state.mobileSheetOpen = false;
+        closePanelsWhenToolbarHidden();
       } else if (state.uiMode === 'agent') {
         state.helpOpen = false;
       }
@@ -311,12 +316,7 @@
       }
     }
 
-    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
-      state.helpOpen = false;
-      state.settingsOpen = false;
-      state.mobileSheetOpen = false;
-      changed = true;
-    }
+    closePanelsWhenToolbarHidden();
 
     if (state.uiMode === 'agent' && state.helpOpen) {
       state.helpOpen = false;
@@ -334,19 +334,14 @@
     }
 
     if (typeof options.mobileSheetOpen === 'boolean') {
-      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden ? options.mobileSheetOpen : false;
+      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden && isMobileOverlayViewport() ? options.mobileSheetOpen : false;
       if (state.mobileSheetOpen !== nextMobileSheetOpen) {
         state.mobileSheetOpen = nextMobileSheetOpen;
         changed = true;
       }
     }
 
-    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
-      state.helpOpen = false;
-      state.settingsOpen = false;
-      state.mobileSheetOpen = false;
-      changed = true;
-    }
+    closePanelsWhenToolbarHidden();
 
     if (
       (options.mobileSheetTab === 'layers' || options.mobileSheetTab === 'inspect' || options.mobileSheetTab === 'annotate' || options.mobileSheetTab === 'more') &&

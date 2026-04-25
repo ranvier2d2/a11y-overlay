@@ -254,13 +254,27 @@
       .toolbar.mobile.agent .mobile-brand {
         gap: 6px;
       }
-      .toolbar.mobile .mobile-title {
-        color: #a3e635;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .toolbar.mobile .mobile-summary {
+        .toolbar.mobile .mobile-title {
+          color: #a3e635;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .toolbar.mobile .mobile-hide {
+          appearance: none;
+          border: 1px solid #44403c;
+          border-radius: 999px;
+          background: rgba(12, 10, 9, 0.64);
+          color: #e7e5e4;
+          padding: 6px 9px;
+          font: inherit;
+          font-size: 11px;
+          line-height: 1;
+        }
+        .toolbar.mobile .mobile-hide:hover {
+          border-color: #a3e635;
+        }
+        .toolbar.mobile .mobile-summary {
         min-width: 0;
         display: flex;
         flex-direction: column;

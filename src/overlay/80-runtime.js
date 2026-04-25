@@ -37,14 +37,14 @@
     '/': () => { toggleHelpSurface(); }
   };
 
-  function toggleHelpSurface() {
-    if (isMobileOverlayViewport()) {
-      toggleMobileSheet('more', { detent: 'peek' });
-      return;
+    function toggleHelpSurface() {
+      if (state.uiMode === 'agent') return;
+      if (isMobileOverlayViewport()) {
+        toggleMobileSheet('more', { detent: 'peek' });
+        return;
+      }
+      configureUi({ helpOpen: !state.helpOpen }, { render: false });
     }
-    if (state.uiMode === 'agent') return;
-    configureUi({ helpOpen: !state.helpOpen }, { render: false });
-  }
 
   function isEditableNode(node) {
     if (!node || typeof node !== 'object' || node.nodeType !== 1) return false;
@@ -253,12 +253,12 @@
         if (toggleSliceState(key)) render();
         return;
       }
-	      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
-	        configureUi({ [key]: !state[key] });
-	        return;
-	      }
-	      throw new Error(`Unsupported toggle key: ${key}`);
-	    },
+      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+        configureUi({ [key]: !state[key] });
+        return;
+      }
+      throw new Error(`Unsupported toggle key: ${key}`);
+    },
     collectDetections,
     getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {

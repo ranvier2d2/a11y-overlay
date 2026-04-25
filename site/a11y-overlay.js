@@ -375,13 +375,27 @@
       .toolbar.mobile.agent .mobile-brand {
         gap: 6px;
       }
-      .toolbar.mobile .mobile-title {
-        color: #a3e635;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .toolbar.mobile .mobile-summary {
+        .toolbar.mobile .mobile-title {
+          color: #a3e635;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .toolbar.mobile .mobile-hide {
+          appearance: none;
+          border: 1px solid #44403c;
+          border-radius: 999px;
+          background: rgba(12, 10, 9, 0.64);
+          color: #e7e5e4;
+          padding: 6px 9px;
+          font: inherit;
+          font-size: 11px;
+          line-height: 1;
+        }
+        .toolbar.mobile .mobile-hide:hover {
+          border-color: #a3e635;
+        }
+        .toolbar.mobile .mobile-summary {
         min-width: 0;
         display: flex;
         flex-direction: column;
@@ -1730,6 +1744,13 @@
   function configureUi(options = {}, control = {}) {
     const { render: shouldRender = true } = control;
     let changed = false;
+    const closePanelsWhenToolbarHidden = () => {
+      if (state.toolbarOpen || (!state.helpOpen && !state.settingsOpen && !state.mobileSheetOpen)) return;
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
+      changed = true;
+    };
 
     if ('uiMode' in options) {
       const nextUiMode = options.uiMode === 'agent' ? 'agent' : 'human';
@@ -1748,9 +1769,7 @@
       state.toolbarOpen = options.toolbarOpen;
       changed = true;
       if (!state.toolbarOpen) {
-        state.helpOpen = false;
-        state.settingsOpen = false;
-        state.mobileSheetOpen = false;
+        closePanelsWhenToolbarHidden();
       } else if (state.uiMode === 'agent') {
         state.helpOpen = false;
       }
@@ -1772,12 +1791,7 @@
       }
     }
 
-    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
-      state.helpOpen = false;
-      state.settingsOpen = false;
-      state.mobileSheetOpen = false;
-      changed = true;
-    }
+    closePanelsWhenToolbarHidden();
 
     if (state.uiMode === 'agent' && state.helpOpen) {
       state.helpOpen = false;
@@ -1795,19 +1809,14 @@
     }
 
     if (typeof options.mobileSheetOpen === 'boolean') {
-      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden ? options.mobileSheetOpen : false;
+      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden && isMobileOverlayViewport() ? options.mobileSheetOpen : false;
       if (state.mobileSheetOpen !== nextMobileSheetOpen) {
         state.mobileSheetOpen = nextMobileSheetOpen;
         changed = true;
       }
     }
 
-    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
-      state.helpOpen = false;
-      state.settingsOpen = false;
-      state.mobileSheetOpen = false;
-      changed = true;
-    }
+    closePanelsWhenToolbarHidden();
 
     if (
       (options.mobileSheetTab === 'layers' || options.mobileSheetTab === 'inspect' || options.mobileSheetTab === 'annotate' || options.mobileSheetTab === 'more') &&
@@ -3819,7 +3828,7 @@
     return true;
   }
 
-  function deselectAnnotations() {
+  function deselectAnnotations(opts = {}) {
     annotations.mode = 'idle';
     annotations.pendingArrowStart = null;
     annotations.pendingArrowPreview = null;
@@ -3827,7 +3836,7 @@
     annotations.editingNoteId = null;
     inspector.selection = null;
     scheduleSessionPersist();
-    render();
+    if (opts.render !== false) render();
   }
 
   function mobileSheetDefaultDetent(tab) {
@@ -4249,7 +4258,7 @@
         tone: '#38bdf8',
         variant: 'compact ghost',
         click: () => {
-          deselectAnnotations();
+          deselectAnnotations({ render: false });
           configureUi({
             mobileSheetTab: 'annotate',
             mobileSheetDetent: 'medium',
@@ -4265,7 +4274,7 @@
         tone: '#fb7185',
         variant: 'compact',
         click: () => {
-          if (removeSelectedAnnotation()) {
+          if (removeSelectedAnnotation({ render: false })) {
             configureUi({
               mobileSheetTab: 'annotate',
               mobileSheetDetent: 'medium',
@@ -4676,7 +4685,7 @@
     return annotations.arrows[annotations.arrows.length - 1];
   }
 
-  function removeSelectedAnnotation() {
+  function removeSelectedAnnotation(opts = {}) {
     if (!annotations.selected) return false;
     if (annotations.selected.type === 'note') {
       annotations.notes = annotations.notes.filter((note) => note.id !== annotations.selected.id);
@@ -4686,8 +4695,10 @@
     annotations.selected = null;
     annotations.editingNoteId = null;
     scheduleSessionPersist();
-    renderHud();
-    renderAnnotations();
+    if (opts.render !== false) {
+      renderHud();
+      renderAnnotations();
+    }
     return true;
   }
 
@@ -5106,19 +5117,31 @@
       }
       return;
     }
-    if (isMobileOverlayViewport()) {
-      const agentUi = state.uiMode === 'agent';
-      toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
-      mobileDock.innerHTML = '';
-      mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
+      if (isMobileOverlayViewport()) {
+        const agentUi = state.uiMode === 'agent';
+        toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
+        mobileDock.innerHTML = '';
+        mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
 
       const brand = document.createElement('div');
       brand.className = 'mobile-brand';
 
-      const title = document.createElement('span');
-      title.className = 'mobile-title';
-      title.textContent = 'a11y';
-      brand.appendChild(title);
+        const title = document.createElement('span');
+        title.className = 'mobile-title';
+        title.textContent = 'a11y';
+        brand.appendChild(title);
+        if (agentUi) {
+          const hide = document.createElement('button');
+          hide.type = 'button';
+          hide.className = 'mobile-hide';
+          hide.textContent = 'Hide';
+          hide.title = 'Hide overlay controls';
+          hide.addEventListener('click', (e) => {
+            e.stopPropagation();
+            configureUi({ toolbarOpen: false });
+          });
+          brand.appendChild(hide);
+        }
 
       const summary = document.createElement('div');
       summary.className = 'mobile-summary';
@@ -5654,14 +5677,14 @@
     '/': () => { toggleHelpSurface(); }
   };
 
-  function toggleHelpSurface() {
-    if (isMobileOverlayViewport()) {
-      toggleMobileSheet('more', { detent: 'peek' });
-      return;
+    function toggleHelpSurface() {
+      if (state.uiMode === 'agent') return;
+      if (isMobileOverlayViewport()) {
+        toggleMobileSheet('more', { detent: 'peek' });
+        return;
+      }
+      configureUi({ helpOpen: !state.helpOpen }, { render: false });
     }
-    if (state.uiMode === 'agent') return;
-    configureUi({ helpOpen: !state.helpOpen }, { render: false });
-  }
 
   function isEditableNode(node) {
     if (!node || typeof node !== 'object' || node.nodeType !== 1) return false;
@@ -5870,12 +5893,12 @@
         if (toggleSliceState(key)) render();
         return;
       }
-	      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
-	        configureUi({ [key]: !state[key] });
-	        return;
-	      }
-	      throw new Error(`Unsupported toggle key: ${key}`);
-	    },
+      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+        configureUi({ [key]: !state[key] });
+        return;
+      }
+      throw new Error(`Unsupported toggle key: ${key}`);
+    },
     collectDetections,
     getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {

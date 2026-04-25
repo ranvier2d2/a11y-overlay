@@ -746,7 +746,7 @@ export class OverlayClient extends OverlayLiveClient {
         index: capture.index,
         scrollY: capture.scrollY,
         fullPage: capture.fullPage,
-        annotationProjection: capture.fullPage ? 'skipped-full-page' : 'viewport'
+        ...(capture.annotationProjection ? { annotationProjection: capture.annotationProjection } : {})
       })),
       screenshotMode: desktopVisualEvidence.mode
     };
@@ -794,7 +794,7 @@ export class OverlayClient extends OverlayLiveClient {
           index: capture.index,
           scrollY: capture.scrollY,
           fullPage: capture.fullPage,
-          annotationProjection: capture.fullPage ? 'skipped-full-page' : 'viewport'
+          ...(capture.annotationProjection ? { annotationProjection: capture.annotationProjection } : {})
         })),
         screenshotMode: mobileVisualEvidence.mode
       };
@@ -811,14 +811,24 @@ export class OverlayClient extends OverlayLiveClient {
     const reportMarkdownPath = path.join(dir, 'report.md');
     const reportHtmlPath = path.join(dir, 'report.html');
     const extraArtifactEntries = [];
+    const baseDir = path.resolve(dir);
+    const toSafeExtraArtifactFileName = (fileName) => {
+      if (typeof fileName !== 'string' || !fileName.trim()) return undefined;
+      if (fileName.includes('/') || fileName.includes('\\') || fileName.split('.').includes('..')) return undefined;
+      const safeFileName = path.basename(fileName);
+      const resolvedPath = path.resolve(baseDir, safeFileName);
+      if (resolvedPath !== baseDir && !resolvedPath.startsWith(`${baseDir}${path.sep}`)) return undefined;
+      return safeFileName;
+    };
     if (options.extraArtifacts && typeof options.extraArtifacts === 'object') {
       for (const [key, descriptor] of Object.entries(options.extraArtifacts)) {
-        if (!descriptor?.fileName || descriptor.payload == null) continue;
-        const filePath = path.join(dir, descriptor.fileName);
+        const safeFileName = toSafeExtraArtifactFileName(descriptor?.fileName);
+        if (!safeFileName || descriptor.payload == null) continue;
+        const filePath = path.resolve(baseDir, safeFileName);
         await writeFile(filePath, `${JSON.stringify(descriptor.payload, null, 2)}\n`, 'utf8');
         extraArtifactEntries.push({
           key,
-          fileName: descriptor.fileName,
+          fileName: safeFileName,
           label: descriptor.label || key
         });
       }
@@ -1073,6 +1083,7 @@ export class OverlayClient extends OverlayLiveClient {
         type,
         fullPage,
         index: 1,
+        annotationProjection: fullPage ? 'skipped-full-page' : 'viewport',
         ...(options.screenshotPath ? { path: options.screenshotPath } : {}),
         ...(options.includeScreenshotBytes === false ? {} : { bytes })
       };
@@ -1128,6 +1139,7 @@ export class OverlayClient extends OverlayLiveClient {
           fullPage: false,
           index: index + 1,
           scrollY,
+          annotationProjection: 'viewport',
           ...(screenshotPath ? { path: screenshotPath } : {}),
           ...(options.includeScreenshotBytes === false ? {} : { bytes })
         });
