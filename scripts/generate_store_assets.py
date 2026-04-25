@@ -8,7 +8,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 STORE = ROOT / "store-assets"
-SCREENSHOTS = STORE / "screenshots"
 EDGE = STORE / "edge"
 
 BG = "#0c0a09"
@@ -36,26 +35,10 @@ def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFo
     return ImageFont.load_default()
 
 
-def cover(im: Image.Image, width: int, height: int) -> Image.Image:
-    src_w, src_h = im.size
-    scale = max(width / src_w, height / src_h)
-    new_size = (int(src_w * scale + 0.5), int(src_h * scale + 0.5))
-    resized = im.resize(new_size, Image.Resampling.LANCZOS)
-    left = (resized.width - width) // 2
-    top = (resized.height - height) // 2
-    return resized.crop((left, top, left + width, top + height))
-
-
 def save_rgb_variants(image: Image.Image, base_path: Path) -> None:
     rgb = image.convert("RGB")
     rgb.save(base_path.with_suffix(".png"))
     rgb.save(base_path.with_suffix(".jpg"), quality=95, subsampling=0)
-
-
-def save_cover(src_name: str, dest_stem: str, width: int = 1280, height: int = 800) -> None:
-    im = Image.open(ROOT / src_name).convert("RGB")
-    out = cover(im, width, height)
-    save_rgb_variants(out, SCREENSHOTS / dest_stem)
 
 
 def draw_app_icon(size: int) -> Image.Image:
@@ -124,19 +107,12 @@ def draw_tile(width: int, height: int, dest_stem: str) -> None:
 
 
 def main() -> None:
-    SCREENSHOTS.mkdir(parents=True, exist_ok=True)
     EDGE.mkdir(parents=True, exist_ok=True)
-
-    save_cover("landing-hero.png", "chrome-01-landing-hero")
-    save_cover("github-overlay-default.png", "chrome-02-overlay-default")
-    save_cover("github-overlay-focus.png", "chrome-03-overlay-focus")
-    save_cover("landing-full.png", "chrome-04-landing-full")
 
     save_rgb_variants(draw_app_icon(300), EDGE / "edge-logo-300")
     draw_tile(440, 280, "edge-small-promotional-tile-440x280")
     draw_tile(1400, 560, "edge-large-promotional-tile-1400x560")
 
-    print(f"generated screenshots in {SCREENSHOTS}")
     print(f"generated edge assets in {EDGE}")
 
 

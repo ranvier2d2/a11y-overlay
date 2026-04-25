@@ -13,7 +13,6 @@ Accessibility overlay runtime, Chrome extension, and static marketing site.
 - `playwright/overlay-client-live.mjs` — js_repl-safe live-session helper without file-writing concerns
 - `src/overlay/` — modular source of truth for the overlay runtime
 - `reference.html` — deterministic product-like target used by the demo iframe
-- `landing.html` — older landing variant kept in the repo but no longer canonical
 
 ## Overlay source layout
 
