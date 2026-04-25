@@ -59,12 +59,12 @@ Privacy policy page: `https://a11y-overlay.vercel.app/privacy.html`
 
 ## Suggested screenshots
 
-Use the existing repo images for store submissions:
+Use the checked-in `store-assets/screenshots/` images for store submissions:
 
-- `landing-hero.png`
-- `github-overlay-default.png`
-- `github-overlay-focus.png`
-- `landing-full.png`
+- `store-assets/screenshots/chrome-01-landing-hero.png`
+- `store-assets/screenshots/chrome-02-overlay-default.png`
+- `store-assets/screenshots/chrome-03-overlay-focus.png`
+- `store-assets/screenshots/chrome-04-landing-full.png`
 
 ## Required follow-up before submission
 
