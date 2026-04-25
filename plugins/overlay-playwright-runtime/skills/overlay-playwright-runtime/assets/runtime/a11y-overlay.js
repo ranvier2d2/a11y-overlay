@@ -115,7 +115,7 @@
   const GET_VIEWPORT_CAPTURE_MESSAGE = 'a11y-overlay-get-viewport-capture';
   const EXPORT_NOTICE_MS = 2800;
   const REPORT_SCHEMA_VERSION = 1;
-  const AUTOMATION_CONTRACT_VERSION = 1;
+  const AUTOMATION_CONTRACT_VERSION = 2;
 
   // elements that are mostly noise in a grid view
   const GRID_SKIP = new Set(['HTML', 'BODY', 'HEAD', 'SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'BR', 'HR']);
@@ -218,6 +218,15 @@
         scrollbar-width: none;
         box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       }
+      .toolbar.hidden {
+        display: none;
+      }
+      .toolbar.agent-desktop {
+        top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        right: 12px;
+        max-width: min(calc(100vw - 24px), 1280px);
+      }
       .toolbar::-webkit-scrollbar { display: none; }
       .toolbar.compact {
         padding: 5px 6px;
@@ -319,6 +328,18 @@
         cursor: pointer;
       }
       .toolbar .close:hover { background: #fb7185; color: #0c0a09; }
+      .toolbar .collapse {
+        background: transparent;
+        border: 1px solid #44403c;
+        color: #22d3ee;
+        padding: 3px 7px;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+      .toolbar .collapse:hover { background: #22d3ee; color: #0c0a09; }
       .toolbar .status {
         max-width: 200px;
         overflow: hidden;
@@ -340,6 +361,10 @@
         gap: 10px;
         justify-content: space-between;
       }
+      .toolbar.mobile.agent {
+        padding: 8px 10px;
+        gap: 8px;
+      }
       .toolbar.mobile .mobile-brand {
         display: flex;
         align-items: center;
@@ -347,13 +372,30 @@
         min-width: 0;
         flex: 1 1 auto;
       }
-      .toolbar.mobile .mobile-title {
-        color: #a3e635;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+      .toolbar.mobile.agent .mobile-brand {
+        gap: 6px;
       }
-      .toolbar.mobile .mobile-summary {
+        .toolbar.mobile .mobile-title {
+          color: #a3e635;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .toolbar.mobile .mobile-hide {
+          appearance: none;
+          border: 1px solid #44403c;
+          border-radius: 999px;
+          background: rgba(12, 10, 9, 0.64);
+          color: #e7e5e4;
+          padding: 6px 9px;
+          font: inherit;
+          font-size: 11px;
+          line-height: 1;
+        }
+        .toolbar.mobile .mobile-hide:hover {
+          border-color: #a3e635;
+        }
+        .toolbar.mobile .mobile-summary {
         min-width: 0;
         display: flex;
         flex-direction: column;
@@ -372,6 +414,12 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .toolbar.mobile.agent .mobile-summary .eyebrow {
+        font-size: 9px;
+      }
+      .toolbar.mobile.agent .mobile-summary .value {
+        font-size: 11px;
       }
       .toolbar.mobile .mobile-actions {
         display: inline-flex;
@@ -408,6 +456,10 @@
         border-radius: 10px;
         cursor: pointer;
       }
+      .toolbar.mobile.agent .mobile-close {
+        width: 32px;
+        height: 32px;
+      }
       .toolbar.mobile .mobile-close:hover {
         background: #fb7185;
         color: #0c0a09;
@@ -428,6 +480,10 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.55);
       }
       .mobile-dock.open { display: flex; }
+      .mobile-dock.agent {
+        gap: 6px;
+        padding: 6px;
+      }
       .mobile-dock .dockbtn {
         flex: 1 1 0;
         min-width: 0;
@@ -443,6 +499,10 @@
         justify-content: center;
         font: inherit;
         cursor: pointer;
+      }
+      .mobile-dock.agent .dockbtn {
+        padding: 8px 4px;
+        gap: 3px;
       }
       .mobile-dock .dockbtn:hover {
         border-color: #57534e;
@@ -464,6 +524,11 @@
         font-weight: 700;
         letter-spacing: 0.05em;
       }
+      .mobile-dock.agent .dockbtn .dock-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+      }
       .mobile-dock .dockbtn .dock-label {
         font-size: 10px;
         font-weight: 700;
@@ -477,6 +542,54 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 100%;
+      }
+      .mobile-dock.agent .dockbtn .dock-meta {
+        display: none;
+      }
+      .agent-launcher {
+        position: fixed;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        display: none;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+        z-index: 2147483647;
+      }
+      .agent-launcher.open {
+        display: flex;
+      }
+      .agent-launcher .agent-chip,
+      .agent-launcher .agent-close {
+        appearance: none;
+        border: 1px solid #44403c;
+        background: rgba(12, 10, 9, 0.92);
+        color: #e7e5e4;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 11px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        backdrop-filter: blur(10px);
+      }
+      .agent-launcher .agent-chip {
+        color: #a3e635;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .agent-launcher .agent-close {
+        color: #fb7185;
+        font-weight: 700;
+      }
+      .agent-launcher .agent-chip:hover {
+        border-color: #a3e635;
+      }
+      .agent-launcher .agent-close:hover {
+        border-color: #fb7185;
+        background: rgba(64, 12, 20, 0.92);
       }
       .mobile-modebar {
         position: fixed;
@@ -1098,6 +1211,7 @@
     <div class="annotation-html" id="annotation-html"></div>
     <div class="annotation-capture" id="annotation-capture" aria-hidden="true"></div>
     <div class="toolbar" id="toolbar"></div>
+    <div class="agent-launcher" id="agent-launcher"></div>
     <div class="mobile-dock" id="mobile-dock"></div>
     <div class="mobile-modebar" id="mobile-modebar"></div>
     <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop"></div>
@@ -1109,11 +1223,18 @@
   const annotationHtml = shadow.getElementById('annotation-html');
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
+  const agentLauncher = shadow.getElementById('agent-launcher');
   const mobileDock = shadow.getElementById('mobile-dock');
   const mobileModebar = shadow.getElementById('mobile-modebar');
   const mobileSheetBackdrop = shadow.getElementById('mobile-sheet-backdrop');
   const mobileSheet = shadow.getElementById('mobile-sheet');
   // ---------- state ----------
+  const bootstrapConfig = (() => {
+    if (typeof window === 'undefined') return {};
+    const value = window.__a11yOverlayBootstrap;
+    return value && typeof value === 'object' ? value : {};
+  })();
+  const bootstrapUiMode = bootstrapConfig.uiMode === 'agent' ? 'agent' : 'human';
   /** @type {OverlayState} */
   const state = {
     layerMode: 'conformance',
@@ -1127,16 +1248,36 @@
     focus: false,
     depth: false,
     grid: false,
-    helpOpen: true,
-    settingsOpen: false,
-    mobileSheetOpen: false,
-    mobileSheetTab: 'layers',
-    mobileSheetDetent: 'medium',
+    uiMode: bootstrapUiMode,
+    toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
+      ? bootstrapConfig.toolbarOpen
+      : bootstrapUiMode !== 'agent',
+    // Human mode keeps the historical visible help panel; agent mode starts chrome-light.
+    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean'
+      ? bootstrapConfig.helpOpen
+      : bootstrapUiMode !== 'agent',
+    settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
+    captureUiHidden: typeof bootstrapConfig.captureUiHidden === 'boolean' ? bootstrapConfig.captureUiHidden : false,
+    mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
+    mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
+      ? bootstrapConfig.mobileSheetTab
+      : 'layers',
+    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'medium' || bootstrapConfig.mobileSheetDetent === 'full'
+      ? bootstrapConfig.mobileSheetDetent
+      : 'peek',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
     touchProfile: 'web-default'
   };
+  if (!state.toolbarOpen || state.captureUiHidden) {
+    state.helpOpen = false;
+    state.settingsOpen = false;
+    state.mobileSheetOpen = false;
+  }
+  if (state.uiMode === 'agent') {
+    state.helpOpen = false;
+  }
   let exportNoticeTimer = 0;
   let sessionPersistTimer = 0;
   let sessionReady = false;
@@ -1290,8 +1431,11 @@
    * @property {boolean} focus
    * @property {boolean} depth
    * @property {boolean} grid
+   * @property {'human'|'agent'} uiMode
+   * @property {boolean} toolbarOpen
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
+   * @property {boolean} captureUiHidden
    * @property {boolean} mobileSheetOpen
    * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
    * @property {'peek'|'medium'|'full'} mobileSheetDetent
@@ -1597,14 +1741,119 @@
     });
   }
 
+  function configureUi(options = {}, control = {}) {
+    const { render: shouldRender = true } = control;
+    let changed = false;
+    const closePanelsWhenToolbarHidden = () => {
+      if (state.toolbarOpen || (!state.helpOpen && !state.settingsOpen && !state.mobileSheetOpen)) return;
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
+      changed = true;
+    };
+
+    if ('uiMode' in options) {
+      const nextUiMode = options.uiMode === 'agent' ? 'agent' : 'human';
+      if (state.uiMode !== nextUiMode) {
+        state.uiMode = nextUiMode;
+        changed = true;
+        if (!('toolbarOpen' in options) && nextUiMode === 'agent' && state.toolbarOpen) {
+          state.toolbarOpen = false;
+          state.helpOpen = false;
+          state.settingsOpen = false;
+        }
+      }
+    }
+
+    if (typeof options.toolbarOpen === 'boolean' && state.toolbarOpen !== options.toolbarOpen) {
+      state.toolbarOpen = options.toolbarOpen;
+      changed = true;
+      if (!state.toolbarOpen) {
+        closePanelsWhenToolbarHidden();
+      } else if (state.uiMode === 'agent') {
+        state.helpOpen = false;
+      }
+    }
+
+    if (typeof options.helpOpen === 'boolean') {
+      const nextHelpOpen = state.toolbarOpen && state.uiMode !== 'agent' ? options.helpOpen : false;
+      if (state.helpOpen !== nextHelpOpen) {
+        state.helpOpen = nextHelpOpen;
+        changed = true;
+      }
+    }
+
+    if (typeof options.settingsOpen === 'boolean') {
+      const nextSettingsOpen = state.toolbarOpen ? options.settingsOpen : false;
+      if (state.settingsOpen !== nextSettingsOpen) {
+        state.settingsOpen = nextSettingsOpen;
+        changed = true;
+      }
+    }
+
+    closePanelsWhenToolbarHidden();
+
+    if (state.uiMode === 'agent' && state.helpOpen) {
+      state.helpOpen = false;
+      changed = true;
+    }
+
+    if (typeof options.captureUiHidden === 'boolean' && state.captureUiHidden !== options.captureUiHidden) {
+      state.captureUiHidden = options.captureUiHidden;
+      changed = true;
+      if (state.captureUiHidden) {
+        state.helpOpen = false;
+        state.settingsOpen = false;
+        state.mobileSheetOpen = false;
+      }
+    }
+
+    if (typeof options.mobileSheetOpen === 'boolean') {
+      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden && isMobileOverlayViewport() ? options.mobileSheetOpen : false;
+      if (state.mobileSheetOpen !== nextMobileSheetOpen) {
+        state.mobileSheetOpen = nextMobileSheetOpen;
+        changed = true;
+      }
+    }
+
+    closePanelsWhenToolbarHidden();
+
+    if (
+      (options.mobileSheetTab === 'layers' || options.mobileSheetTab === 'inspect' || options.mobileSheetTab === 'annotate' || options.mobileSheetTab === 'more') &&
+      state.mobileSheetTab !== options.mobileSheetTab
+    ) {
+      state.mobileSheetTab = options.mobileSheetTab;
+      changed = true;
+    }
+
+    if (
+      (options.mobileSheetDetent === 'peek' || options.mobileSheetDetent === 'medium' || options.mobileSheetDetent === 'full') &&
+      state.mobileSheetDetent !== options.mobileSheetDetent
+    ) {
+      state.mobileSheetDetent = options.mobileSheetDetent;
+      changed = true;
+    }
+
+    if (changed && shouldRender) {
+      render();
+    }
+    return changed;
+  }
+
   function applyPreset(presetId, opts = {}) {
     const preset = getPresetMeta(presetId);
     if (!preset) return false;
-    const { announce = true } = opts;
+    const {
+      announce = true,
+      ui = null
+    } = opts;
     state.layerMode = preset.layerMode;
     state.touchProfile = preset.touchProfile;
     persistTouchProfile(state.touchProfile).catch(() => {});
     applySliceMap(preset.enabledSlices);
+    if (ui) {
+      configureUi(ui, { render: false });
+    }
     clearIncompatibleInspectorSelection(state.layerMode);
     scheduleSessionPersist();
     if (announce) {
@@ -3543,9 +3792,11 @@
       color: entry.color || '#e7e5e4'
     };
     if (isMobileOverlayViewport()) {
-      state.mobileSheetTab = 'inspect';
-      state.mobileSheetDetent = 'full';
-      state.mobileSheetOpen = true;
+      configureUi({
+        mobileSheetTab: 'inspect',
+        mobileSheetDetent: 'full',
+        mobileSheetOpen: true
+      }, { render: false });
     }
     scheduleSessionPersist();
     render();
@@ -3577,7 +3828,7 @@
     return true;
   }
 
-  function deselectAnnotations() {
+  function deselectAnnotations(opts = {}) {
     annotations.mode = 'idle';
     annotations.pendingArrowStart = null;
     annotations.pendingArrowPreview = null;
@@ -3585,7 +3836,7 @@
     annotations.editingNoteId = null;
     inspector.selection = null;
     scheduleSessionPersist();
-    render();
+    if (opts.render !== false) render();
   }
 
   function mobileSheetDefaultDetent(tab) {
@@ -3595,9 +3846,11 @@
   }
 
   function openMobileSheet(tab, opts = {}) {
-    state.mobileSheetTab = tab;
-    state.mobileSheetDetent = opts.detent || mobileSheetDefaultDetent(tab);
-    state.mobileSheetOpen = true;
+    configureUi({
+      mobileSheetTab: tab,
+      mobileSheetDetent: opts.detent || mobileSheetDefaultDetent(tab),
+      mobileSheetOpen: true
+    }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -3605,7 +3858,7 @@
 
   function closeMobileSheet(opts = {}) {
     if (!state.mobileSheetOpen) return false;
-    state.mobileSheetOpen = false;
+    configureUi({ mobileSheetOpen: false }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -3641,6 +3894,22 @@
 
   function renderHud() {
     renderToolbar();
+    if (state.captureUiHidden) {
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
+      const help = shadow.querySelector('.help');
+      if (help) help.remove();
+      const settings = shadow.querySelector('.settings');
+      if (settings) settings.remove();
+      const inspectorPanel = shadow.querySelector('.inspector');
+      if (inspectorPanel) inspectorPanel.remove();
+      mobileSheetBackdrop.classList.remove('open');
+      mobileSheetBackdrop.onclick = null;
+      mobileSheet.classList.remove('open');
+      mobileSheet.innerHTML = '';
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const help = shadow.querySelector('.help');
       if (help) help.remove();
@@ -3989,10 +4258,12 @@
         tone: '#38bdf8',
         variant: 'compact ghost',
         click: () => {
-          deselectAnnotations();
-          state.mobileSheetTab = 'annotate';
-          state.mobileSheetDetent = 'medium';
-          state.mobileSheetOpen = true;
+          deselectAnnotations({ render: false });
+          configureUi({
+            mobileSheetTab: 'annotate',
+            mobileSheetDetent: 'medium',
+            mobileSheetOpen: true
+          }, { render: false });
           render();
         }
       });
@@ -4003,10 +4274,12 @@
         tone: '#fb7185',
         variant: 'compact',
         click: () => {
-          if (removeSelectedAnnotation()) {
-            state.mobileSheetTab = 'annotate';
-            state.mobileSheetDetent = 'medium';
-            state.mobileSheetOpen = true;
+          if (removeSelectedAnnotation({ render: false })) {
+            configureUi({
+              mobileSheetTab: 'annotate',
+              mobileSheetDetent: 'medium',
+              mobileSheetOpen: true
+            }, { render: false });
             render();
           }
         }
@@ -4078,23 +4351,25 @@
     });
     exportSection.appendChild(exportGrid);
 
-    const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
-    const helpRows = document.createElement('div');
-    helpRows.className = 'mobile-inspector-rows';
-    [
-      ['Tap badge', 'Open the inspector receipt for that finding.'],
-      ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
-      ['R / F / D / G', 'Review and depth-oriented slices.'],
-      ['N / W / V', 'Note, arrow, or deselect placement.'],
-      ['Del / Backspace', 'Delete the selected note or arrow.'],
-      ['X', 'Remove the overlay entirely.']
-    ].forEach(([key, value]) => {
-      const row = document.createElement('div');
-      row.className = 'mobile-inspector-row';
-      row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
-      helpRows.appendChild(row);
-    });
-    helpSection.appendChild(helpRows);
+    if (state.uiMode !== 'agent') {
+      const helpSection = appendSection('Quick help', `Mode ${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}.`, 'secondary');
+      const helpRows = document.createElement('div');
+      helpRows.className = 'mobile-inspector-rows';
+      [
+        ['Tap badge', 'Open the inspector receipt for that finding.'],
+        ['L / H / I / M / T / A', 'Toggle structural and audit slices.'],
+        ['R / F / D / G', 'Review and depth-oriented slices.'],
+        ['N / W / V', 'Note, arrow, or deselect placement.'],
+        ['Del / Backspace', 'Delete the selected note or arrow.'],
+        ['X', 'Remove the overlay entirely.']
+      ].forEach(([key, value]) => {
+        const row = document.createElement('div');
+        row.className = 'mobile-inspector-row';
+        row.innerHTML = `<div class="key">${key}</div><div class="value">${value}</div>`;
+        helpRows.appendChild(row);
+      });
+      helpSection.appendChild(helpRows);
+    }
 
     const exitSection = appendSection('Overlay', 'Mobile keeps one expanded surface at a time so the page stays readable.', 'secondary');
     const exitGrid = document.createElement('div');
@@ -4410,7 +4685,7 @@
     return annotations.arrows[annotations.arrows.length - 1];
   }
 
-  function removeSelectedAnnotation() {
+  function removeSelectedAnnotation(opts = {}) {
     if (!annotations.selected) return false;
     if (annotations.selected.type === 'note') {
       annotations.notes = annotations.notes.filter((note) => note.id !== annotations.selected.id);
@@ -4420,8 +4695,10 @@
     annotations.selected = null;
     annotations.editingNoteId = null;
     scheduleSessionPersist();
-    renderHud();
-    renderAnnotations();
+    if (opts.render !== false) {
+      renderHud();
+      renderAnnotations();
+    }
     return true;
   }
 
@@ -4800,20 +5077,71 @@
 
   function renderToolbar() {
     toolbar.innerHTML = '';
+    agentLauncher.innerHTML = '';
+    agentLauncher.className = 'agent-launcher';
     mobileModebar.innerHTML = '';
     mobileModebar.className = 'mobile-modebar';
-    if (isMobileOverlayViewport()) {
-      toolbar.className = 'toolbar mobile';
+    if (state.captureUiHidden) {
+      toolbar.className = 'toolbar hidden';
       mobileDock.innerHTML = '';
-      mobileDock.className = 'mobile-dock open';
+      mobileDock.className = 'mobile-dock';
+      return;
+    }
+    if (!state.toolbarOpen) {
+      toolbar.className = 'toolbar hidden';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock';
+      {
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'agent-chip';
+        open.textContent = 'A11Y';
+        open.title = 'Open overlay controls';
+        open.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ toolbarOpen: true });
+        });
+        agentLauncher.appendChild(open);
+
+        const closeLauncher = document.createElement('button');
+        closeLauncher.type = 'button';
+        closeLauncher.className = 'agent-close';
+        closeLauncher.textContent = '×';
+        closeLauncher.title = 'Remove overlay (X)';
+        closeLauncher.addEventListener('click', (e) => {
+          e.stopPropagation();
+          teardown();
+        });
+        agentLauncher.appendChild(closeLauncher);
+        agentLauncher.className = 'agent-launcher open';
+      }
+      return;
+    }
+      if (isMobileOverlayViewport()) {
+        const agentUi = state.uiMode === 'agent';
+        toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
+        mobileDock.innerHTML = '';
+        mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
 
       const brand = document.createElement('div');
       brand.className = 'mobile-brand';
 
-      const title = document.createElement('span');
-      title.className = 'mobile-title';
-      title.textContent = 'a11y';
-      brand.appendChild(title);
+        const title = document.createElement('span');
+        title.className = 'mobile-title';
+        title.textContent = 'a11y';
+        brand.appendChild(title);
+        if (agentUi) {
+          const hide = document.createElement('button');
+          hide.type = 'button';
+          hide.className = 'mobile-hide';
+          hide.textContent = 'Hide';
+          hide.title = 'Hide overlay controls';
+          hide.addEventListener('click', (e) => {
+            e.stopPropagation();
+            configureUi({ toolbarOpen: false });
+          });
+          brand.appendChild(hide);
+        }
 
       const summary = document.createElement('div');
       summary.className = 'mobile-summary';
@@ -4825,7 +5153,9 @@
 
       const value = document.createElement('div');
       value.className = 'value';
-      value.textContent = state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`;
+      value.textContent = agentUi
+        ? `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`
+        : (state.exportNotice || `${state.layerMode === 'review' ? 'Review' : 'Conformance'} · ${currentTouchProfileLabel()}`);
       summary.appendChild(value);
       brand.appendChild(summary);
       toolbar.appendChild(brand);
@@ -4833,10 +5163,13 @@
       const actions = document.createElement('div');
       actions.className = 'mobile-actions';
 
-      const chip = document.createElement('span');
-      chip.className = 'mobile-chip';
-      chip.textContent = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel() || 'Overlay active';
-      actions.appendChild(chip);
+      const statusLabel = editingAnnotationLabel() || selectedAnnotationLabel() || modeLabel();
+      if (!agentUi || statusLabel) {
+        const chip = document.createElement('span');
+        chip.className = 'mobile-chip';
+        chip.textContent = statusLabel || 'Overlay active';
+        actions.appendChild(chip);
+      }
 
       const close = document.createElement('button');
       close.type = 'button';
@@ -4965,12 +5298,16 @@
 
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
+    const agentDesktop = state.uiMode === 'agent';
 
     const renderDesktopToolbarVariant = (variant) => {
       const compact = variant !== 'full';
       const tight = variant === 'tight';
       toolbar.innerHTML = '';
-      toolbar.className = 'toolbar' + (compact ? ' compact' : '') + (tight ? ' tight' : '');
+      toolbar.className = 'toolbar'
+        + (compact ? ' compact' : '')
+        + (tight ? ' tight' : '')
+        + (agentDesktop ? ' agent-desktop' : '');
 
       const title = document.createElement('span');
       title.className = 'title';
@@ -5020,19 +5357,20 @@
         toolbar.appendChild(b);
       });
 
-      const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
-      const help = document.createElement('button');
-      help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
-      help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
-      help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
-      help.innerHTML = '<span>?</span>';
-      help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
-      help.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.helpOpen = !state.helpOpen;
-        render();
-      });
-      toolbar.appendChild(help);
+      if (!agentDesktop) {
+        const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
+        const help = document.createElement('button');
+        help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
+        help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
+        help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
+        help.innerHTML = '<span>?</span>';
+        help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
+        help.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ helpOpen: !state.helpOpen });
+        });
+        toolbar.appendChild(help);
+      }
 
       const settings = document.createElement('button');
       settings.className = 'tbtn' + (state.settingsOpen ? ' on' : '');
@@ -5042,8 +5380,7 @@
       settings.title = compact ? 'Workflow settings, reports, and export actions' : 'Audit settings and workflow presets';
       settings.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.settingsOpen = !state.settingsOpen;
-        render();
+        configureUi({ settingsOpen: !state.settingsOpen });
       });
       toolbar.appendChild(settings);
 
@@ -5181,6 +5518,18 @@
           status.textContent = state.exportNotice;
           toolbar.appendChild(status);
         }
+      }
+
+      if (agentDesktop) {
+        const collapse = document.createElement('button');
+        collapse.className = 'collapse';
+        collapse.textContent = 'Hide';
+        collapse.title = 'Hide overlay controls';
+        collapse.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ toolbarOpen: false });
+        });
+        toolbar.appendChild(collapse);
       }
 
       const close = document.createElement('button');
@@ -5328,13 +5677,14 @@
     '/': () => { toggleHelpSurface(); }
   };
 
-  function toggleHelpSurface() {
-    if (isMobileOverlayViewport()) {
-      toggleMobileSheet('more', { detent: 'peek' });
-      return;
+    function toggleHelpSurface() {
+      if (state.uiMode === 'agent') return;
+      if (isMobileOverlayViewport()) {
+        toggleMobileSheet('more', { detent: 'peek' });
+        return;
+      }
+      configureUi({ helpOpen: !state.helpOpen }, { render: false });
     }
-    state.helpOpen = !state.helpOpen;
-  }
 
   function isEditableNode(node) {
     if (!node || typeof node !== 'object' || node.nodeType !== 1) return false;
@@ -5474,7 +5824,7 @@
       overlayVersion: VERSION,
       reportSchemaVersion: REPORT_SCHEMA_VERSION,
       methods: {
-        toggle: { args: ['sliceKey'] },
+        toggle: { args: ['sliceKey | uiStateKey'], uiStateKeys: ['helpOpen', 'settingsOpen', 'toolbarOpen', 'captureUiHidden', 'mobileSheetOpen'] },
         toggleHelp: { args: [] },
         collectDetections: { args: [], returns: 'OverlayDetectionRecord[]' },
         buildReport: { args: ['format', 'opts'], returns: 'OverlayReportData | string' },
@@ -5483,7 +5833,9 @@
         downloadAuditBundle: { args: ['opts'], returns: 'Promise<OverlayReportData>' },
         exportPng: { args: ['target'], returns: 'Promise<void>' },
         getAutomationContract: { args: [], returns: 'object' },
+        getUiState: { args: [], returns: 'object' },
         listPresets: { args: [], returns: 'OverlayPreset[]' },
+        configureUi: { args: ['opts'], returns: 'object' },
         applyPreset: { args: ['presetId', 'opts'], returns: 'boolean' },
         setAnnotationMode: { args: ['mode'], returns: 'void' },
         setLayerMode: { args: ['mode'], returns: 'void' },
@@ -5517,6 +5869,19 @@
   }
 
   // ---------- api ----------
+  function getUiStateSnapshot() {
+    return {
+      uiMode: state.uiMode,
+      toolbarOpen: state.toolbarOpen,
+      helpOpen: state.helpOpen,
+      settingsOpen: state.settingsOpen,
+      captureUiHidden: state.captureUiHidden,
+      mobileSheetOpen: state.mobileSheetOpen,
+      mobileSheetTab: state.mobileSheetTab,
+      mobileSheetDetent: state.mobileSheetDetent
+    };
+  }
+
   /**
    * Public automation and operator API exposed to pages, bookmarklets, and
    * browser-driving agents once the overlay installs successfully.
@@ -5528,12 +5893,18 @@
         if (toggleSliceState(key)) render();
         return;
       }
-      if (key in state) {
-        state[key] = !state[key];
-        render();
+      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+        configureUi({ [key]: !state[key] });
+        return;
       }
+      throw new Error(`Unsupported toggle key: ${key}`);
     },
     collectDetections,
+    getUiState: getUiStateSnapshot,
+    configureUi(opts = {}) {
+      configureUi(opts);
+      return getUiStateSnapshot();
+    },
     buildReport(format = 'json', opts = {}) {
       const normalizedFormat = format === 'html' ? 'html' : 'json';
       return normalizedFormat === 'html'

@@ -17,6 +17,10 @@ PLUGIN_ROOT = (
 
 SYNC_PAIRS = [
     (
+        REPO_ROOT / "a11y-overlay.js",
+        PLUGIN_ROOT / "assets" / "runtime" / "a11y-overlay.js",
+    ),
+    (
         PLAYWRIGHT_ROOT / "overlay-client.mjs",
         PLUGIN_ROOT / "assets" / "runtime" / "playwright" / "overlay-client.mjs",
     ),

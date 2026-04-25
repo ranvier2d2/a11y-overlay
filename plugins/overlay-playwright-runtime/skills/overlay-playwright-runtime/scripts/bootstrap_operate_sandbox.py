@@ -60,21 +60,32 @@ def iter_asset_files(asset_root: Path) -> list[tuple[Path, Path]]:
 
 def iter_runtime_client_files(runtime_root: Path) -> list[tuple[Path, Path]]:
     expected = [
+        "../a11y-overlay.js",
         "overlay-client.mjs",
-        "overlay-client-live.mjs",
     ]
     pairs: list[tuple[Path, Path]] = []
     for name in expected:
-        source_path = runtime_root / name
+        source_path = (runtime_root / name).resolve()
         if not source_path.exists():
             raise FileNotFoundError(f"missing runtime client asset: {source_path}")
-        pairs.append((source_path, Path(name)))
+        relative_path = Path(name).name
+        pairs.append((source_path, Path(relative_path)))
     return pairs
 
 
 def copy_assets(asset_root: Path, runtime_root: Path, sandbox_root: Path, dry_run: bool) -> int:
-    pairs = iter_asset_files(asset_root)
-    pairs.extend(iter_runtime_client_files(runtime_root))
+    pairs_by_target = {
+        relative_path: source_path
+        for source_path, relative_path in iter_asset_files(asset_root)
+    }
+    pairs_by_target.update({
+        relative_path: source_path
+        for source_path, relative_path in iter_runtime_client_files(runtime_root)
+    })
+    pairs = [
+        (source_path, relative_path)
+        for relative_path, source_path in sorted(pairs_by_target.items())
+    ]
 
     for source_path, relative_path in pairs:
         target_path = sandbox_root / relative_path

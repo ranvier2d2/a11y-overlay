@@ -19,20 +19,35 @@
     depth: false,
     grid: false,
     uiMode: bootstrapUiMode,
-    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
+    toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
+      ? bootstrapConfig.toolbarOpen
+      : bootstrapUiMode !== 'agent',
+    // Human mode keeps the historical visible help panel; agent mode starts chrome-light.
+    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean'
+      ? bootstrapConfig.helpOpen
+      : bootstrapUiMode !== 'agent',
     settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
+    captureUiHidden: typeof bootstrapConfig.captureUiHidden === 'boolean' ? bootstrapConfig.captureUiHidden : false,
     mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
     mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
       ? bootstrapConfig.mobileSheetTab
       : 'layers',
-    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'full'
+    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'medium' || bootstrapConfig.mobileSheetDetent === 'full'
       ? bootstrapConfig.mobileSheetDetent
-      : 'medium',
+      : 'peek',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',
     touchProfile: 'web-default'
   };
+  if (!state.toolbarOpen || state.captureUiHidden) {
+    state.helpOpen = false;
+    state.settingsOpen = false;
+    state.mobileSheetOpen = false;
+  }
+  if (state.uiMode === 'agent') {
+    state.helpOpen = false;
+  }
   let exportNoticeTimer = 0;
   let sessionPersistTimer = 0;
   let sessionReady = false;
@@ -187,8 +202,10 @@
    * @property {boolean} depth
    * @property {boolean} grid
    * @property {'human'|'agent'} uiMode
+   * @property {boolean} toolbarOpen
    * @property {boolean} helpOpen
    * @property {boolean} settingsOpen
+   * @property {boolean} captureUiHidden
    * @property {boolean} mobileSheetOpen
    * @property {'layers'|'inspect'|'annotate'|'more'} mobileSheetTab
    * @property {'peek'|'medium'|'full'} mobileSheetDetent

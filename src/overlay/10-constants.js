@@ -68,7 +68,7 @@
   const GET_VIEWPORT_CAPTURE_MESSAGE = 'a11y-overlay-get-viewport-capture';
   const EXPORT_NOTICE_MS = 2800;
   const REPORT_SCHEMA_VERSION = 1;
-  const AUTOMATION_CONTRACT_VERSION = 1;
+  const AUTOMATION_CONTRACT_VERSION = 2;
 
   // elements that are mostly noise in a grid view
   const GRID_SKIP = new Set(['HTML', 'BODY', 'HEAD', 'SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'BR', 'HR']);

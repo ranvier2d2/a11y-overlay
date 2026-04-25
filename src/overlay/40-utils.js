@@ -269,29 +269,79 @@
   function configureUi(options = {}, control = {}) {
     const { render: shouldRender = true } = control;
     let changed = false;
+    const closePanelsWhenToolbarHidden = () => {
+      if (state.toolbarOpen || (!state.helpOpen && !state.settingsOpen && !state.mobileSheetOpen)) return;
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
+      changed = true;
+    };
 
     if ('uiMode' in options) {
       const nextUiMode = options.uiMode === 'agent' ? 'agent' : 'human';
       if (state.uiMode !== nextUiMode) {
         state.uiMode = nextUiMode;
         changed = true;
+        if (!('toolbarOpen' in options) && nextUiMode === 'agent' && state.toolbarOpen) {
+          state.toolbarOpen = false;
+          state.helpOpen = false;
+          state.settingsOpen = false;
+        }
       }
     }
 
-    if (typeof options.helpOpen === 'boolean' && state.helpOpen !== options.helpOpen) {
-      state.helpOpen = options.helpOpen;
+    if (typeof options.toolbarOpen === 'boolean' && state.toolbarOpen !== options.toolbarOpen) {
+      state.toolbarOpen = options.toolbarOpen;
+      changed = true;
+      if (!state.toolbarOpen) {
+        closePanelsWhenToolbarHidden();
+      } else if (state.uiMode === 'agent') {
+        state.helpOpen = false;
+      }
+    }
+
+    if (typeof options.helpOpen === 'boolean') {
+      const nextHelpOpen = state.toolbarOpen && state.uiMode !== 'agent' ? options.helpOpen : false;
+      if (state.helpOpen !== nextHelpOpen) {
+        state.helpOpen = nextHelpOpen;
+        changed = true;
+      }
+    }
+
+    if (typeof options.settingsOpen === 'boolean') {
+      const nextSettingsOpen = state.toolbarOpen ? options.settingsOpen : false;
+      if (state.settingsOpen !== nextSettingsOpen) {
+        state.settingsOpen = nextSettingsOpen;
+        changed = true;
+      }
+    }
+
+    closePanelsWhenToolbarHidden();
+
+    if (state.uiMode === 'agent' && state.helpOpen) {
+      state.helpOpen = false;
       changed = true;
     }
 
-    if (typeof options.settingsOpen === 'boolean' && state.settingsOpen !== options.settingsOpen) {
-      state.settingsOpen = options.settingsOpen;
+    if (typeof options.captureUiHidden === 'boolean' && state.captureUiHidden !== options.captureUiHidden) {
+      state.captureUiHidden = options.captureUiHidden;
       changed = true;
+      if (state.captureUiHidden) {
+        state.helpOpen = false;
+        state.settingsOpen = false;
+        state.mobileSheetOpen = false;
+      }
     }
 
-    if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {
-      state.mobileSheetOpen = options.mobileSheetOpen;
-      changed = true;
+    if (typeof options.mobileSheetOpen === 'boolean') {
+      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden && isMobileOverlayViewport() ? options.mobileSheetOpen : false;
+      if (state.mobileSheetOpen !== nextMobileSheetOpen) {
+        state.mobileSheetOpen = nextMobileSheetOpen;
+        changed = true;
+      }
     }
+
+    closePanelsWhenToolbarHidden();
 
     if (
       (options.mobileSheetTab === 'layers' || options.mobileSheetTab === 'inspect' || options.mobileSheetTab === 'annotate' || options.mobileSheetTab === 'more') &&

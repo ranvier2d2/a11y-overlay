@@ -13,14 +13,17 @@ class FakeRuntime {
     this.annotationMode = 'idle';
     this.uiState = {
       uiMode: 'human',
+      toolbarOpen: true,
       helpOpen: true,
       settingsOpen: false,
+      captureUiHidden: false,
       mobileSheetOpen: false,
       mobileSheetTab: 'layers',
       mobileSheetDetent: 'medium'
     };
     this.notes = [];
     this.arrows = [];
+    this.uiTransitions = [];
     this.getAutomationContract = this.getAutomationContract.bind(this);
     this.getUiState = this.getUiState.bind(this);
     this.listPresets = this.listPresets.bind(this);
@@ -40,7 +43,7 @@ class FakeRuntime {
 
   getAutomationContract() {
     return {
-      contractVersion: 1,
+      contractVersion: 2,
       reportSchemaVersion: 1,
       methods: {
         getAutomationContract: {},
@@ -76,10 +79,22 @@ class FakeRuntime {
   }
 
   configureUi(options = {}) {
-    this.uiState = {
+    const nextUiState = {
       ...this.uiState,
       ...options
     };
+    if (!nextUiState.toolbarOpen) {
+      nextUiState.helpOpen = false;
+      nextUiState.settingsOpen = false;
+      nextUiState.mobileSheetOpen = false;
+    }
+    if (nextUiState.captureUiHidden) {
+      nextUiState.mobileSheetOpen = false;
+      nextUiState.helpOpen = false;
+      nextUiState.settingsOpen = false;
+    }
+    this.uiTransitions.push(nextUiState);
+    this.uiState = nextUiState;
     return this.getUiState();
   }
 
@@ -136,20 +151,98 @@ class FakeRuntime {
     return {
       document: {
         title: 'Fixture Page',
-        url: 'https://example.test/demo'
+        url: 'https://example.test/demo',
+        viewport: {
+          width: 1280,
+          height: 720
+        }
       },
       audit: {
         scope: options.scope,
         presetId: this.appliedPreset || '',
-        presetLabel: this.appliedPreset ? 'Agent' : 'Custom'
+        presetLabel: this.appliedPreset ? 'Agent' : 'Custom',
+        touchProfile: 'both',
+        layerMode: this.layerMode
       },
+      overlayVersion: '0.1.17',
+      schemaVersion: 1,
       summary: {
-        total: 1
+        total: 2,
+        severity: {
+          unspecified: 1,
+          warning: 1
+        },
+        findingType: {
+          advisory: 1,
+          heuristic: 1
+        },
+        slices: {
+          target: 1,
+          repeat: 1
+        }
+      },
+      actions: [
+        {
+          priority: 1,
+          bucket: 'review',
+          bucketLabel: 'Review',
+          severity: 'warning',
+          sliceKey: 'target',
+          title: 'Interactive target misses advisory touch size',
+          count: 1,
+          whyItMatters: 'Controls are shorter than the configured touch guidance.',
+          suggestedFix: 'Raise the control height to at least 44px.',
+          examples: [
+            '131×36 advisory · Get in Touch'
+          ]
+        }
+      ],
+      annotations: {
+        notes: this.notes.map((note) => ({
+          id: note.id,
+          x: note.x,
+          y: note.y,
+          text: note.text || ''
+        })),
+        arrows: this.arrows.map((arrow) => ({
+          id: arrow.id,
+          x1: arrow.x1,
+          y1: arrow.y1,
+          x2: arrow.x2,
+          y2: arrow.y2
+        }))
       },
       findings: [
         {
           id: 'target-too-small-1',
-          kind: 'target-too-small'
+          kind: 'target-too-small',
+          label: '131×36 advisory · Get in Touch',
+          meta: {
+            severity: 'warning',
+            sliceKey: 'target',
+            findingType: 'advisory',
+            whyFlagged: 'The button is below the advisory touch minimum.',
+            suggestedFix: 'Raise the button height to at least 44px.'
+          },
+          inspectorRows: [
+            { key: 'Path', value: 'button.get-in-touch' },
+            { key: 'Evidence', value: 'Target size 131×36 CSS px' },
+            { key: 'Source', value: 'Apple touch target guidance; Android touch target guidance' }
+          ]
+        },
+        {
+          id: 'repeat-1',
+          kind: 'repeat-pattern',
+          label: 'Repeated compact control pattern',
+          meta: {
+            sliceKey: 'repeat',
+            findingType: 'heuristic',
+            summary: 'Repeated compact controls suggest a component-level sizing problem.'
+          },
+          inspectorRows: [
+            { key: 'Path', value: '.compact-card-actions' },
+            { key: 'Evidence', value: 'Repeated 24×24 icon buttons across cards' }
+          ]
         }
       ]
     };
@@ -266,7 +359,7 @@ async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
   const client = new ClientClass();
 
   const contract = await client.inject(target);
-  assert.equal(contract.contractVersion, 1);
+  assert.equal(contract.contractVersion, 2);
   assert.equal(target.scriptTags.length, 1);
   assert.equal(target.scriptTags[0].path, DEFAULT_SCRIPT_PATH);
 
@@ -275,9 +368,11 @@ async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
 
   const configured = await client.configureUi(target, {
     uiMode: 'agent',
+    toolbarOpen: false,
     helpOpen: false
   });
   assert.equal(configured.uiMode, 'agent');
+  assert.equal(configured.toolbarOpen, false);
   assert.equal(configured.helpOpen, false);
 
   const applied = await client.applyPreset(target, 'agent-capture', { announce: false });
@@ -316,6 +411,7 @@ async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
 
   const uiState = await client.getUiState(target);
   assert.equal(uiState.uiMode, 'agent');
+  assert.equal(uiState.toolbarOpen, false);
   assert.equal(uiState.helpOpen, false);
 }
 
@@ -326,7 +422,7 @@ async function verifyForceInjectIsIdempotent() {
   const client = new OverlayClient();
 
   const contract = await client.inject(target, { force: true });
-  assert.equal(contract.contractVersion, 1);
+  assert.equal(contract.contractVersion, 2);
   assert.equal(target.scriptTags.length, 1);
   assert.equal(target.scriptTags[0].path, DEFAULT_SCRIPT_PATH);
 }
@@ -366,7 +462,7 @@ async function verifyFailurePackageWrite() {
     assert.equal(report.audit.scope, 'all');
 
     const contract = JSON.parse(await readFile(result.contractPath, 'utf8'));
-    assert.equal(contract.contractVersion, 1);
+    assert.equal(contract.contractVersion, 2);
 
     const htmlReport = await readFile(result.htmlReportPath, 'utf8');
     assert.match(htmlReport, /scope:all/);
@@ -442,6 +538,8 @@ async function verifyWriteAuditArtifactSet() {
 
   const mobileRuntime = new FakeRuntime();
   mobileRuntime.applyPreset('mobile');
+  mobileRuntime.addNote({ x: 24, y: 48 }, 'Mobile note');
+  mobileRuntime.addArrow({ x: 10, y: 12 }, { x: 20, y: 24 });
 
   const desktopTarget = new FakeTarget(desktopRuntime);
   const mobileTarget = new FakeTarget(mobileRuntime);
@@ -457,17 +555,28 @@ async function verifyWriteAuditArtifactSet() {
       scope: 'all',
       mobileTarget,
       screenshotType: 'jpeg',
+      screenshotTimeoutMs: 12345,
+      mobileScreenshotTimeoutMs: 23456,
       fullPage: true,
       mobileFullPage: false,
+      extraArtifacts: {
+        placementReview: {
+          fileName: 'placement-review.json',
+          label: 'Placement review metadata',
+          payload: { requiresVisualReview: false }
+        }
+      },
       reportContext: {
         target_name: 'Fixture App',
         audit_mode: 'audit-local-web',
-        browser_and_os: 'Playwright + fake target'
+        browser_and_os: 'Playwright + fake target',
+        annotation_artifacts: 'Placement review metadata: placement-review.json'
       }
     });
 
     assert.equal(path.dirname(result.artifactIndexPath), dir);
     assert.equal(path.dirname(result.reportMarkdownPath), dir);
+    assert.equal(path.dirname(result.reportHtmlPath), dir);
     assert.equal(path.basename(result.desktop.htmlBundlePath), 'desktop.html');
     assert.equal(path.basename(result.desktop.jsonReportPath), 'desktop.json');
     assert.equal(path.basename(result.desktop.screenshotPath), 'desktop.jpg');
@@ -476,6 +585,8 @@ async function verifyWriteAuditArtifactSet() {
     assert.equal(path.basename(result.mobile.screenshotPath), 'mobile.jpg');
 
     const artifactIndex = JSON.parse(await readFile(result.artifactIndexPath, 'utf8'));
+    assert.equal(artifactIndex.reportMarkdown, 'report.md');
+    assert.equal(artifactIndex.reportHtml, 'report.html');
     assert.equal(artifactIndex.desktop.htmlBundle, 'desktop.html');
     assert.equal(artifactIndex.desktop.reportJson, 'desktop.json');
     assert.equal(artifactIndex.desktop.screenshot, 'desktop.jpg');
@@ -483,21 +594,48 @@ async function verifyWriteAuditArtifactSet() {
     assert.equal(artifactIndex.mobile.reportJson, 'mobile.json');
     assert.equal(artifactIndex.mobile.screenshot, 'mobile.jpg');
     assert.equal(artifactIndex.contract, 'contract.json');
+    assert.equal(artifactIndex.placementReview, 'placement-review.json');
 
     const reportMarkdown = await readFile(result.reportMarkdownPath, 'utf8');
     assert.match(reportMarkdown, /# Accessibility Audit Report/);
     assert.match(reportMarkdown, /\*\*Target:\*\* Fixture App/);
+    assert.match(reportMarkdown, /\*\*Surface highlights:\*\*/);
+    assert.match(reportMarkdown, /Interactive target misses advisory touch size/);
+    assert.match(reportMarkdown, /Raise the control height to at least 44px/);
+    assert.match(reportMarkdown, /### Counts by tested surface/);
     assert.match(reportMarkdown, /\*\*Artifact index:\*\* artifact-index\.json/);
+    assert.match(reportMarkdown, /report\.html/);
     assert.match(reportMarkdown, /desktop\.html/);
     assert.match(reportMarkdown, /mobile\.html/);
+    assert.match(reportMarkdown, /Placement review metadata: placement-review\.json/);
+
+    const reportHtml = await readFile(result.reportHtmlPath, 'utf8');
+    assert.match(reportHtml, /<title>Fixture App Accessibility Audit<\/title>/);
+    assert.match(reportHtml, /Interactive target misses advisory touch size/);
+    assert.match(reportHtml, /Desktop HTML evidence bundle/);
+    assert.match(reportHtml, /evidence-carousel/);
+    assert.match(reportHtml, /carousel-slide/);
+    assert.match(reportHtml, /data-carousel-next/);
+    assert.match(reportHtml, /desktop\.jpg/);
+    assert.match(reportHtml, /placement-review\.json/);
+    assert.equal(result.desktop.screenshotCaptures[0].annotationProjection, 'skipped-full-page');
+    assert.equal(result.mobile.screenshotCaptures[0].annotationProjection, 'viewport');
+    assert.match(reportHtml, /<div[^>]*class="annotation-overlay"[^>]*>/);
+    assert.match(reportHtml, /<div[^>]*class="annotation-note"[^>]*>/);
+    assert.match(reportHtml, /<span[^>]*class="annotation-note-title"[^>]*>Note<\/span>/);
+    assert.match(reportHtml, /<path[^>]*class="annotation-arrow"[^>]*>/);
+    assert.match(reportHtml, /Mobile note/);
+    assert.doesNotMatch(reportHtml, /Desktop note/);
 
     assert.equal(desktopTarget.screenshots.length, 1);
     assert.equal(desktopTarget.screenshots[0].path, result.desktop.screenshotPath);
     assert.equal(desktopTarget.screenshots[0].type, 'jpeg');
+    assert.equal(desktopTarget.screenshots[0].timeout, 12345);
 
     assert.equal(mobileTarget.screenshots.length, 1);
     assert.equal(mobileTarget.screenshots[0].path, result.mobile.screenshotPath);
     assert.equal(mobileTarget.screenshots[0].fullPage, false);
+    assert.equal(mobileTarget.screenshots[0].timeout, 23456);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -535,6 +673,7 @@ async function verifyScrollAwareVisualEvidence() {
       fileName: 'desktop-review.jpg',
       screenshotType: 'jpeg',
       captureMode: 'scroll-slices',
+      quietMode: true,
       scrollSettlingMs: 0
     });
 
@@ -544,12 +683,15 @@ async function verifyScrollAwareVisualEvidence() {
     assert.equal(path.basename(visualEvidence.captures[1].path), 'desktop-review-02.jpg');
     assert.equal(desktopTarget.screenshots[0].scrollY, 0);
     assert.ok(desktopTarget.screenshots.at(-1).scrollY > 0);
+    assert.ok(runtime.uiTransitions.some((entry) => entry.captureUiHidden === true));
+    assert.equal(runtime.uiState.captureUiHidden, false);
 
     const result = await client.writeAuditArtifactSet(desktopTarget, {
       dir,
       scope: 'all',
       mobileTarget,
       screenshotType: 'jpeg',
+      quietMode: true,
       captureMode: 'scroll-slices',
       mobileCaptureMode: 'scroll-slices',
       scrollSettlingMs: 0
@@ -568,6 +710,7 @@ async function verifyScrollAwareVisualEvidence() {
     assert.equal(artifactIndex.desktop.screenshots[1], 'desktop-02.jpg');
     assert.equal(artifactIndex.mobile.screenshotMode, 'scroll-slices');
     assert.ok(artifactIndex.mobile.screenshots.length > 1);
+    assert.equal(runtime.uiState.captureUiHidden, false);
 
     const reportMarkdown = await readFile(result.reportMarkdownPath, 'utf8');
     assert.match(reportMarkdown, /desktop-02\.jpg/);

@@ -37,9 +37,11 @@
       color: entry.color || '#e7e5e4'
     };
     if (isMobileOverlayViewport()) {
-      state.mobileSheetTab = 'inspect';
-      state.mobileSheetDetent = 'full';
-      state.mobileSheetOpen = true;
+      configureUi({
+        mobileSheetTab: 'inspect',
+        mobileSheetDetent: 'full',
+        mobileSheetOpen: true
+      }, { render: false });
     }
     scheduleSessionPersist();
     render();
@@ -71,7 +73,7 @@
     return true;
   }
 
-  function deselectAnnotations() {
+  function deselectAnnotations(opts = {}) {
     annotations.mode = 'idle';
     annotations.pendingArrowStart = null;
     annotations.pendingArrowPreview = null;
@@ -79,7 +81,7 @@
     annotations.editingNoteId = null;
     inspector.selection = null;
     scheduleSessionPersist();
-    render();
+    if (opts.render !== false) render();
   }
 
   function mobileSheetDefaultDetent(tab) {
@@ -89,9 +91,11 @@
   }
 
   function openMobileSheet(tab, opts = {}) {
-    state.mobileSheetTab = tab;
-    state.mobileSheetDetent = opts.detent || mobileSheetDefaultDetent(tab);
-    state.mobileSheetOpen = true;
+    configureUi({
+      mobileSheetTab: tab,
+      mobileSheetDetent: opts.detent || mobileSheetDefaultDetent(tab),
+      mobileSheetOpen: true
+    }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -99,7 +103,7 @@
 
   function closeMobileSheet(opts = {}) {
     if (!state.mobileSheetOpen) return false;
-    state.mobileSheetOpen = false;
+    configureUi({ mobileSheetOpen: false }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -135,6 +139,22 @@
 
   function renderHud() {
     renderToolbar();
+    if (state.captureUiHidden) {
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
+      const help = shadow.querySelector('.help');
+      if (help) help.remove();
+      const settings = shadow.querySelector('.settings');
+      if (settings) settings.remove();
+      const inspectorPanel = shadow.querySelector('.inspector');
+      if (inspectorPanel) inspectorPanel.remove();
+      mobileSheetBackdrop.classList.remove('open');
+      mobileSheetBackdrop.onclick = null;
+      mobileSheet.classList.remove('open');
+      mobileSheet.innerHTML = '';
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const help = shadow.querySelector('.help');
       if (help) help.remove();
@@ -483,10 +503,12 @@
         tone: '#38bdf8',
         variant: 'compact ghost',
         click: () => {
-          deselectAnnotations();
-          state.mobileSheetTab = 'annotate';
-          state.mobileSheetDetent = 'medium';
-          state.mobileSheetOpen = true;
+          deselectAnnotations({ render: false });
+          configureUi({
+            mobileSheetTab: 'annotate',
+            mobileSheetDetent: 'medium',
+            mobileSheetOpen: true
+          }, { render: false });
           render();
         }
       });
@@ -497,10 +519,12 @@
         tone: '#fb7185',
         variant: 'compact',
         click: () => {
-          if (removeSelectedAnnotation()) {
-            state.mobileSheetTab = 'annotate';
-            state.mobileSheetDetent = 'medium';
-            state.mobileSheetOpen = true;
+          if (removeSelectedAnnotation({ render: false })) {
+            configureUi({
+              mobileSheetTab: 'annotate',
+              mobileSheetDetent: 'medium',
+              mobileSheetOpen: true
+            }, { render: false });
             render();
           }
         }
@@ -906,7 +930,7 @@
     return annotations.arrows[annotations.arrows.length - 1];
   }
 
-  function removeSelectedAnnotation() {
+  function removeSelectedAnnotation(opts = {}) {
     if (!annotations.selected) return false;
     if (annotations.selected.type === 'note') {
       annotations.notes = annotations.notes.filter((note) => note.id !== annotations.selected.id);
@@ -916,8 +940,10 @@
     annotations.selected = null;
     annotations.editingNoteId = null;
     scheduleSessionPersist();
-    renderHud();
-    renderAnnotations();
+    if (opts.render !== false) {
+      renderHud();
+      renderAnnotations();
+    }
     return true;
   }
 

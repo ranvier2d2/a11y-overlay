@@ -37,13 +37,14 @@
     '/': () => { toggleHelpSurface(); }
   };
 
-  function toggleHelpSurface() {
-    if (isMobileOverlayViewport()) {
-      toggleMobileSheet('more', { detent: 'peek' });
-      return;
+    function toggleHelpSurface() {
+      if (state.uiMode === 'agent') return;
+      if (isMobileOverlayViewport()) {
+        toggleMobileSheet('more', { detent: 'peek' });
+        return;
+      }
+      configureUi({ helpOpen: !state.helpOpen }, { render: false });
     }
-    state.helpOpen = !state.helpOpen;
-  }
 
   function isEditableNode(node) {
     if (!node || typeof node !== 'object' || node.nodeType !== 1) return false;
@@ -183,7 +184,7 @@
       overlayVersion: VERSION,
       reportSchemaVersion: REPORT_SCHEMA_VERSION,
       methods: {
-        toggle: { args: ['sliceKey'] },
+        toggle: { args: ['sliceKey | uiStateKey'], uiStateKeys: ['helpOpen', 'settingsOpen', 'toolbarOpen', 'captureUiHidden', 'mobileSheetOpen'] },
         toggleHelp: { args: [] },
         collectDetections: { args: [], returns: 'OverlayDetectionRecord[]' },
         buildReport: { args: ['format', 'opts'], returns: 'OverlayReportData | string' },
@@ -228,6 +229,19 @@
   }
 
   // ---------- api ----------
+  function getUiStateSnapshot() {
+    return {
+      uiMode: state.uiMode,
+      toolbarOpen: state.toolbarOpen,
+      helpOpen: state.helpOpen,
+      settingsOpen: state.settingsOpen,
+      captureUiHidden: state.captureUiHidden,
+      mobileSheetOpen: state.mobileSheetOpen,
+      mobileSheetTab: state.mobileSheetTab,
+      mobileSheetDetent: state.mobileSheetDetent
+    };
+  }
+
   /**
    * Public automation and operator API exposed to pages, bookmarklets, and
    * browser-driving agents once the overlay installs successfully.
@@ -239,25 +253,17 @@
         if (toggleSliceState(key)) render();
         return;
       }
-      if (key in state) {
-        state[key] = !state[key];
-        render();
+      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+        configureUi({ [key]: !state[key] });
+        return;
       }
+      throw new Error(`Unsupported toggle key: ${key}`);
     },
     collectDetections,
-    getUiState() {
-      return {
-        uiMode: state.uiMode,
-        helpOpen: state.helpOpen,
-        settingsOpen: state.settingsOpen,
-        mobileSheetOpen: state.mobileSheetOpen,
-        mobileSheetTab: state.mobileSheetTab,
-        mobileSheetDetent: state.mobileSheetDetent
-      };
-    },
+    getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {
       configureUi(opts);
-      return this.getUiState();
+      return getUiStateSnapshot();
     },
     buildReport(format = 'json', opts = {}) {
       const normalizedFormat = format === 'html' ? 'html' : 'json';

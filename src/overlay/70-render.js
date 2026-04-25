@@ -90,21 +90,71 @@
 
   function renderToolbar() {
     toolbar.innerHTML = '';
+    agentLauncher.innerHTML = '';
+    agentLauncher.className = 'agent-launcher';
     mobileModebar.innerHTML = '';
     mobileModebar.className = 'mobile-modebar';
-    if (isMobileOverlayViewport()) {
-      const agentUi = state.uiMode === 'agent';
-      toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
+    if (state.captureUiHidden) {
+      toolbar.className = 'toolbar hidden';
       mobileDock.innerHTML = '';
-      mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
+      mobileDock.className = 'mobile-dock';
+      return;
+    }
+    if (!state.toolbarOpen) {
+      toolbar.className = 'toolbar hidden';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock';
+      {
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'agent-chip';
+        open.textContent = 'A11Y';
+        open.title = 'Open overlay controls';
+        open.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ toolbarOpen: true });
+        });
+        agentLauncher.appendChild(open);
+
+        const closeLauncher = document.createElement('button');
+        closeLauncher.type = 'button';
+        closeLauncher.className = 'agent-close';
+        closeLauncher.textContent = '×';
+        closeLauncher.title = 'Remove overlay (X)';
+        closeLauncher.addEventListener('click', (e) => {
+          e.stopPropagation();
+          teardown();
+        });
+        agentLauncher.appendChild(closeLauncher);
+        agentLauncher.className = 'agent-launcher open';
+      }
+      return;
+    }
+      if (isMobileOverlayViewport()) {
+        const agentUi = state.uiMode === 'agent';
+        toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
+        mobileDock.innerHTML = '';
+        mobileDock.className = 'mobile-dock open' + (agentUi ? ' agent' : '');
 
       const brand = document.createElement('div');
       brand.className = 'mobile-brand';
 
-      const title = document.createElement('span');
-      title.className = 'mobile-title';
-      title.textContent = 'a11y';
-      brand.appendChild(title);
+        const title = document.createElement('span');
+        title.className = 'mobile-title';
+        title.textContent = 'a11y';
+        brand.appendChild(title);
+        if (agentUi) {
+          const hide = document.createElement('button');
+          hide.type = 'button';
+          hide.className = 'mobile-hide';
+          hide.textContent = 'Hide';
+          hide.title = 'Hide overlay controls';
+          hide.addEventListener('click', (e) => {
+            e.stopPropagation();
+            configureUi({ toolbarOpen: false });
+          });
+          brand.appendChild(hide);
+        }
 
       const summary = document.createElement('div');
       summary.className = 'mobile-summary';
@@ -261,12 +311,16 @@
 
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
+    const agentDesktop = state.uiMode === 'agent';
 
     const renderDesktopToolbarVariant = (variant) => {
       const compact = variant !== 'full';
       const tight = variant === 'tight';
       toolbar.innerHTML = '';
-      toolbar.className = 'toolbar' + (compact ? ' compact' : '') + (tight ? ' tight' : '');
+      toolbar.className = 'toolbar'
+        + (compact ? ' compact' : '')
+        + (tight ? ' tight' : '')
+        + (agentDesktop ? ' agent-desktop' : '');
 
       const title = document.createElement('span');
       title.className = 'title';
@@ -316,19 +370,20 @@
         toolbar.appendChild(b);
       });
 
-      const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
-      const help = document.createElement('button');
-      help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
-      help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
-      help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
-      help.innerHTML = '<span>?</span>';
-      help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
-      help.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.helpOpen = !state.helpOpen;
-        render();
-      });
-      toolbar.appendChild(help);
+      if (!agentDesktop) {
+        const sep = document.createElement('span'); sep.className = 'sep'; toolbar.appendChild(sep);
+        const help = document.createElement('button');
+        help.className = 'tbtn' + (state.helpOpen ? ' on' : '');
+        help.style.background = state.helpOpen ? '#e7e5e4' : 'transparent';
+        help.style.borderColor = state.helpOpen ? '#e7e5e4' : '';
+        help.innerHTML = '<span>?</span>';
+        help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
+        help.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ helpOpen: !state.helpOpen });
+        });
+        toolbar.appendChild(help);
+      }
 
       const settings = document.createElement('button');
       settings.className = 'tbtn' + (state.settingsOpen ? ' on' : '');
@@ -338,8 +393,7 @@
       settings.title = compact ? 'Workflow settings, reports, and export actions' : 'Audit settings and workflow presets';
       settings.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.settingsOpen = !state.settingsOpen;
-        render();
+        configureUi({ settingsOpen: !state.settingsOpen });
       });
       toolbar.appendChild(settings);
 
@@ -477,6 +531,18 @@
           status.textContent = state.exportNotice;
           toolbar.appendChild(status);
         }
+      }
+
+      if (agentDesktop) {
+        const collapse = document.createElement('button');
+        collapse.className = 'collapse';
+        collapse.textContent = 'Hide';
+        collapse.title = 'Hide overlay controls';
+        collapse.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ toolbarOpen: false });
+        });
+        toolbar.appendChild(collapse);
       }
 
       const close = document.createElement('button');

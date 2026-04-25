@@ -13,3 +13,6 @@ dist/
 
 # Generated reports, captures, renders, and local proof artifacts
 output/
+
+# Codex hook runtime state
+.codex/state/

@@ -97,6 +97,15 @@
         scrollbar-width: none;
         box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       }
+      .toolbar.hidden {
+        display: none;
+      }
+      .toolbar.agent-desktop {
+        top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        right: 12px;
+        max-width: min(calc(100vw - 24px), 1280px);
+      }
       .toolbar::-webkit-scrollbar { display: none; }
       .toolbar.compact {
         padding: 5px 6px;
@@ -198,6 +207,18 @@
         cursor: pointer;
       }
       .toolbar .close:hover { background: #fb7185; color: #0c0a09; }
+      .toolbar .collapse {
+        background: transparent;
+        border: 1px solid #44403c;
+        color: #22d3ee;
+        padding: 3px 7px;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+      .toolbar .collapse:hover { background: #22d3ee; color: #0c0a09; }
       .toolbar .status {
         max-width: 200px;
         overflow: hidden;
@@ -233,13 +254,27 @@
       .toolbar.mobile.agent .mobile-brand {
         gap: 6px;
       }
-      .toolbar.mobile .mobile-title {
-        color: #a3e635;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .toolbar.mobile .mobile-summary {
+        .toolbar.mobile .mobile-title {
+          color: #a3e635;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .toolbar.mobile .mobile-hide {
+          appearance: none;
+          border: 1px solid #44403c;
+          border-radius: 999px;
+          background: rgba(12, 10, 9, 0.64);
+          color: #e7e5e4;
+          padding: 6px 9px;
+          font: inherit;
+          font-size: 11px;
+          line-height: 1;
+        }
+        .toolbar.mobile .mobile-hide:hover {
+          border-color: #a3e635;
+        }
+        .toolbar.mobile .mobile-summary {
         min-width: 0;
         display: flex;
         flex-direction: column;
@@ -389,6 +424,51 @@
       }
       .mobile-dock.agent .dockbtn .dock-meta {
         display: none;
+      }
+      .agent-launcher {
+        position: fixed;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        display: none;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+        z-index: 2147483647;
+      }
+      .agent-launcher.open {
+        display: flex;
+      }
+      .agent-launcher .agent-chip,
+      .agent-launcher .agent-close {
+        appearance: none;
+        border: 1px solid #44403c;
+        background: rgba(12, 10, 9, 0.92);
+        color: #e7e5e4;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 11px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        backdrop-filter: blur(10px);
+      }
+      .agent-launcher .agent-chip {
+        color: #a3e635;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .agent-launcher .agent-close {
+        color: #fb7185;
+        font-weight: 700;
+      }
+      .agent-launcher .agent-chip:hover {
+        border-color: #a3e635;
+      }
+      .agent-launcher .agent-close:hover {
+        border-color: #fb7185;
+        background: rgba(64, 12, 20, 0.92);
       }
       .mobile-modebar {
         position: fixed;
@@ -1010,6 +1090,7 @@
     <div class="annotation-html" id="annotation-html"></div>
     <div class="annotation-capture" id="annotation-capture" aria-hidden="true"></div>
     <div class="toolbar" id="toolbar"></div>
+    <div class="agent-launcher" id="agent-launcher"></div>
     <div class="mobile-dock" id="mobile-dock"></div>
     <div class="mobile-modebar" id="mobile-modebar"></div>
     <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop"></div>
@@ -1021,6 +1102,7 @@
   const annotationHtml = shadow.getElementById('annotation-html');
   const annotationCapture = shadow.getElementById('annotation-capture');
   const toolbar = shadow.getElementById('toolbar');
+  const agentLauncher = shadow.getElementById('agent-launcher');
   const mobileDock = shadow.getElementById('mobile-dock');
   const mobileModebar = shadow.getElementById('mobile-modebar');
   const mobileSheetBackdrop = shadow.getElementById('mobile-sheet-backdrop');

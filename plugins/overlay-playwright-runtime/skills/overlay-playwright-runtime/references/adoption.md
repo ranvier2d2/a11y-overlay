@@ -1,85 +1,64 @@
-# Adoption Notes
+# Vendoring Details
 
-## Purpose
+Read this file only when the selected case is
+[cases/adopt.md](cases/adopt.md).
 
-Use the overlay runtime as a semantic inspection layer for Playwright and browser-agent workflows.
-It helps answer:
+This file is intentionally implementation-focused. It covers the vendoring
+behavior after the case has already been classified as `adopt`.
 
-- what structure is visible right now
-- which preset should be active for this run
-- what report or evidence should be captured after a failure
-
-It does **not** replace Playwright as the action engine.
-
-For persistent local debugging, this reference is intentionally incomplete. Use `references/interactive.md` for the `js_repl` session pattern and browser reuse guidance.
-
-## Canonical Repo Files
+## Canonical repo files
 
 The reusable files are:
 
 - `a11y-overlay.js`
 - `playwright/overlay-client.mjs`
 
-In this skill, those files are bundled locally under `assets/runtime/` so `adopt`
-does not need to fetch from GitHub each time it runs.
+In this skill, those files are bundled locally under `assets/runtime/` so
+vendoring does not need to fetch from GitHub during each run.
 
-The operate sandbox is separate from this path. `adopt` should not create or edit a
-target repo `package.json` unless the user explicitly asks for dependency integration help.
+## Detect whether a repo already has the runtime
 
-## Playwright Usage Pattern
+From the target repo root:
 
-Basic pattern:
-
-```js
-import { OverlayClient } from './playwright/overlay-client.mjs';
-
-const client = new OverlayClient();
-
-await client.inject(page);
-await client.applyPreset(page, 'agent-capture', { announce: false });
-
-const report = await client.buildReport(page, 'json', { scope: 'all' });
+```bash
+rg --files | rg '(^a11y-overlay\\.js$|^playwright/overlay-client\\.mjs$)'
 ```
 
-Failure package pattern:
+If both files exist:
 
-```js
-const artifacts = await client.writeFailurePackage(page, {
-  dir: './artifacts/case-001',
-  scope: 'all',
-  includeHtmlReport: true,
-  includeAuditBundle: true,
-  fullPage: true
-});
+- prefer the in-repo versions
+- do not vendor fresh copies unless the user explicitly asks to overwrite
+
+## Vendor the runtime
+
+Dry run first when the target repo is unfamiliar:
+
+```bash
+python3 scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo \
+  --dry-run
 ```
 
-## Where This Fits
+Actual vendoring:
 
-Use this adoption path when:
+```bash
+python3 scripts/vendor_overlay_runtime.py \
+  --target-root /absolute/path/to/repo
+```
 
-- another repo needs the overlay runtime files vendored in
-- the user wants reproducible semantic reports in CI
-- the browser session does not need to stay alive between turns
+Use `--force` only when the user explicitly wants to overwrite divergent files.
 
-Preferred packaging model:
+## Compatibility-aware behavior
 
-1. install the skill or plugin once
-2. vendor from the installed bundled assets
-3. commit the vendored files into the target repo when that repo should own them
+Identical existing files are treated as compatible:
 
-## Compatibility-aware vendoring
+- identical `a11y-overlay.js` is reused
+- identical `playwright/overlay-client.mjs` is reused
+- only divergent files require `--force`
 
-The bundled vendor script now treats identical files as compatible:
+## Temporary audit-only mode
 
-- if the target repo already has the same `a11y-overlay.js`, it is reused
-- if the target repo already has the same `playwright/overlay-client.mjs`, it is reused
-- only divergent files are treated as conflicts that require `--force`
-
-This makes repeat adoption and cross-repo maintenance less noisy.
-
-## Temporary audit-only adopt mode
-
-For audit runs that should not leave vendored files behind, use:
+For an audit run that should not leave vendored files behind:
 
 ```bash
 python3 scripts/vendor_overlay_runtime.py \
@@ -87,13 +66,7 @@ python3 scripts/vendor_overlay_runtime.py \
   --temporary
 ```
 
-That writes a vendoring manifest under:
-
-```text
-.codex/overlay-playwright-runtime/vendor-manifest.json
-```
-
-After the audit run, clean up the copied files with:
+After the audit:
 
 ```bash
 python3 scripts/vendor_overlay_runtime.py \
@@ -107,29 +80,13 @@ Cleanup is conservative:
 - files changed after vendoring are preserved
 - the manifest is removed only when cleanup completes fully
 
-Do not use this as the only guidance for local iterative QA in Codex. In that case, prefer the persistent browser/session path from `references/interactive.md`.
+## Keep the boundary clear
 
-## Recommended Agent Flow
+Use vendoring when:
 
-1. Inject runtime.
-2. Read `getAutomationContract()`.
-3. Apply `agent-capture`.
-4. Build JSON report.
-5. Use Playwright for clicks, typing, and assertions.
-6. On failure, write a failure package.
+- another repo should own the runtime files
+- CI or repo-local Playwright code should call the overlay directly
+- the browser session does not need to stay alive between Codex turns
 
-If the task includes responsive checks, visual iteration, or repeated debugging, keep the Playwright session alive and rerun these steps in the same browser context instead of recreating everything from scratch.
-
-## Current Limits
-
-- No runtime readiness primitive yet.
-- No stable target query API yet.
-- No frame or open-shadow traversal contract yet.
-
-Treat the current runtime as:
-
-- inspection
-- diagnostics
-- evidence packaging
-
-Do not describe it as a complete autonomous action-selection layer until those gaps are closed.
+Do not use this file as the main guide for persistent local iteration in Codex.
+For that, read [interactive.md](interactive.md) and the chosen `operate` case.
