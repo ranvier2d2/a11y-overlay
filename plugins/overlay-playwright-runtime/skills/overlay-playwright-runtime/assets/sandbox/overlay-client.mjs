@@ -745,7 +745,8 @@ export class OverlayClient extends OverlayLiveClient {
         path: capture.path,
         index: capture.index,
         scrollY: capture.scrollY,
-        fullPage: capture.fullPage
+        fullPage: capture.fullPage,
+        annotationProjection: capture.fullPage ? 'skipped-full-page' : 'viewport'
       })),
       screenshotMode: desktopVisualEvidence.mode
     };
@@ -792,7 +793,8 @@ export class OverlayClient extends OverlayLiveClient {
           path: capture.path,
           index: capture.index,
           scrollY: capture.scrollY,
-          fullPage: capture.fullPage
+          fullPage: capture.fullPage,
+          annotationProjection: capture.fullPage ? 'skipped-full-page' : 'viewport'
         })),
         screenshotMode: mobileVisualEvidence.mode
       };
@@ -1907,14 +1909,11 @@ export class OverlayClient extends OverlayLiveClient {
     const arrows = Array.isArray(report?.annotations?.arrows) ? report.annotations.arrows : [];
     const viewportWidth = viewport.width;
     const viewportHeight = viewport.height;
-    const captureHeight = capture?.fullPage
-      ? Math.max(
-          viewportHeight,
-          Number.isFinite(viewport.scrollHeight) ? viewport.scrollHeight : 0,
-          Number.isFinite(report?.document?.scrollHeight) ? report.document.scrollHeight : 0
-        )
-      : viewportHeight;
-    const scrollY = capture?.fullPage ? 0 : (Number.isFinite(capture?.scrollY) ? capture.scrollY : 0);
+    if (capture?.fullPage || capture?.annotationProjection === 'skipped-full-page') {
+      return { notes: [], arrows: [] };
+    }
+    const captureHeight = viewportHeight;
+    const scrollY = Number.isFinite(capture?.scrollY) ? capture.scrollY : 0;
 
     const normalizePoint = (x, y) => ({
       x: Math.max(0, Math.min(100, (x / viewportWidth) * 100)),
@@ -1934,7 +1933,7 @@ export class OverlayClient extends OverlayLiveClient {
 
     const visibleNotes = notes
       .filter((note) => Number.isFinite(note?.x) && Number.isFinite(note?.y))
-      .filter((note) => capture?.fullPage || (note.y >= scrollY && note.y <= scrollY + viewportHeight))
+      .filter((note) => note.y >= scrollY && note.y <= scrollY + viewportHeight)
       .map((note) => {
         const position = normalizePoint(note.x, note.y);
         const footprint = estimateNoteFootprint(note.text || 'Note');
@@ -1948,7 +1947,7 @@ export class OverlayClient extends OverlayLiveClient {
 
     const visibleArrows = arrows
       .filter((arrow) => ['x1', 'y1', 'x2', 'y2'].every((key) => Number.isFinite(arrow?.[key])))
-      .filter((arrow) => capture?.fullPage || this._captureContainsArrow(arrow, scrollY, viewportHeight))
+      .filter((arrow) => this._captureContainsArrow(arrow, scrollY, viewportHeight))
       .map((arrow) => {
         const start = normalizePoint(arrow.x1, arrow.y1);
         const end = normalizePoint(arrow.x2, arrow.y2);

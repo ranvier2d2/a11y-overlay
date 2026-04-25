@@ -1238,6 +1238,7 @@
     toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
       ? bootstrapConfig.toolbarOpen
       : bootstrapUiMode !== 'agent',
+    // Human mode keeps the historical visible help panel; agent mode starts chrome-light.
     helpOpen: typeof bootstrapConfig.helpOpen === 'boolean'
       ? bootstrapConfig.helpOpen
       : bootstrapUiMode !== 'agent',
@@ -1741,6 +1742,7 @@
       if (!state.toolbarOpen) {
         state.helpOpen = false;
         state.settingsOpen = false;
+        state.mobileSheetOpen = false;
       }
     }
 
@@ -1760,9 +1762,10 @@
       }
     }
 
-    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen)) {
+    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
       state.helpOpen = false;
       state.settingsOpen = false;
+      state.mobileSheetOpen = false;
       changed = true;
     }
 
@@ -1776,8 +1779,18 @@
       }
     }
 
-    if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {
-      state.mobileSheetOpen = options.mobileSheetOpen;
+    if (typeof options.mobileSheetOpen === 'boolean') {
+      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden ? options.mobileSheetOpen : false;
+      if (state.mobileSheetOpen !== nextMobileSheetOpen) {
+        state.mobileSheetOpen = nextMobileSheetOpen;
+        changed = true;
+      }
+    }
+
+    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
       changed = true;
     }
 
@@ -5040,6 +5053,36 @@
       mobileDock.className = 'mobile-dock';
       return;
     }
+    if (!state.toolbarOpen) {
+      toolbar.className = 'toolbar hidden';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock';
+      if (!isMobileOverlayViewport() && state.uiMode === 'agent') {
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'agent-chip';
+        open.textContent = 'A11Y';
+        open.title = 'Open overlay controls';
+        open.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ toolbarOpen: true });
+        });
+        agentLauncher.appendChild(open);
+
+        const closeLauncher = document.createElement('button');
+        closeLauncher.type = 'button';
+        closeLauncher.className = 'agent-close';
+        closeLauncher.textContent = '×';
+        closeLauncher.title = 'Remove overlay (X)';
+        closeLauncher.addEventListener('click', (e) => {
+          e.stopPropagation();
+          teardown();
+        });
+        agentLauncher.appendChild(closeLauncher);
+        agentLauncher.className = 'agent-launcher open';
+      }
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const agentUi = state.uiMode === 'agent';
       toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
@@ -5210,35 +5253,6 @@
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
     const agentDesktop = state.uiMode === 'agent';
-
-    if (agentDesktop && !state.toolbarOpen) {
-      toolbar.className = 'toolbar hidden';
-
-      const open = document.createElement('button');
-      open.type = 'button';
-      open.className = 'agent-chip';
-      open.textContent = 'A11Y';
-      open.title = 'Open overlay controls';
-      open.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.toolbarOpen = true;
-        render();
-      });
-      agentLauncher.appendChild(open);
-
-      const closeLauncher = document.createElement('button');
-      closeLauncher.type = 'button';
-      closeLauncher.className = 'agent-close';
-      closeLauncher.textContent = '×';
-      closeLauncher.title = 'Remove overlay (X)';
-      closeLauncher.addEventListener('click', (e) => {
-        e.stopPropagation();
-        teardown();
-      });
-      agentLauncher.appendChild(closeLauncher);
-      agentLauncher.className = 'agent-launcher open';
-      return;
-    }
 
     const renderDesktopToolbarVariant = (variant) => {
       const compact = variant !== 'full';
@@ -5467,10 +5481,7 @@
         collapse.title = 'Hide overlay controls';
         collapse.addEventListener('click', (e) => {
           e.stopPropagation();
-          state.toolbarOpen = false;
-          state.helpOpen = false;
-          state.settingsOpen = false;
-          render();
+          configureUi({ toolbarOpen: false });
         });
         toolbar.appendChild(collapse);
       }
@@ -5625,6 +5636,7 @@
       toggleMobileSheet('more', { detent: 'peek' });
       return;
     }
+    if (state.uiMode === 'agent') return;
     configureUi({ helpOpen: !state.helpOpen }, { render: false });
   }
 
@@ -5766,7 +5778,7 @@
       overlayVersion: VERSION,
       reportSchemaVersion: REPORT_SCHEMA_VERSION,
       methods: {
-        toggle: { args: ['sliceKey'] },
+        toggle: { args: ['sliceKey | uiStateKey'], uiStateKeys: ['helpOpen', 'settingsOpen', 'toolbarOpen', 'captureUiHidden', 'mobileSheetOpen'] },
         toggleHelp: { args: [] },
         collectDetections: { args: [], returns: 'OverlayDetectionRecord[]' },
         buildReport: { args: ['format', 'opts'], returns: 'OverlayReportData | string' },
@@ -5811,6 +5823,19 @@
   }
 
   // ---------- api ----------
+  function getUiStateSnapshot() {
+    return {
+      uiMode: state.uiMode,
+      toolbarOpen: state.toolbarOpen,
+      helpOpen: state.helpOpen,
+      settingsOpen: state.settingsOpen,
+      captureUiHidden: state.captureUiHidden,
+      mobileSheetOpen: state.mobileSheetOpen,
+      mobileSheetTab: state.mobileSheetTab,
+      mobileSheetDetent: state.mobileSheetDetent
+    };
+  }
+
   /**
    * Public automation and operator API exposed to pages, bookmarklets, and
    * browser-driving agents once the overlay installs successfully.
@@ -5832,21 +5857,10 @@
       }
     },
     collectDetections,
-    getUiState() {
-      return {
-        uiMode: state.uiMode,
-        toolbarOpen: state.toolbarOpen,
-        helpOpen: state.helpOpen,
-        settingsOpen: state.settingsOpen,
-        captureUiHidden: state.captureUiHidden,
-        mobileSheetOpen: state.mobileSheetOpen,
-        mobileSheetTab: state.mobileSheetTab,
-        mobileSheetDetent: state.mobileSheetDetent
-      };
-    },
+    getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {
       configureUi(opts);
-      return this.getUiState();
+      return getUiStateSnapshot();
     },
     buildReport(format = 'json', opts = {}) {
       const normalizedFormat = format === 'html' ? 'html' : 'json';

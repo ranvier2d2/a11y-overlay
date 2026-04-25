@@ -1014,7 +1014,7 @@ export async function createOverlaySandboxSession(options = {}) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-  const previewOverlayHtml = ({ screenshotHref, plan, noteText }) => {
+  const previewOverlayHtml = ({ screenshotHref, plan, noteText, includeArrow = true }) => {
     const viewport = plan.viewport;
     const title = escapeHtml(plan.label || "Annotation preview");
     const confidence = escapeHtml(plan.confidence);
@@ -1062,7 +1062,7 @@ export async function createOverlaySandboxSession(options = {}) {
         <div class="stage">
           <img src="${screenshotSrc}" alt="${title}" />
           <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-            ${arrowStartPct ? `<path class="arrow" d="M ${arrowStartPct.x} ${arrowStartPct.y} L ${arrowEndPct.x} ${arrowEndPct.y}" />
+            ${includeArrow && arrowStartPct ? `<path class="arrow" d="M ${arrowStartPct.x} ${arrowStartPct.y} L ${arrowEndPct.x} ${arrowEndPct.y}" />
             <polygon class="arrow-head" points="${(() => {
               const dx = arrowEndPct.x - arrowStartPct.x;
               const dy = arrowEndPct.y - arrowStartPct.y;
@@ -1645,16 +1645,36 @@ export async function createOverlaySandboxSession(options = {}) {
       ? resolveActionTarget(page, navigator.trigger)
       : page.getByRole(navigator.triggerRole || "combobox", navigator.triggerName ? { name: navigator.triggerName, exact: navigator.exact !== false } : {});
     const beforeLabel = ((await trigger.textContent()) || "").replace(/\s+/g, " ").trim();
+    const triggerIndex = await trigger.evaluate((node) => Array.from(document.querySelectorAll("[role='combobox']")).indexOf(node)).catch(() => -1);
     await trigger.click({ timeout, force: navigator.force !== false });
     const option = page.getByRole(navigator.optionRole || "option", {
       name: label,
       exact: navigator.exact !== false
     });
     await option.click({ timeout, force: navigator.force !== false });
-    await page.waitForFunction((expectedLabel) => {
-      const triggerNode = document.querySelector("[role='combobox']");
-      return triggerNode && (triggerNode.textContent || "").replace(/\s+/g, " ").trim() === expectedLabel;
-    }, label, { timeout });
+    const triggerIdentity = {
+      name: typeof navigator.triggerName === "string" ? navigator.triggerName : "",
+      beforeLabel,
+      index: triggerIndex
+    };
+    await page.waitForFunction(({ expectedLabel, identity }) => {
+      const normalize = (value) => (value || "").replace(/\s+/g, " ").trim();
+      const nodes = Array.from(document.querySelectorAll("[role='combobox']"));
+      if (Number.isInteger(identity.index) && identity.index >= 0 && nodes[identity.index]) {
+        return normalize(nodes[identity.index].textContent) === expectedLabel;
+      }
+      const matchesIdentity = (node) => {
+        const ariaLabel = normalize(node.getAttribute("aria-label"));
+        const text = normalize(node.textContent);
+        if (identity.name && ariaLabel === identity.name) return true;
+        if (identity.name && text === identity.name) return true;
+        if (identity.beforeLabel && ariaLabel === identity.beforeLabel) return true;
+        if (identity.beforeLabel && text === identity.beforeLabel) return true;
+        return !identity.name && !identity.beforeLabel;
+      };
+      const triggerNode = nodes.find(matchesIdentity);
+      return triggerNode && normalize(triggerNode.textContent) === expectedLabel;
+    }, { expectedLabel: label, identity: triggerIdentity }, { timeout });
     const settleMs = Number.isFinite(navigator.routeSettlingMs) ? Math.max(0, navigator.routeSettlingMs) : 1200;
     if (settleMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, settleMs));

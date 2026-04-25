@@ -86,6 +86,7 @@ class FakeRuntime {
     if (!nextUiState.toolbarOpen) {
       nextUiState.helpOpen = false;
       nextUiState.settingsOpen = false;
+      nextUiState.mobileSheetOpen = false;
     }
     if (nextUiState.captureUiHidden) {
       nextUiState.mobileSheetOpen = false;
@@ -535,6 +536,8 @@ async function verifyWriteAuditArtifactSet() {
 
   const mobileRuntime = new FakeRuntime();
   mobileRuntime.applyPreset('mobile');
+  mobileRuntime.addNote({ x: 24, y: 48 }, 'Mobile note');
+  mobileRuntime.addArrow({ x: 10, y: 12 }, { x: 20, y: 24 });
 
   const desktopTarget = new FakeTarget(desktopRuntime);
   const mobileTarget = new FakeTarget(mobileRuntime);
@@ -604,11 +607,14 @@ async function verifyWriteAuditArtifactSet() {
     assert.match(reportHtml, /carousel-slide/);
     assert.match(reportHtml, /data-carousel-next/);
     assert.match(reportHtml, /desktop\.jpg/);
+    assert.equal(result.desktop.screenshotCaptures[0].annotationProjection, 'skipped-full-page');
+    assert.equal(result.mobile.screenshotCaptures[0].annotationProjection, 'viewport');
     assert.match(reportHtml, /<div[^>]*class="annotation-overlay"[^>]*>/);
     assert.match(reportHtml, /<div[^>]*class="annotation-note"[^>]*>/);
     assert.match(reportHtml, /<span[^>]*class="annotation-note-title"[^>]*>Note<\/span>/);
     assert.match(reportHtml, /<path[^>]*class="annotation-arrow"[^>]*>/);
-    assert.match(reportHtml, /Desktop note/);
+    assert.match(reportHtml, /Mobile note/);
+    assert.doesNotMatch(reportHtml, /Desktop note/);
 
     assert.equal(desktopTarget.screenshots.length, 1);
     assert.equal(desktopTarget.screenshots[0].path, result.desktop.screenshotPath);

@@ -42,6 +42,7 @@
       toggleMobileSheet('more', { detent: 'peek' });
       return;
     }
+    if (state.uiMode === 'agent') return;
     configureUi({ helpOpen: !state.helpOpen }, { render: false });
   }
 
@@ -183,7 +184,7 @@
       overlayVersion: VERSION,
       reportSchemaVersion: REPORT_SCHEMA_VERSION,
       methods: {
-        toggle: { args: ['sliceKey'] },
+        toggle: { args: ['sliceKey | uiStateKey'], uiStateKeys: ['helpOpen', 'settingsOpen', 'toolbarOpen', 'captureUiHidden', 'mobileSheetOpen'] },
         toggleHelp: { args: [] },
         collectDetections: { args: [], returns: 'OverlayDetectionRecord[]' },
         buildReport: { args: ['format', 'opts'], returns: 'OverlayReportData | string' },
@@ -228,6 +229,19 @@
   }
 
   // ---------- api ----------
+  function getUiStateSnapshot() {
+    return {
+      uiMode: state.uiMode,
+      toolbarOpen: state.toolbarOpen,
+      helpOpen: state.helpOpen,
+      settingsOpen: state.settingsOpen,
+      captureUiHidden: state.captureUiHidden,
+      mobileSheetOpen: state.mobileSheetOpen,
+      mobileSheetTab: state.mobileSheetTab,
+      mobileSheetDetent: state.mobileSheetDetent
+    };
+  }
+
   /**
    * Public automation and operator API exposed to pages, bookmarklets, and
    * browser-driving agents once the overlay installs successfully.
@@ -249,21 +263,10 @@
       }
     },
     collectDetections,
-    getUiState() {
-      return {
-        uiMode: state.uiMode,
-        toolbarOpen: state.toolbarOpen,
-        helpOpen: state.helpOpen,
-        settingsOpen: state.settingsOpen,
-        captureUiHidden: state.captureUiHidden,
-        mobileSheetOpen: state.mobileSheetOpen,
-        mobileSheetTab: state.mobileSheetTab,
-        mobileSheetDetent: state.mobileSheetDetent
-      };
-    },
+    getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {
       configureUi(opts);
-      return this.getUiState();
+      return getUiStateSnapshot();
     },
     buildReport(format = 'json', opts = {}) {
       const normalizedFormat = format === 'html' ? 'html' : 'json';

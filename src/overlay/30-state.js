@@ -22,6 +22,7 @@
     toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
       ? bootstrapConfig.toolbarOpen
       : bootstrapUiMode !== 'agent',
+    // Human mode keeps the historical visible help panel; agent mode starts chrome-light.
     helpOpen: typeof bootstrapConfig.helpOpen === 'boolean'
       ? bootstrapConfig.helpOpen
       : bootstrapUiMode !== 'agent',

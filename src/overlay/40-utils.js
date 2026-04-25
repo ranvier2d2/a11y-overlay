@@ -289,6 +289,7 @@
       if (!state.toolbarOpen) {
         state.helpOpen = false;
         state.settingsOpen = false;
+        state.mobileSheetOpen = false;
       }
     }
 
@@ -308,9 +309,10 @@
       }
     }
 
-    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen)) {
+    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
       state.helpOpen = false;
       state.settingsOpen = false;
+      state.mobileSheetOpen = false;
       changed = true;
     }
 
@@ -324,8 +326,18 @@
       }
     }
 
-    if (typeof options.mobileSheetOpen === 'boolean' && state.mobileSheetOpen !== options.mobileSheetOpen) {
-      state.mobileSheetOpen = options.mobileSheetOpen;
+    if (typeof options.mobileSheetOpen === 'boolean') {
+      const nextMobileSheetOpen = state.toolbarOpen && !state.captureUiHidden ? options.mobileSheetOpen : false;
+      if (state.mobileSheetOpen !== nextMobileSheetOpen) {
+        state.mobileSheetOpen = nextMobileSheetOpen;
+        changed = true;
+      }
+    }
+
+    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen || state.mobileSheetOpen)) {
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
       changed = true;
     }
 

@@ -100,6 +100,36 @@
       mobileDock.className = 'mobile-dock';
       return;
     }
+    if (!state.toolbarOpen) {
+      toolbar.className = 'toolbar hidden';
+      mobileDock.innerHTML = '';
+      mobileDock.className = 'mobile-dock';
+      if (!isMobileOverlayViewport() && state.uiMode === 'agent') {
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'agent-chip';
+        open.textContent = 'A11Y';
+        open.title = 'Open overlay controls';
+        open.addEventListener('click', (e) => {
+          e.stopPropagation();
+          configureUi({ toolbarOpen: true });
+        });
+        agentLauncher.appendChild(open);
+
+        const closeLauncher = document.createElement('button');
+        closeLauncher.type = 'button';
+        closeLauncher.className = 'agent-close';
+        closeLauncher.textContent = '×';
+        closeLauncher.title = 'Remove overlay (X)';
+        closeLauncher.addEventListener('click', (e) => {
+          e.stopPropagation();
+          teardown();
+        });
+        agentLauncher.appendChild(closeLauncher);
+        agentLauncher.className = 'agent-launcher open';
+      }
+      return;
+    }
     if (isMobileOverlayViewport()) {
       const agentUi = state.uiMode === 'agent';
       toolbar.className = 'toolbar mobile' + (agentUi ? ' agent' : '');
@@ -270,35 +300,6 @@
     mobileDock.innerHTML = '';
     mobileDock.className = 'mobile-dock';
     const agentDesktop = state.uiMode === 'agent';
-
-    if (agentDesktop && !state.toolbarOpen) {
-      toolbar.className = 'toolbar hidden';
-
-      const open = document.createElement('button');
-      open.type = 'button';
-      open.className = 'agent-chip';
-      open.textContent = 'A11Y';
-      open.title = 'Open overlay controls';
-      open.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state.toolbarOpen = true;
-        render();
-      });
-      agentLauncher.appendChild(open);
-
-      const closeLauncher = document.createElement('button');
-      closeLauncher.type = 'button';
-      closeLauncher.className = 'agent-close';
-      closeLauncher.textContent = '×';
-      closeLauncher.title = 'Remove overlay (X)';
-      closeLauncher.addEventListener('click', (e) => {
-        e.stopPropagation();
-        teardown();
-      });
-      agentLauncher.appendChild(closeLauncher);
-      agentLauncher.className = 'agent-launcher open';
-      return;
-    }
 
     const renderDesktopToolbarVariant = (variant) => {
       const compact = variant !== 'full';
@@ -527,10 +528,7 @@
         collapse.title = 'Hide overlay controls';
         collapse.addEventListener('click', (e) => {
           e.stopPropagation();
-          state.toolbarOpen = false;
-          state.helpOpen = false;
-          state.settingsOpen = false;
-          render();
+          configureUi({ toolbarOpen: false });
         });
         toolbar.appendChild(collapse);
       }
