@@ -627,11 +627,22 @@ async function main() {
     assert.equal((snapshotAfterPreview.annotations.notes || []).length, (snapshotBeforePreview.annotations.notes || []).length);
     assert.equal((snapshotAfterPreview.annotations.arrows || []).length, (snapshotBeforePreview.annotations.arrows || []).length);
 
-    const review = await session.reviewPlannedAnnotation(placementPage, {
-      plan: reviewedPlacement,
-      filePath: path.join(outputDir, 'placement-review.jpg'),
-      type: 'jpeg'
-    });
+    const previousReviewQueuePath = process.env.CODEX_OVERLAY_REVIEW_QUEUE_PATH;
+    process.env.CODEX_OVERLAY_REVIEW_QUEUE_PATH = path.join(outputDir, 'overlay-review-queue.jsonl');
+    let review;
+    try {
+      review = await session.reviewPlannedAnnotation(placementPage, {
+        plan: reviewedPlacement,
+        filePath: path.join(outputDir, 'placement-review.jpg'),
+        type: 'jpeg'
+      });
+    } finally {
+      if (previousReviewQueuePath === undefined) {
+        delete process.env.CODEX_OVERLAY_REVIEW_QUEUE_PATH;
+      } else {
+        process.env.CODEX_OVERLAY_REVIEW_QUEUE_PATH = previousReviewQueuePath;
+      }
+    }
     assert.equal(review.requiresVisualReview, true);
     assert.equal(review.shouldAutoAccept, false);
     assert.equal(review.suggestedNextAction, 'inspect-preview');

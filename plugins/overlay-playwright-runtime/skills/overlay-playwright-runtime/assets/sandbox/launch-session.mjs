@@ -635,7 +635,7 @@ export async function createOverlaySandboxSession(options = {}) {
     if (review.reviewed !== true) return "medium";
     if (review.acceptable === false) return "low";
     if (viewport?.isCompact) {
-      return review.retried ? "medium" : "medium";
+      return "medium";
     }
     if (
       review.acceptable &&
@@ -1130,7 +1130,7 @@ export async function createOverlaySandboxSession(options = {}) {
       path: basePath,
       type,
       quietMode,
-      captureMode: "viewport"
+      fullPage: false
     });
     if (!screenshotPath) {
       throw new Error("previewPlannedAnnotation could not resolve a screenshot path.");
@@ -1551,7 +1551,8 @@ export async function createOverlaySandboxSession(options = {}) {
     }
 
     const clicked = await page.evaluate((targetHref) => {
-      const link = document.querySelector(`a[href="${targetHref}"]`);
+      const link = Array.from(document.querySelectorAll("a[href]"))
+        .find((element) => element.getAttribute("href") === targetHref);
       if (!(link instanceof HTMLElement)) return false;
       link.click();
       return true;
@@ -2075,7 +2076,12 @@ export async function createOverlaySandboxSession(options = {}) {
     });
 
     if (extraArtifacts && typeof extraArtifacts === "object") {
-      const artifactIndex = JSON.parse(await readFile(artifacts.artifactIndexPath, "utf8"));
+      let artifactIndex;
+      try {
+        artifactIndex = JSON.parse(await readFile(artifacts.artifactIndexPath, "utf8"));
+      } catch {
+        artifactIndex = {};
+      }
       for (const [key, descriptor] of Object.entries(extraArtifacts)) {
         if (!descriptor?.fileName || descriptor.payload == null) continue;
         const filePath = join(dir, descriptor.fileName);

@@ -277,6 +277,8 @@
         changed = true;
         if (!('toolbarOpen' in options) && nextUiMode === 'agent' && state.toolbarOpen) {
           state.toolbarOpen = false;
+          state.helpOpen = false;
+          state.settingsOpen = false;
         }
       }
     }
@@ -290,13 +292,25 @@
       }
     }
 
-    if (typeof options.helpOpen === 'boolean' && state.helpOpen !== options.helpOpen) {
-      state.helpOpen = options.helpOpen;
-      changed = true;
+    if (typeof options.helpOpen === 'boolean') {
+      const nextHelpOpen = state.toolbarOpen ? options.helpOpen : false;
+      if (state.helpOpen !== nextHelpOpen) {
+        state.helpOpen = nextHelpOpen;
+        changed = true;
+      }
     }
 
-    if (typeof options.settingsOpen === 'boolean' && state.settingsOpen !== options.settingsOpen) {
-      state.settingsOpen = options.settingsOpen;
+    if (typeof options.settingsOpen === 'boolean') {
+      const nextSettingsOpen = state.toolbarOpen ? options.settingsOpen : false;
+      if (state.settingsOpen !== nextSettingsOpen) {
+        state.settingsOpen = nextSettingsOpen;
+        changed = true;
+      }
+    }
+
+    if (!state.toolbarOpen && (state.helpOpen || state.settingsOpen)) {
+      state.helpOpen = false;
+      state.settingsOpen = false;
       changed = true;
     }
 

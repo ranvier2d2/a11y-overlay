@@ -29,9 +29,9 @@
     mobileSheetTab: bootstrapConfig.mobileSheetTab === 'inspect' || bootstrapConfig.mobileSheetTab === 'annotate' || bootstrapConfig.mobileSheetTab === 'more'
       ? bootstrapConfig.mobileSheetTab
       : 'layers',
-    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'full'
+    mobileSheetDetent: bootstrapConfig.mobileSheetDetent === 'peek' || bootstrapConfig.mobileSheetDetent === 'medium' || bootstrapConfig.mobileSheetDetent === 'full'
       ? bootstrapConfig.mobileSheetDetent
-      : 'medium',
+      : 'peek',
     exportBusy: false,
     exportNotice: '',
     exportNoticeTone: 'muted',

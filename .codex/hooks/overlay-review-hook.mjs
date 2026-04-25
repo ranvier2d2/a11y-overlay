@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 const MAX_ENTRIES_TO_REPORT = 3;
@@ -89,6 +89,17 @@ function reviewArtifactsExist(entry) {
   return !inspectionTargetPath || existsSync(inspectionTargetPath);
 }
 
+function reviewEntryKey(entry) {
+  const generation = entry.generatedAt || entry.enqueuedAt || (() => {
+    try {
+      return String(statSync(entry.descriptorPath).mtimeMs);
+    } catch {
+      return "unknown";
+    }
+  })();
+  return `${entry.descriptorPath}::${generation}`;
+}
+
 function collectPendingReviews({ cwd, repoRoot, payload, state }) {
   const queuePath = process.env.CODEX_OVERLAY_REVIEW_QUEUE_PATH || join(repoRoot, ".codex", "state", "overlay-review-queue.jsonl");
   const queueEntries = readJsonLines(queuePath)
@@ -106,8 +117,9 @@ function collectPendingReviews({ cwd, repoRoot, payload, state }) {
   const byDescriptor = new Map();
   for (const entry of [...queueEntries, ...descriptorEntries]) {
     if (entry.requiresVisualReview !== true) continue;
-    if (state.notifiedDescriptorPaths?.includes(entry.descriptorPath)) continue;
-    byDescriptor.set(entry.descriptorPath, entry);
+    const key = reviewEntryKey(entry);
+    if (state.notifiedDescriptorKeys?.includes(key)) continue;
+    byDescriptor.set(key, entry);
   }
   return [...byDescriptor.values()];
 }
@@ -157,16 +169,16 @@ if (!pending.length) {
 }
 
 const message = formatReviewMessage(pending);
-const notifiedDescriptorPaths = [
+const notifiedDescriptorKeys = [
   ...new Set([
-    ...(state.notifiedDescriptorPaths || []),
-    ...pending.map((entry) => entry.descriptorPath)
+    ...(state.notifiedDescriptorKeys || []),
+    ...pending.map((entry) => reviewEntryKey(entry))
   ])
 ];
 
 writeState(statePath, {
   ...state,
-  notifiedDescriptorPaths,
+  notifiedDescriptorKeys,
   lastNotificationAt: new Date().toISOString()
 });
 

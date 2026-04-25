@@ -90,25 +90,23 @@ List the skill first:
 npx skills add https://github.com/ranvier2d2/a11y-overlay -l --full-depth
 ```
 
-Install it into Codex globally:
+Install it into Codex:
 
 ```bash
 npx skills add https://github.com/ranvier2d2/a11y-overlay \
   --full-depth \
   --skill overlay-playwright-runtime \
-  --agent codex \
-  --global \
-  --yes
+  --agent codex
 ```
 
 Direct skill-path install also works if you prefer a narrower source URL:
 
 ```bash
 npx skills add https://github.com/ranvier2d2/a11y-overlay/tree/main/plugins/overlay-playwright-runtime/skills/overlay-playwright-runtime \
-  --agent codex \
-  --global \
-  --yes
+  --agent codex
 ```
+
+Add `--global --yes` only when you explicitly want a non-interactive global install.
 
 Use `skills.sh` when you want the skill installed directly into a Codex environment without first wiring a plugin marketplace.
 

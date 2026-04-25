@@ -1497,6 +1497,7 @@ export class OverlayClient extends OverlayLiveClient {
 
     for (const { label, report } of reports) {
       const actions = Array.isArray(report?.actions) ? report.actions : [];
+      const surfaceRoute = this._formatSurfaceRoute(label, report);
       for (const action of actions) {
         const key = [action.bucket, action.severity, action.sliceKey, action.title].join('::');
         const current = clusters.get(key) || {
@@ -1504,7 +1505,7 @@ export class OverlayClient extends OverlayLiveClient {
           severity: action.severity || 'review',
           findingType: action.sliceKey || 'action-cluster',
           bucket: action.bucket || 'review',
-          route: this._formatSurfaceRoute(label, report),
+          route: surfaceRoute,
           target: action.examples?.length ? action.examples.slice(0, 3).join('; ') : 'Examples not recorded.',
           why: action.whyItMatters || 'Derived from the report action planner.',
           evidence: '',
@@ -1516,7 +1517,7 @@ export class OverlayClient extends OverlayLiveClient {
         };
         current.count += action.count || 0;
         current.examples.push(...(action.examples || []));
-        current.surfaces.push(label);
+        current.surfaces.push(surfaceRoute);
         clusters.set(key, current);
       }
     }
@@ -1899,15 +1900,18 @@ export class OverlayClient extends OverlayLiveClient {
     const arrows = Array.isArray(report?.annotations?.arrows) ? report.annotations.arrows : [];
     const viewportWidth = viewport.width;
     const viewportHeight = viewport.height;
-    const scrollY = Number.isFinite(capture?.scrollY) ? capture.scrollY : 0;
-
-    if (capture?.fullPage) {
-      return { notes: [], arrows: [] };
-    }
+    const captureHeight = capture?.fullPage
+      ? Math.max(
+          viewportHeight,
+          Number.isFinite(viewport.scrollHeight) ? viewport.scrollHeight : 0,
+          Number.isFinite(report?.document?.scrollHeight) ? report.document.scrollHeight : 0
+        )
+      : viewportHeight;
+    const scrollY = capture?.fullPage ? 0 : (Number.isFinite(capture?.scrollY) ? capture.scrollY : 0);
 
     const normalizePoint = (x, y) => ({
       x: Math.max(0, Math.min(100, (x / viewportWidth) * 100)),
-      y: Math.max(0, Math.min(100, ((y - scrollY) / viewportHeight) * 100))
+      y: Math.max(0, Math.min(100, ((y - scrollY) / captureHeight) * 100))
     });
 
     const estimateNoteFootprint = (text = '') => {
@@ -1917,13 +1921,13 @@ export class OverlayClient extends OverlayLiveClient {
       const heightPx = Math.min(Math.max(56 + (lines * 22), 88), viewportHeight * 0.34);
       return {
         width: (widthPx / viewportWidth) * 100,
-        height: (heightPx / viewportHeight) * 100
+        height: (heightPx / captureHeight) * 100
       };
     };
 
     const visibleNotes = notes
       .filter((note) => Number.isFinite(note?.x) && Number.isFinite(note?.y))
-      .filter((note) => note.y >= scrollY && note.y <= scrollY + viewportHeight)
+      .filter((note) => capture?.fullPage || (note.y >= scrollY && note.y <= scrollY + viewportHeight))
       .map((note) => {
         const position = normalizePoint(note.x, note.y);
         const footprint = estimateNoteFootprint(note.text || 'Note');
@@ -1937,7 +1941,7 @@ export class OverlayClient extends OverlayLiveClient {
 
     const visibleArrows = arrows
       .filter((arrow) => ['x1', 'y1', 'x2', 'y2'].every((key) => Number.isFinite(arrow?.[key])))
-      .filter((arrow) => this._captureContainsArrow(arrow, scrollY, viewportHeight))
+      .filter((arrow) => capture?.fullPage || this._captureContainsArrow(arrow, scrollY, viewportHeight))
       .map((arrow) => {
         const start = normalizePoint(arrow.x1, arrow.y1);
         const end = normalizePoint(arrow.x2, arrow.y2);

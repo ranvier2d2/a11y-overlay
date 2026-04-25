@@ -599,10 +599,11 @@ async function verifyWriteAuditArtifactSet() {
     assert.match(reportHtml, /carousel-slide/);
     assert.match(reportHtml, /data-carousel-next/);
     assert.match(reportHtml, /desktop\.jpg/);
-    assert.match(reportHtml, /annotation-overlay/);
-    assert.match(reportHtml, /annotation-note/);
-    assert.match(reportHtml, /annotation-note-title/);
-    assert.match(reportHtml, /annotation-arrow/);
+    assert.match(reportHtml, /<div[^>]*class="annotation-overlay"[^>]*>/);
+    assert.match(reportHtml, /<div[^>]*class="annotation-note"[^>]*>/);
+    assert.match(reportHtml, /<span[^>]*class="annotation-note-title"[^>]*>Note<\/span>/);
+    assert.match(reportHtml, /<path[^>]*class="annotation-arrow"[^>]*>/);
+    assert.match(reportHtml, /Desktop note/);
 
     assert.equal(desktopTarget.screenshots.length, 1);
     assert.equal(desktopTarget.screenshots[0].path, result.desktop.screenshotPath);

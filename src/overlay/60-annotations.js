@@ -136,6 +136,9 @@
   function renderHud() {
     renderToolbar();
     if (state.captureUiHidden) {
+      state.helpOpen = false;
+      state.settingsOpen = false;
+      state.mobileSheetOpen = false;
       const help = shadow.querySelector('.help');
       if (help) help.remove();
       const settings = shadow.querySelector('.settings');
