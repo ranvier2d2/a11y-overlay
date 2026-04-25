@@ -1,6 +1,6 @@
 {
   "name": "overlay-playwright-runtime",
-  "version": "0.1.17",
+  "version": "0.2.0-alpha.1",
   "description": "Installable Codex skill for adopting and operating the a11y-overlay runtime in Playwright workflows.",
   "author": {
     "name": "Joaquin Venegas Arevalo",
