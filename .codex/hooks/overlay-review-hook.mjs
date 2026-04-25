@@ -161,7 +161,10 @@ const payload = readStdinJson();
 const cwd = payload.cwd || process.cwd();
 const repoRoot = findRepoRoot(cwd);
 const statePath = join(repoRoot, ".codex", "state", "overlay-review-hook-state.json");
-const state = readJsonFile(statePath, { notifiedDescriptorPaths: [] });
+const state = readJsonFile(statePath, { notifiedDescriptorKeys: [] });
+state.notifiedDescriptorKeys = Array.isArray(state.notifiedDescriptorKeys)
+  ? state.notifiedDescriptorKeys
+  : (Array.isArray(state.notifiedDescriptorPaths) ? state.notifiedDescriptorPaths : []);
 const pending = collectPendingReviews({ cwd, repoRoot, payload, state });
 
 if (!pending.length) {

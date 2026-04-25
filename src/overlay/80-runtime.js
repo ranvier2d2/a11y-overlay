@@ -42,7 +42,7 @@
       toggleMobileSheet('more', { detent: 'peek' });
       return;
     }
-    state.helpOpen = !state.helpOpen;
+    configureUi({ helpOpen: !state.helpOpen }, { render: false });
   }
 
   function isEditableNode(node) {
@@ -237,6 +237,10 @@
     toggle(key) {
       if (getSliceMeta(key)) {
         if (toggleSliceState(key)) render();
+        return;
+      }
+      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+        configureUi({ [key]: !state[key] });
         return;
       }
       if (key in state) {

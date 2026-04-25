@@ -1,5 +1,5 @@
-const { mkdir, readFile, writeFile } = await import('node:fs/promises');
-const path = await import('node:path');
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import {
   OverlayLiveClient,
@@ -1148,7 +1148,14 @@ export class OverlayClient extends OverlayLiveClient {
       return await capture();
     } finally {
       if (previousUiState) {
-        await this.configureUi(target, previousUiState).catch(() => {});
+        await this.configureUi(target, previousUiState).catch((error) => {
+          if (process.env.DEBUG_OVERLAY_CLIENT) {
+            console.warn('[OverlayClient] Failed to restore UI state after quiet capture:', {
+              target: this._targetLabel(target),
+              error: error?.message || String(error)
+            });
+          }
+        });
       }
     }
   }
@@ -1536,7 +1543,7 @@ export class OverlayClient extends OverlayLiveClient {
     if (total <= 0) return undefined;
     return {
       title: 'Repeated pattern findings require clustered review',
-      severity: mobileReport ? 'review' : 'review',
+      severity: 'review',
       findingType: 'heuristic',
       bucket: 'review',
       route: this._defaultAuditedSurfaces(desktopReport, mobileReport),

@@ -43,7 +43,7 @@ class FakeRuntime {
 
   getAutomationContract() {
     return {
-      contractVersion: 1,
+      contractVersion: 2,
       reportSchemaVersion: 1,
       methods: {
         getAutomationContract: {},
@@ -79,11 +79,19 @@ class FakeRuntime {
   }
 
   configureUi(options = {}) {
-    this.uiTransitions.push(options);
-    this.uiState = {
+    const nextUiState = {
       ...this.uiState,
       ...options
     };
+    if (!nextUiState.toolbarOpen) {
+      nextUiState.helpOpen = false;
+      nextUiState.settingsOpen = false;
+    }
+    if (nextUiState.captureUiHidden) {
+      nextUiState.mobileSheetOpen = false;
+    }
+    this.uiTransitions.push(nextUiState);
+    this.uiState = nextUiState;
     return this.getUiState();
   }
 
@@ -156,20 +164,18 @@ class FakeRuntime {
       overlayVersion: '0.1.17',
       schemaVersion: 1,
       summary: {
-        total: 5,
+        total: 2,
         severity: {
-          unspecified: 3,
-          warning: 2
+          unspecified: 1,
+          warning: 1
         },
         findingType: {
-          advisory: 2,
-          heuristic: 2,
-          standard: 1
+          advisory: 1,
+          heuristic: 1
         },
         slices: {
-          target: 2,
-          repeat: 2,
-          interact: 1
+          target: 1,
+          repeat: 1
         }
       },
       actions: [
@@ -180,12 +186,11 @@ class FakeRuntime {
           severity: 'warning',
           sliceKey: 'target',
           title: 'Interactive target misses advisory touch size',
-          count: 2,
+          count: 1,
           whyItMatters: 'Controls are shorter than the configured touch guidance.',
           suggestedFix: 'Raise the control height to at least 44px.',
           examples: [
-            '131×36 advisory · Get in Touch',
-            '94×36 advisory · Overview'
+            '131×36 advisory · Get in Touch'
           ]
         }
       ],
@@ -351,7 +356,7 @@ async function verifyInjectAndDelegation(ClientClass = OverlayClient) {
   const client = new ClientClass();
 
   const contract = await client.inject(target);
-  assert.equal(contract.contractVersion, 1);
+  assert.equal(contract.contractVersion, 2);
   assert.equal(target.scriptTags.length, 1);
   assert.equal(target.scriptTags[0].path, DEFAULT_SCRIPT_PATH);
 
@@ -414,7 +419,7 @@ async function verifyForceInjectIsIdempotent() {
   const client = new OverlayClient();
 
   const contract = await client.inject(target, { force: true });
-  assert.equal(contract.contractVersion, 1);
+  assert.equal(contract.contractVersion, 2);
   assert.equal(target.scriptTags.length, 1);
   assert.equal(target.scriptTags[0].path, DEFAULT_SCRIPT_PATH);
 }
@@ -454,7 +459,7 @@ async function verifyFailurePackageWrite() {
     assert.equal(report.audit.scope, 'all');
 
     const contract = JSON.parse(await readFile(result.contractPath, 'utf8'));
-    assert.equal(contract.contractVersion, 1);
+    assert.equal(contract.contractVersion, 2);
 
     const htmlReport = await readFile(result.htmlReportPath, 'utf8');
     assert.match(htmlReport, /scope:all/);

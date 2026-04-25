@@ -1007,8 +1007,22 @@ export async function createOverlaySandboxSession(options = {}) {
     y: Math.max(0, Math.min(100, (y / viewport.height) * 100))
   });
 
+  const escapeHtml = (value) => String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
   const previewOverlayHtml = ({ screenshotHref, plan, noteText }) => {
     const viewport = plan.viewport;
+    const title = escapeHtml(plan.label || "Annotation preview");
+    const confidence = escapeHtml(plan.confidence);
+    const approvalMode = escapeHtml(plan.approval.effectiveMode);
+    const fallbackRenderer = escapeHtml(plan.fallback.recommendedRenderer);
+    const noteBody = escapeHtml(noteText || plan.text || "");
+    const rationale = escapeHtml(plan.approval.rationale);
+    const screenshotSrc = escapeHtml(screenshotHref);
     const noteWidthPct = Math.max(18, Math.min(42, (plan.noteSize.width / viewport.width) * 100));
     const noteHeightPct = Math.max(12, Math.min(46, (plan.noteSize.height / viewport.height) * 100));
     const notePoint = normalizePreviewPoint({
@@ -1025,7 +1039,7 @@ export async function createOverlaySandboxSession(options = {}) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${String(plan.label || "Annotation preview")}</title>
+    <title>${title}</title>
     <style>
       body { margin: 0; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f1117; color: #edf1f7; }
       main { width: min(1280px, calc(100vw - 32px)); margin: 24px auto; }
@@ -1044,9 +1058,9 @@ export async function createOverlaySandboxSession(options = {}) {
   <body>
     <main>
       <section class="card">
-        <div class="meta">Confidence: ${plan.confidence} · Approval: ${plan.approval.effectiveMode} · Requires preview: ${plan.approval.requiresPreview ? "yes" : "no"} · Suggested fallback: ${plan.fallback.recommendedRenderer}</div>
+        <div class="meta">Confidence: ${confidence} · Approval: ${approvalMode} · Requires preview: ${plan.approval.requiresPreview ? "yes" : "no"} · Suggested fallback: ${fallbackRenderer}</div>
         <div class="stage">
-          <img src="${screenshotHref}" alt="${String(plan.label || "Annotation preview")}" />
+          <img src="${screenshotSrc}" alt="${title}" />
           <svg viewBox="0 0 100 100" preserveAspectRatio="none">
             ${arrowStartPct ? `<path class="arrow" d="M ${arrowStartPct.x} ${arrowStartPct.y} L ${arrowEndPct.x} ${arrowEndPct.y}" />
             <polygon class="arrow-head" points="${(() => {
@@ -1069,10 +1083,10 @@ export async function createOverlaySandboxSession(options = {}) {
           </svg>
           <div class="note" style="transform: translate(0, 0); min-height:${noteHeightPct}%;">
             <strong>Preview</strong>
-            ${String(noteText || plan.text || "")}
+            ${noteBody}
           </div>
         </div>
-        <div class="summary">${plan.approval.rationale}</div>
+        <div class="summary">${rationale}</div>
       </section>
     </main>
   </body>
@@ -2290,7 +2304,7 @@ export async function createOverlaySandboxSession(options = {}) {
       throw new Error("resumeAuthenticatedAudit requires runtimeScriptPath.");
     }
     const desktopPage = state.desktopPage;
-    if (!desktopPage || desktopPage.isClosed?.()) {
+    if (!desktopPage || (typeof desktopPage.isClosed === "function" && desktopPage.isClosed() === true)) {
       throw new Error("resumeAuthenticatedAudit requires an existing live desktop page. Call beginManualAuthSession or ensureDesktopPage first.");
     }
 

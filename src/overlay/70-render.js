@@ -367,8 +367,7 @@
         help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
         help.addEventListener('click', (e) => {
           e.stopPropagation();
-          state.helpOpen = !state.helpOpen;
-          render();
+          configureUi({ helpOpen: !state.helpOpen });
         });
         toolbar.appendChild(help);
       }
@@ -381,8 +380,7 @@
       settings.title = compact ? 'Workflow settings, reports, and export actions' : 'Audit settings and workflow presets';
       settings.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.settingsOpen = !state.settingsOpen;
-        render();
+        configureUi({ settingsOpen: !state.settingsOpen });
       });
       toolbar.appendChild(settings);
 

@@ -22,7 +22,9 @@
     toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
       ? bootstrapConfig.toolbarOpen
       : bootstrapUiMode !== 'agent',
-    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
+    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean'
+      ? bootstrapConfig.helpOpen
+      : bootstrapUiMode !== 'agent',
     settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
     captureUiHidden: typeof bootstrapConfig.captureUiHidden === 'boolean' ? bootstrapConfig.captureUiHidden : false,
     mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,

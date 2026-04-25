@@ -332,7 +332,7 @@ async function main() {
       preset: 'agent-capture',
       announce: false
     });
-    assert.equal(contract.contractVersion, 1);
+    assert.equal(contract.contractVersion, 2);
 
     const uiState = await session.liveClient.getUiState(page);
     assert.equal(uiState.uiMode, 'agent');

@@ -115,7 +115,7 @@
   const GET_VIEWPORT_CAPTURE_MESSAGE = 'a11y-overlay-get-viewport-capture';
   const EXPORT_NOTICE_MS = 2800;
   const REPORT_SCHEMA_VERSION = 1;
-  const AUTOMATION_CONTRACT_VERSION = 1;
+  const AUTOMATION_CONTRACT_VERSION = 2;
 
   // elements that are mostly noise in a grid view
   const GRID_SKIP = new Set(['HTML', 'BODY', 'HEAD', 'SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'BR', 'HR']);
@@ -1238,7 +1238,9 @@
     toolbarOpen: typeof bootstrapConfig.toolbarOpen === 'boolean'
       ? bootstrapConfig.toolbarOpen
       : bootstrapUiMode !== 'agent',
-    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean' ? bootstrapConfig.helpOpen : true,
+    helpOpen: typeof bootstrapConfig.helpOpen === 'boolean'
+      ? bootstrapConfig.helpOpen
+      : bootstrapUiMode !== 'agent',
     settingsOpen: typeof bootstrapConfig.settingsOpen === 'boolean' ? bootstrapConfig.settingsOpen : false,
     captureUiHidden: typeof bootstrapConfig.captureUiHidden === 'boolean' ? bootstrapConfig.captureUiHidden : false,
     mobileSheetOpen: typeof bootstrapConfig.mobileSheetOpen === 'boolean' ? bootstrapConfig.mobileSheetOpen : false,
@@ -5305,8 +5307,7 @@
         help.title = compact ? 'Toggle help. Hidden report and export actions move into settings.' : 'Toggle help';
         help.addEventListener('click', (e) => {
           e.stopPropagation();
-          state.helpOpen = !state.helpOpen;
-          render();
+          configureUi({ helpOpen: !state.helpOpen });
         });
         toolbar.appendChild(help);
       }
@@ -5319,8 +5320,7 @@
       settings.title = compact ? 'Workflow settings, reports, and export actions' : 'Audit settings and workflow presets';
       settings.addEventListener('click', (e) => {
         e.stopPropagation();
-        state.settingsOpen = !state.settingsOpen;
-        render();
+        configureUi({ settingsOpen: !state.settingsOpen });
       });
       toolbar.appendChild(settings);
 
@@ -5625,7 +5625,7 @@
       toggleMobileSheet('more', { detent: 'peek' });
       return;
     }
-    state.helpOpen = !state.helpOpen;
+    configureUi({ helpOpen: !state.helpOpen }, { render: false });
   }
 
   function isEditableNode(node) {
@@ -5820,6 +5820,10 @@
     toggle(key) {
       if (getSliceMeta(key)) {
         if (toggleSliceState(key)) render();
+        return;
+      }
+      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+        configureUi({ [key]: !state[key] });
         return;
       }
       if (key in state) {
