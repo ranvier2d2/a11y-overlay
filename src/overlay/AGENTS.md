@@ -23,12 +23,12 @@
 
 ## Validate
 
-- Fast check: `python3 /Users/joaquinvenegasarevalo/coding/frontend-gadget/scripts/build_overlay.py`
-- Full check: `python3 /Users/joaquinvenegasarevalo/coding/frontend-gadget/scripts/build_overlay.py && node /Users/joaquinvenegasarevalo/coding/frontend-gadget/tests/verify_overlay_client.mjs`
+- Fast check from repo root: `python3 scripts/build_overlay.py`
+- Full check from repo root: `python3 scripts/build_overlay.py && node tests/verify_overlay_client.mjs`
 
 ## ONGOING IMPLEMENTATION
 
-- Roadmap source: [docs/overlay-playwright-runtime-roadmap.md](/Users/joaquinvenegasarevalo/coding/frontend-gadget/docs/overlay-playwright-runtime-roadmap.md)
+- Roadmap source: `docs/overlay-playwright-runtime-roadmap.md`
 - Runtime-facing work should stay narrow:
   1. preserve current agent UI configuration support, including capture-time chrome suppression
   2. keep note and arrow storage/replay stable for downstream report renderers

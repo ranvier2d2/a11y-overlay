@@ -23,12 +23,12 @@
 
 ## Validate
 
-- Fast check: `node /Users/joaquinvenegasarevalo/coding/frontend-gadget/tests/verify_overlay_client.mjs`
-- Full check: `node /Users/joaquinvenegasarevalo/coding/frontend-gadget/tests/verify_overlay_client.mjs && node /Users/joaquinvenegasarevalo/coding/frontend-gadget/tests/verify_overlay_sandbox.mjs`
+- Fast check from repo root: `node tests/verify_overlay_client.mjs`
+- Full check from repo root: `node tests/verify_overlay_client.mjs && node tests/verify_overlay_sandbox.mjs`
 
 ## ONGOING IMPLEMENTATION
 
-- Roadmap source: [docs/overlay-playwright-runtime-roadmap.md](/Users/joaquinvenegasarevalo/coding/frontend-gadget/docs/overlay-playwright-runtime-roadmap.md)
+- Roadmap source: `docs/overlay-playwright-runtime-roadmap.md`
 - Priority work owned here:
   1. keep `captureVisualEvidence(...)` and `writeAuditArtifactSet(...)` stable for quiet captures and scroll-aware evidence
   2. keep report projection aligned with runtime note geometry so replayed callouts do not drift

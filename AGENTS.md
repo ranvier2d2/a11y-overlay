@@ -53,7 +53,7 @@
 
 ## ONGOING IMPLEMENTATION
 
-- Source roadmap: [docs/overlay-playwright-runtime-roadmap.md](/Users/joaquinvenegasarevalo/coding/frontend-gadget/docs/overlay-playwright-runtime-roadmap.md)
+- Source roadmap: `docs/overlay-playwright-runtime-roadmap.md`
 - Current program of work:
   1. keep first-class audit modalities stable across public, responsive, authenticated, and desktop-shell flows
   2. improve annotation evidence quality: quiet capture, viewport-safe placement, and retry/reflow behavior
