@@ -253,15 +253,12 @@
         if (toggleSliceState(key)) render();
         return;
       }
-      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
-        configureUi({ [key]: !state[key] });
-        return;
-      }
-      if (key in state) {
-        state[key] = !state[key];
-        render();
-      }
-    },
+	      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+	        configureUi({ [key]: !state[key] });
+	        return;
+	      }
+	      throw new Error(`Unsupported toggle key: ${key}`);
+	    },
     collectDetections,
     getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {

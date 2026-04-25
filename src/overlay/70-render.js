@@ -104,7 +104,7 @@
       toolbar.className = 'toolbar hidden';
       mobileDock.innerHTML = '';
       mobileDock.className = 'mobile-dock';
-      if (!isMobileOverlayViewport() && state.uiMode === 'agent') {
+      {
         const open = document.createElement('button');
         open.type = 'button';
         open.className = 'agent-chip';

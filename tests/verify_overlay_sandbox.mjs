@@ -370,7 +370,7 @@ async function main() {
     const restoredUiState = await session.liveClient.getUiState(page);
     assert.equal(restoredUiState.captureUiHidden, false);
     assert.equal(restoredUiState.toolbarOpen, true);
-    assert.equal(restoredUiState.helpOpen, true);
+    assert.equal(restoredUiState.helpOpen, false);
     assert.equal(restoredUiState.settingsOpen, true);
 
     const nestedFullPageEvidence = await session.captureVisualEvidence(page, {

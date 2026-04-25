@@ -1983,7 +1983,6 @@ export async function createOverlaySandboxSession(options = {}) {
     waitUntil = DEFAULT_WAIT_UNTIL
   } = {}) => {
     await validateAuthenticatedState(desktopPage, authValidation, readiness);
-    const authState = await captureAuthenticatedState(desktopPage, auth);
 
     const auditUrl = url || desktopPage.url();
     if (
@@ -1994,6 +1993,7 @@ export async function createOverlaySandboxSession(options = {}) {
       await desktopPage.goto(auditUrl, { waitUntil });
     }
     await waitForReady(desktopPage, readiness);
+    const authState = await captureAuthenticatedState(desktopPage, auth);
     await ensureOverlay(desktopPage, {
       runtimeScriptPath,
       preset,
@@ -2078,7 +2078,6 @@ export async function createOverlaySandboxSession(options = {}) {
     extraArtifacts = {}
   }) => {
     const { join } = await import("node:path");
-    const { writeFile, readFile } = await import("node:fs/promises");
     const outputStem = artifactName || `${slugify(url)}-a11y-${stampNow()}`;
     const dir = artifactDir || join(paths.outputDir, outputStem);
     await ensureDirectory(dir);
@@ -2098,6 +2097,7 @@ export async function createOverlaySandboxSession(options = {}) {
       mobileCaptureMode: mobile.captureMode || (mobile.fullPage === true ? "full-page" : "scroll-slices"),
       fullPage: desktop.fullPage,
       mobileFullPage: mobile.fullPage,
+      extraArtifacts,
       reportContext: {
         target_name: reportContext.target_name || undefined,
         primary_url: reportContext.primary_url || url,
@@ -2108,22 +2108,6 @@ export async function createOverlaySandboxSession(options = {}) {
         ...reportContext
       }
     });
-
-    if (extraArtifacts && typeof extraArtifacts === "object") {
-      let artifactIndex;
-      try {
-        artifactIndex = JSON.parse(await readFile(artifacts.artifactIndexPath, "utf8"));
-      } catch {
-        artifactIndex = {};
-      }
-      for (const [key, descriptor] of Object.entries(extraArtifacts)) {
-        if (!descriptor?.fileName || descriptor.payload == null) continue;
-        const filePath = join(dir, descriptor.fileName);
-        await writeFile(filePath, `${JSON.stringify(descriptor.payload, null, 2)}\n`, "utf8");
-        artifactIndex[key] = descriptor.fileName;
-      }
-      await writeFile(artifacts.artifactIndexPath, `${JSON.stringify(artifactIndex, null, 2)}\n`, "utf8");
-    }
 
     return {
       dir,
@@ -2484,6 +2468,10 @@ export async function createOverlaySandboxSession(options = {}) {
       const startedAt = Date.now();
 
       try {
+        if (normalizeComparableUrl(desktopPage.url()) !== normalizeComparableUrl(baseUrl)) {
+          await desktopPage.goto(baseUrl, { waitUntil: routeWalker.waitUntil || DEFAULT_WAIT_UNTIL });
+          await waitForReady(desktopPage, readiness);
+        }
         const navigation = await navigateRouteFromDom(desktopPage, route, routeWalker);
         await waitForReady(desktopPage, routeReadiness || readiness);
         await ensureOverlay(desktopPage, {

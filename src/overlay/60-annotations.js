@@ -37,9 +37,11 @@
       color: entry.color || '#e7e5e4'
     };
     if (isMobileOverlayViewport()) {
-      state.mobileSheetTab = 'inspect';
-      state.mobileSheetDetent = 'full';
-      state.mobileSheetOpen = true;
+      configureUi({
+        mobileSheetTab: 'inspect',
+        mobileSheetDetent: 'full',
+        mobileSheetOpen: true
+      }, { render: false });
     }
     scheduleSessionPersist();
     render();
@@ -89,9 +91,11 @@
   }
 
   function openMobileSheet(tab, opts = {}) {
-    state.mobileSheetTab = tab;
-    state.mobileSheetDetent = opts.detent || mobileSheetDefaultDetent(tab);
-    state.mobileSheetOpen = true;
+    configureUi({
+      mobileSheetTab: tab,
+      mobileSheetDetent: opts.detent || mobileSheetDefaultDetent(tab),
+      mobileSheetOpen: true
+    }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -99,7 +103,7 @@
 
   function closeMobileSheet(opts = {}) {
     if (!state.mobileSheetOpen) return false;
-    state.mobileSheetOpen = false;
+    configureUi({ mobileSheetOpen: false }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -500,9 +504,11 @@
         variant: 'compact ghost',
         click: () => {
           deselectAnnotations();
-          state.mobileSheetTab = 'annotate';
-          state.mobileSheetDetent = 'medium';
-          state.mobileSheetOpen = true;
+          configureUi({
+            mobileSheetTab: 'annotate',
+            mobileSheetDetent: 'medium',
+            mobileSheetOpen: true
+          }, { render: false });
           render();
         }
       });
@@ -514,9 +520,11 @@
         variant: 'compact',
         click: () => {
           if (removeSelectedAnnotation()) {
-            state.mobileSheetTab = 'annotate';
-            state.mobileSheetDetent = 'medium';
-            state.mobileSheetOpen = true;
+            configureUi({
+              mobileSheetTab: 'annotate',
+              mobileSheetDetent: 'medium',
+              mobileSheetOpen: true
+            }, { render: false });
             render();
           }
         }

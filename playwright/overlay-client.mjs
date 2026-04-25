@@ -724,7 +724,7 @@ export class OverlayClient extends OverlayLiveClient {
         screenshotPath: desktopScreenshotPath,
         screenshotType,
         screenshotTimeoutMs: options.screenshotTimeoutMs,
-        captureMode: options.captureMode,
+        captureMode: options.captureMode || (options.fullPage === true ? 'full-page' : 'viewport'),
         fullPage: options.fullPage,
         includeScreenshotBytes: false,
         quietMode: options.quietMode,
@@ -772,7 +772,7 @@ export class OverlayClient extends OverlayLiveClient {
           screenshotPath: mobileScreenshotPath,
           screenshotType,
           screenshotTimeoutMs: options.mobileScreenshotTimeoutMs ?? options.screenshotTimeoutMs,
-          captureMode: options.mobileCaptureMode || options.captureMode,
+          captureMode: options.mobileCaptureMode || options.captureMode || (options.mobileFullPage === true ? 'full-page' : 'viewport'),
           fullPage: options.mobileFullPage,
           includeScreenshotBytes: false,
           quietMode: options.mobileQuietMode ?? options.quietMode,
@@ -810,6 +810,19 @@ export class OverlayClient extends OverlayLiveClient {
     const artifactIndexPath = path.join(dir, 'artifact-index.json');
     const reportMarkdownPath = path.join(dir, 'report.md');
     const reportHtmlPath = path.join(dir, 'report.html');
+    const extraArtifactEntries = [];
+    if (options.extraArtifacts && typeof options.extraArtifacts === 'object') {
+      for (const [key, descriptor] of Object.entries(options.extraArtifacts)) {
+        if (!descriptor?.fileName || descriptor.payload == null) continue;
+        const filePath = path.join(dir, descriptor.fileName);
+        await writeFile(filePath, `${JSON.stringify(descriptor.payload, null, 2)}\n`, 'utf8');
+        extraArtifactEntries.push({
+          key,
+          fileName: descriptor.fileName,
+          label: descriptor.label || key
+        });
+      }
+    }
 
     const artifactIndex = {
       generatedAt: new Date().toISOString(),
@@ -832,7 +845,8 @@ export class OverlayClient extends OverlayLiveClient {
           ...(mobile.screenshotMode ? { screenshotMode: mobile.screenshotMode } : {})
         }
       } : {}),
-      ...(contractPath ? { contract: path.basename(contractPath) } : {})
+      ...(contractPath ? { contract: path.basename(contractPath) } : {}),
+      ...Object.fromEntries(extraArtifactEntries.map((entry) => [entry.key, entry.fileName]))
     };
     await writeFile(artifactIndexPath, `${JSON.stringify(artifactIndex, null, 2)}\n`, 'utf8');
 
@@ -844,7 +858,8 @@ export class OverlayClient extends OverlayLiveClient {
       desktopReport,
       desktop,
       mobileReport,
-      mobile
+      mobile,
+      extraArtifacts: extraArtifactEntries
     });
 
     const reportMarkdown = await this._renderAuditMarkdown({
@@ -1252,7 +1267,8 @@ export class OverlayClient extends OverlayLiveClient {
     desktopReport,
     desktop,
     mobileReport,
-    mobile
+    mobile,
+    extraArtifacts = []
   }) {
     const desktopSummary = desktopReport?.summary || {};
     const mobileSummary = mobileReport?.summary || {};
@@ -1274,6 +1290,7 @@ export class OverlayClient extends OverlayLiveClient {
       mobileReport,
       desktop,
       mobile,
+      extraArtifacts,
       desktopSummary,
       mobileSummary,
       mergedSlices,
@@ -1379,7 +1396,7 @@ export class OverlayClient extends OverlayLiveClient {
       touch_profile: this._formatTouchProfiles(desktopReport, mobileReport),
       browser_and_os: reportContext.browser_and_os || 'Not recorded by the client helper.',
       manual_interactions: reportContext.manual_interactions || 'Not specified.',
-      artifact_set: this._formatArtifactSetList(desktop, mobile, artifactIndexPath, reportHtmlPath),
+      artifact_set: this._formatArtifactSetList(desktop, mobile, artifactIndexPath, reportHtmlPath, reportModel.extraArtifacts),
       method_notes: reportContext.method_notes || 'Generated from overlay runtime report data, synthesized priority themes, and Playwright screenshots.',
       total_findings: String((desktopSummary.total || 0) + (mobileSummary.total || 0)),
       error_count: String((desktopSummary.severity?.error || 0) + (mobileSummary.severity?.error || 0)),
@@ -1735,7 +1752,7 @@ export class OverlayClient extends OverlayLiveClient {
     return Array.from(profiles).join(', ') || 'Unknown';
   }
 
-  _formatArtifactSetList(desktop, mobile, artifactIndexPath, reportHtmlPath) {
+  _formatArtifactSetList(desktop, mobile, artifactIndexPath, reportHtmlPath, extraArtifacts = []) {
     const items = [path.basename(artifactIndexPath), path.basename(reportHtmlPath), path.basename(desktop.htmlBundlePath)];
     if (desktop.screenshotPaths?.length) {
       items.push(...desktop.screenshotPaths.map((value) => path.basename(value)));
@@ -1751,6 +1768,11 @@ export class OverlayClient extends OverlayLiveClient {
         items.push(path.basename(mobile.screenshotPath));
       }
       if (mobile.jsonReportPath) items.push(path.basename(mobile.jsonReportPath));
+    }
+    if (Array.isArray(extraArtifacts)) {
+      extraArtifacts.forEach((entry) => {
+        if (entry?.fileName) items.push(path.basename(entry.fileName));
+      });
     }
     return items.join(', ');
   }
@@ -1876,6 +1898,15 @@ export class OverlayClient extends OverlayLiveClient {
       if (reportModel.mobile.jsonReportPath) {
         entries.push({ label: 'Mobile JSON report', href: path.basename(reportModel.mobile.jsonReportPath) });
       }
+    }
+    if (Array.isArray(reportModel.extraArtifacts)) {
+      reportModel.extraArtifacts.forEach((entry) => {
+        if (!entry?.fileName) return;
+        entries.push({
+          label: entry.label || entry.key || entry.fileName,
+          href: path.basename(entry.fileName)
+        });
+      });
     }
     return entries;
   }

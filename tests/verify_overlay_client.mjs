@@ -90,6 +90,8 @@ class FakeRuntime {
     }
     if (nextUiState.captureUiHidden) {
       nextUiState.mobileSheetOpen = false;
+      nextUiState.helpOpen = false;
+      nextUiState.settingsOpen = false;
     }
     this.uiTransitions.push(nextUiState);
     this.uiState = nextUiState;
@@ -557,6 +559,13 @@ async function verifyWriteAuditArtifactSet() {
       mobileScreenshotTimeoutMs: 23456,
       fullPage: true,
       mobileFullPage: false,
+      extraArtifacts: {
+        placementReview: {
+          fileName: 'placement-review.json',
+          label: 'Placement review metadata',
+          payload: { requiresVisualReview: false }
+        }
+      },
       reportContext: {
         target_name: 'Fixture App',
         audit_mode: 'audit-local-web',
@@ -585,6 +594,7 @@ async function verifyWriteAuditArtifactSet() {
     assert.equal(artifactIndex.mobile.reportJson, 'mobile.json');
     assert.equal(artifactIndex.mobile.screenshot, 'mobile.jpg');
     assert.equal(artifactIndex.contract, 'contract.json');
+    assert.equal(artifactIndex.placementReview, 'placement-review.json');
 
     const reportMarkdown = await readFile(result.reportMarkdownPath, 'utf8');
     assert.match(reportMarkdown, /# Accessibility Audit Report/);
@@ -607,6 +617,7 @@ async function verifyWriteAuditArtifactSet() {
     assert.match(reportHtml, /carousel-slide/);
     assert.match(reportHtml, /data-carousel-next/);
     assert.match(reportHtml, /desktop\.jpg/);
+    assert.match(reportHtml, /placement-review\.json/);
     assert.equal(result.desktop.screenshotCaptures[0].annotationProjection, 'skipped-full-page');
     assert.equal(result.mobile.screenshotCaptures[0].annotationProjection, 'viewport');
     assert.match(reportHtml, /<div[^>]*class="annotation-overlay"[^>]*>/);

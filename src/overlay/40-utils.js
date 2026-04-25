@@ -290,11 +290,13 @@
         state.helpOpen = false;
         state.settingsOpen = false;
         state.mobileSheetOpen = false;
+      } else if (state.uiMode === 'agent') {
+        state.helpOpen = false;
       }
     }
 
     if (typeof options.helpOpen === 'boolean') {
-      const nextHelpOpen = state.toolbarOpen ? options.helpOpen : false;
+      const nextHelpOpen = state.toolbarOpen && state.uiMode !== 'agent' ? options.helpOpen : false;
       if (state.helpOpen !== nextHelpOpen) {
         state.helpOpen = nextHelpOpen;
         changed = true;
@@ -313,6 +315,11 @@
       state.helpOpen = false;
       state.settingsOpen = false;
       state.mobileSheetOpen = false;
+      changed = true;
+    }
+
+    if (state.uiMode === 'agent' && state.helpOpen) {
+      state.helpOpen = false;
       changed = true;
     }
 

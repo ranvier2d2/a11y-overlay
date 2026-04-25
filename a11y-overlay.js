@@ -1256,6 +1256,14 @@
     exportNoticeTone: 'muted',
     touchProfile: 'web-default'
   };
+  if (!state.toolbarOpen || state.captureUiHidden) {
+    state.helpOpen = false;
+    state.settingsOpen = false;
+    state.mobileSheetOpen = false;
+  }
+  if (state.uiMode === 'agent') {
+    state.helpOpen = false;
+  }
   let exportNoticeTimer = 0;
   let sessionPersistTimer = 0;
   let sessionReady = false;
@@ -1743,11 +1751,13 @@
         state.helpOpen = false;
         state.settingsOpen = false;
         state.mobileSheetOpen = false;
+      } else if (state.uiMode === 'agent') {
+        state.helpOpen = false;
       }
     }
 
     if (typeof options.helpOpen === 'boolean') {
-      const nextHelpOpen = state.toolbarOpen ? options.helpOpen : false;
+      const nextHelpOpen = state.toolbarOpen && state.uiMode !== 'agent' ? options.helpOpen : false;
       if (state.helpOpen !== nextHelpOpen) {
         state.helpOpen = nextHelpOpen;
         changed = true;
@@ -1766,6 +1776,11 @@
       state.helpOpen = false;
       state.settingsOpen = false;
       state.mobileSheetOpen = false;
+      changed = true;
+    }
+
+    if (state.uiMode === 'agent' && state.helpOpen) {
+      state.helpOpen = false;
       changed = true;
     }
 
@@ -3768,9 +3783,11 @@
       color: entry.color || '#e7e5e4'
     };
     if (isMobileOverlayViewport()) {
-      state.mobileSheetTab = 'inspect';
-      state.mobileSheetDetent = 'full';
-      state.mobileSheetOpen = true;
+      configureUi({
+        mobileSheetTab: 'inspect',
+        mobileSheetDetent: 'full',
+        mobileSheetOpen: true
+      }, { render: false });
     }
     scheduleSessionPersist();
     render();
@@ -3820,9 +3837,11 @@
   }
 
   function openMobileSheet(tab, opts = {}) {
-    state.mobileSheetTab = tab;
-    state.mobileSheetDetent = opts.detent || mobileSheetDefaultDetent(tab);
-    state.mobileSheetOpen = true;
+    configureUi({
+      mobileSheetTab: tab,
+      mobileSheetDetent: opts.detent || mobileSheetDefaultDetent(tab),
+      mobileSheetOpen: true
+    }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -3830,7 +3849,7 @@
 
   function closeMobileSheet(opts = {}) {
     if (!state.mobileSheetOpen) return false;
-    state.mobileSheetOpen = false;
+    configureUi({ mobileSheetOpen: false }, { render: false });
     if (opts.render !== false) {
       renderHud();
     }
@@ -4231,9 +4250,11 @@
         variant: 'compact ghost',
         click: () => {
           deselectAnnotations();
-          state.mobileSheetTab = 'annotate';
-          state.mobileSheetDetent = 'medium';
-          state.mobileSheetOpen = true;
+          configureUi({
+            mobileSheetTab: 'annotate',
+            mobileSheetDetent: 'medium',
+            mobileSheetOpen: true
+          }, { render: false });
           render();
         }
       });
@@ -4245,9 +4266,11 @@
         variant: 'compact',
         click: () => {
           if (removeSelectedAnnotation()) {
-            state.mobileSheetTab = 'annotate';
-            state.mobileSheetDetent = 'medium';
-            state.mobileSheetOpen = true;
+            configureUi({
+              mobileSheetTab: 'annotate',
+              mobileSheetDetent: 'medium',
+              mobileSheetOpen: true
+            }, { render: false });
             render();
           }
         }
@@ -5057,7 +5080,7 @@
       toolbar.className = 'toolbar hidden';
       mobileDock.innerHTML = '';
       mobileDock.className = 'mobile-dock';
-      if (!isMobileOverlayViewport() && state.uiMode === 'agent') {
+      {
         const open = document.createElement('button');
         open.type = 'button';
         open.className = 'agent-chip';
@@ -5847,15 +5870,12 @@
         if (toggleSliceState(key)) render();
         return;
       }
-      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
-        configureUi({ [key]: !state[key] });
-        return;
-      }
-      if (key in state) {
-        state[key] = !state[key];
-        render();
-      }
-    },
+	      if (key === 'helpOpen' || key === 'settingsOpen' || key === 'toolbarOpen' || key === 'captureUiHidden' || key === 'mobileSheetOpen') {
+	        configureUi({ [key]: !state[key] });
+	        return;
+	      }
+	      throw new Error(`Unsupported toggle key: ${key}`);
+	    },
     collectDetections,
     getUiState: getUiStateSnapshot,
     configureUi(opts = {}) {

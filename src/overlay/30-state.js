@@ -40,6 +40,14 @@
     exportNoticeTone: 'muted',
     touchProfile: 'web-default'
   };
+  if (!state.toolbarOpen || state.captureUiHidden) {
+    state.helpOpen = false;
+    state.settingsOpen = false;
+    state.mobileSheetOpen = false;
+  }
+  if (state.uiMode === 'agent') {
+    state.helpOpen = false;
+  }
   let exportNoticeTimer = 0;
   let sessionPersistTimer = 0;
   let sessionReady = false;
