@@ -161,6 +161,11 @@
     border-radius: 4px; color: var(--fg-muted);
     text-transform: uppercase;
   }
+  .chip.alpha {
+    color: var(--bg);
+    background: var(--interact);
+    border-color: var(--interact);
+  }
   .chip.dot::before {
     content: ""; display: inline-block; width: 8px; height: 8px;
     background: var(--interact); border-radius: 50%; margin-right: 8px;
@@ -670,6 +675,45 @@
   }
   .repo-banner-cta .repo-cta-arrow { font-size: 14px; }
   .repo-banner:hover .repo-banner-cta { background: var(--interact); color: var(--bg); }
+  .alpha-release {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: center;
+    margin: 0 0 24px;
+    padding: 18px 22px;
+    border: 1px solid #d6d3d1;
+    border-radius: 8px;
+    background: #f5f5f4;
+    color: var(--bg);
+  }
+  .alpha-release strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+  .alpha-release span {
+    display: block;
+    color: #57534e;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .alpha-release a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 5px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .alpha-release a:hover { background: #292524; }
   .install .steps {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
@@ -681,6 +725,7 @@
     background: #fafaf9;
     border-radius: 8px;
     position: relative;
+    min-width: 0;
   }
   .install .step .idx {
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
@@ -698,7 +743,8 @@
     background: var(--bg); color: var(--fg);
     font-family: var(--mono); font-size: 12px; line-height: 1.5;
     border-radius: 5px; overflow-x: auto;
-    white-space: pre-wrap; word-break: break-all;
+    max-width: 100%;
+    white-space: pre; word-break: normal;
   }
   .install .step pre .c { color: var(--fg-dim); }
   .install .step pre .k { color: var(--interact); }
@@ -1076,6 +1122,8 @@
     .key-list .item { border-left: none !important; }
     .repo-banner { grid-template-columns: auto 1fr; gap: 16px; padding: 20px; }
     .repo-banner-cta { grid-column: 1 / -1; justify-self: start; }
+    .alpha-release { grid-template-columns: 1fr; }
+    .alpha-release a { justify-self: start; }
     footer .links {
       width: 100%;
       margin-left: 0;
@@ -1086,6 +1134,9 @@
 
   @media (max-width: 640px) {
     .install .steps { grid-template-columns: 1fr; }
+    .repo-banner { grid-template-columns: 1fr; }
+    .repo-banner-path { font-size: 16px; }
+    .repo-banner-icon { width: 48px; height: 48px; }
   }
 </style>
 </head>
@@ -1099,7 +1150,7 @@
     <div class="brand">
       <img src="icons/icon-32.png" alt="">
       a11y-overlay
-      <span class="v">v0.1.17</span>
+      <span class="v">alpha.1</span>
     </div>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
       <span class="bar" aria-hidden="true"></span>
@@ -1131,12 +1182,13 @@
       <p class="lede">
         A keyboard-driven overlay that draws <b>landmarks</b>, <b>headings</b>, <b>focus order</b>,
         <b>form labels</b>, <b>small targets</b> and <b>repeating components</b> on any webpage.
-        Ships as a Chrome extension, a script tag, a Playwright/Puppeteer inject, or a Codex/Claude skill.
+        Ships as a Chrome extension, a script tag, a Playwright/Puppeteer client, or an installable agent skill.
       </p>
       <div class="meta">
         <span class="chip dot">Runs on any site</span>
         <span class="chip">⌘⇧Y · Ctrl⇧Y</span>
         <span class="chip">MV3</span>
+        <span class="chip alpha">Codex skill alpha</span>
       </div>
 
       <!-- Dogfood: use the tool on its own landing -->
@@ -1475,6 +1527,10 @@
     <div class="sec-head">
       <div class="eyebrow" style="color: var(--fg-faint)">Install</div>
       <h2>Grab the source, then pick a delivery shape.</h2>
+      <p>
+        The alpha release includes the standalone runtime, Playwright client, and
+        <b>overlay-playwright-runtime</b> skill for Codex-style local audits.
+      </p>
     </div>
 
     <!-- Primary GitHub banner -->
@@ -1497,6 +1553,16 @@
         <span class="repo-cta-arrow">→</span>
       </div>
     </a>
+
+    <div class="alpha-release">
+      <div>
+        <strong>Alpha release: v0.2.0-alpha.1</strong>
+        <span>Validated install path, bundled skill assets, persistent sandbox audit flows, and trust-but-verify annotation review hooks.</span>
+      </div>
+      <a href="https://github.com/ranvier2d2/a11y-overlay/releases/tag/v0.2.0-alpha.1" target="_blank" rel="noopener">
+        Release notes →
+      </a>
+    </div>
 
     <div class="steps">
       <div class="step">
@@ -1537,9 +1603,9 @@
 
       <div class="step">
         <div class="idx">04 — SKILL</div>
-        <h3>Codex / Claude skill</h3>
-        <p>Install <span class="kbd-light">overlay-playwright-runtime</span> as an agent skill for local audits, authenticated browser sessions, visual evidence, and report bundles.</p>
-<pre><span class="c"># swap codex for claude-code when needed</span>
+        <h3>Agent skill</h3>
+        <p>Install <span class="kbd-light">overlay-playwright-runtime</span> for local audits, authenticated browser sessions, visual evidence, report bundles, and reviewable annotation previews.</p>
+<pre><span class="c"># use --agent codex for Codex installs</span>
 <span class="k">npx</span> skills add https://github.com/ranvier2d2/a11y-overlay \
   --full-depth \
   --skill <span class="s">overlay-playwright-runtime</span> \
@@ -1547,7 +1613,7 @@
         <div class="warn">
           Add <b>--global --yes</b> only when you explicitly want a non-interactive global install.
         </div>
-        <span class="tag">SKILLS.SH · CODEX · CLAUDE</span>
+        <span class="tag">SKILLS.SH · CODEX · ALPHA</span>
       </div>
     </div>
   </div>
@@ -1560,7 +1626,7 @@
       <div class="brand">
         <img src="icons/icon-32.png" alt="" style="width:24px; height:24px;">
         <span>a11y-overlay</span>
-        <span class="v">v0.1.17</span>
+        <span class="v">alpha.1</span>
       </div>      <div class="tag">A small tool. Built in the open. Fork and remix as you please.</div>
       <div class="links">
         <a href="#toggles">Toggles</a>
