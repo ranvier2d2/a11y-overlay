@@ -34,6 +34,16 @@ Rebuild the shipped runtime with:
 python3 scripts/build_overlay.py
 ```
 
+## Design notes
+
+Implementation notes and historical product specs live in `docs/`:
+
+- [`docs/research-rule-engine.md`](docs/research-rule-engine.md) — source hierarchy and finding taxonomy principles
+- [`docs/image-audit-spec.md`](docs/image-audit-spec.md) — image audit slice semantics and detection plan
+- [`docs/toolbar-state-spec.md`](docs/toolbar-state-spec.md) — toolbar state model and interaction rules
+- [`docs/overlay-playwright-runtime-roadmap.md`](docs/overlay-playwright-runtime-roadmap.md) — current skill/runtime roadmap
+- [`docs/annotation-placement-reflow-design.md`](docs/annotation-placement-reflow-design.md) — annotation placement and visual review design
+
 ## Local preview
 
 Run a static server from the repo root:
